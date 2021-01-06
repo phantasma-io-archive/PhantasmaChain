@@ -660,18 +660,21 @@ namespace Phantasma.Neo.Core
 
         }
 
-        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null, byte[] nonce = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, object[] args, string attachSymbol = null
+                , IEnumerable<Transaction.Output> attachTargets = null, byte[] nonce = null, Action<string> usedRpc = null)
         {
             var bytes = GenerateScript(scriptHash, args, nonce);
-            return CallContract(key, scriptHash, bytes, attachSymbol, attachTargets);
+            return CallContract(key, scriptHash, bytes, attachSymbol, attachTargets, usedRpc);
         }
 
-        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, string operation, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null, byte[] nonce = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, string operation, object[] args
+                , string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null, byte[] nonce = null, Action<string> usedRpc = null)
         {
-            return CallContract(key, scriptHash, new object[] { operation, args }, attachSymbol, attachTargets, nonce);
+            return CallContract(key, scriptHash, new object[] { operation, args }, attachSymbol, attachTargets, nonce, usedRpc);
         }
 
-        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, byte[] bytes, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, byte[] bytes, string attachSymbol = null
+                , IEnumerable<Transaction.Output> attachTargets = null, Action<string> usedRpc = null)
         {
             List<Transaction.Input> inputs = null;
             List<Transaction.Output> outputs = null;
@@ -704,19 +707,24 @@ namespace Phantasma.Neo.Core
 
             transaction.Sign(key);
 
-            if (SendTransaction(key, transaction))
+            if (SendTransaction(key, transaction, out string rpc))
             {
+                if (usedRpc != null)
+                {
+                    usedRpc.Invoke(rpc);
+                }
+
                 return transaction;
             }
 
             return null;
         }
 
-        protected abstract bool SendTransaction(Transaction tx);
+        protected abstract bool SendTransaction(Transaction tx, out string usedRpc);
 
-        public bool SendTransaction(NeoKeys keys, Transaction tx)
+        public bool SendTransaction(NeoKeys keys, Transaction tx, out string usedRpc)
         {
-            return SendTransaction(tx);
+            return SendTransaction(tx, out usedRpc);
         }
 
         public abstract byte[] GetStorage(string scriptHash, byte[] key);
@@ -747,7 +755,7 @@ namespace Phantasma.Neo.Core
             return GetTransaction(val);
         }
 
-        public Transaction SendAsset(NeoKeys fromKey, string toAddress, string symbol, decimal amount)
+        public Transaction SendAsset(NeoKeys fromKey, string toAddress, string symbol, decimal amount, out string usedRpc)
         {
             if (String.Equals(fromKey.Address, toAddress, StringComparison.OrdinalIgnoreCase))
             {
@@ -757,10 +765,10 @@ namespace Phantasma.Neo.Core
             var toScriptHash = toAddress.GetScriptHashFromAddress();
             var target = new Transaction.Output() { scriptHash = new UInt160(toScriptHash), value = amount };
             var targets = new List<Transaction.Output>() { target };
-            return SendAsset(fromKey, symbol, targets);
+            return SendAsset(fromKey, symbol, targets, out usedRpc);
         }
 
-        public Transaction SendAsset(NeoKeys fromKey, string symbol, IEnumerable<Transaction.Output> targets)
+        public Transaction SendAsset(NeoKeys fromKey, string symbol, IEnumerable<Transaction.Output> targets, out string usedRpc)
         {
             List<Transaction.Input> inputs;
             List<Transaction.Output> outputs;
@@ -779,7 +787,7 @@ namespace Phantasma.Neo.Core
 
             tx.Sign(fromKey);
 
-            var ok = SendTransaction(tx);
+            var ok = SendTransaction(tx, out usedRpc);
             return ok ? tx : null;
         }
 
@@ -832,7 +840,7 @@ namespace Phantasma.Neo.Core
             var witness = new Witness { invocationScript = ("0014" + toKey.Address.AddressToScriptHash().ByteToHex()).HexToBytes(), verificationScript = verificationScript };
             tx.Sign(toKey, new Witness[] { witness });
 
-            var ok = SendTransaction(tx);
+            var ok = SendTransaction(tx, out string usedRpc);
             return ok ? tx : null;
         }
 
@@ -879,7 +887,7 @@ namespace Phantasma.Neo.Core
 
             tx.Sign(ownerKey);
 
-            var ok = SendTransaction(tx);
+            var ok = SendTransaction(tx, out string usedRpc);
             return ok ? tx : null;
         }
 
@@ -939,7 +947,7 @@ namespace Phantasma.Neo.Core
             var witness = new Witness { invocationScript = ("0014" + ownerKey.Address.AddressToScriptHash().ByteToHex()).HexToBytes(), verificationScript = verificationScript };
             tx.Sign(ownerKey, new Witness[] { witness });
 
-            var ok = SendTransaction(tx);
+            var ok = SendTransaction(tx, out string usedRpc);
             return ok ? tx : null;
         }
 
@@ -996,6 +1004,10 @@ namespace Phantasma.Neo.Core
         }
 
         public abstract bool HasPlugin(string hash);
+
+        public abstract bool CheckMempool(string node, string txHash);
+
+        public abstract List<string>GetMempool(string node, bool unverified);
 
         public abstract string GetNep5Transfers(UInt160 hash, DateTime timestamp);
 
@@ -1140,7 +1152,7 @@ namespace Phantasma.Neo.Core
 
             tx.Sign(keys);
 
-            var ok = SendTransaction(tx);
+            var ok = SendTransaction(tx, out string usedRpc);
             return ok ? tx : null;
         }
 
