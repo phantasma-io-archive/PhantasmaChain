@@ -218,7 +218,7 @@ namespace Phantasma.Blockchain
                         throw new ChainException("failed to execute inflation transaction");
                     }
 
-                    transactions = transactions.Concat(new Transaction[] { transaction});
+                    block.AddTransactionHash(transaction.Hash);
                 }
             }
 

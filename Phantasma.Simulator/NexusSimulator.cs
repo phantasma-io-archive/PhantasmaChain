@@ -1032,7 +1032,7 @@ namespace Phantasma.Simulator
             EndBlock();
         }
 
-        public void TimeSkipDays(double days, bool roundUp = false)
+        public void TimeSkipDays(double days, bool roundUp = false, Action<Block> block = null)
         {
             CurrentTime = CurrentTime.AddDays(days);
 
@@ -1054,7 +1054,12 @@ namespace Phantasma.Simulator
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
                     .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
                     SpendGas(_owner.Address).EndScript());
-            EndBlock();
+            
+            var blocks = EndBlock();
+            if (block != null)
+            {
+                block.Invoke(blocks.First());
+            }
 
             var txCost = Nexus.RootChain.GetTransactionFee(tx);
             

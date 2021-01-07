@@ -1929,6 +1929,33 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void Inflation()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            Block block = null;
+            simulator.TimeSkipDays(90, false, x => block = x);
+
+            var inflation = false;
+            foreach(var tx in block.TransactionHashes)
+            {
+                Console.WriteLine("tx: " + tx);
+                foreach (var evt in block.GetEventsForTransaction(tx))
+                {
+                    if (evt.Kind == EventKind.Inflation)
+                    {
+                        inflation = true;
+                    }
+                }
+            }
+
+            Assert.AreEqual(true, inflation);
+        }
+
+        [TestMethod]
         public void DuplicateTransferTest()
         {
             var owner = PhantasmaKeys.Generate();
