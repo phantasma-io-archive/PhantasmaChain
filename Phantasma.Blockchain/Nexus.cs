@@ -1543,7 +1543,13 @@ namespace Phantasma.Blockchain
             var payload = Encoding.UTF8.GetBytes("A Phantasma was born...");
             var block = new Block(Chain.InitialHeight, rootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, owner.Address, payload);
 
-            var changeSet = rootChain.ProcessBlock(block, transactions, 1);
+	        Transaction inflationTx = null;
+            var changeSet = rootChain.ProcessBlock(block, transactions, 1, out inflationTx);
+	        if (inflationTx != null)
+ 	        {
+		        transactions.Add(inflationTx);
+	        }
+
             block.Sign(owner);
             rootChain.AddBlock(block, transactions, 1, changeSet);
 

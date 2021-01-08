@@ -145,7 +145,7 @@ namespace Phantasma.Blockchain
         }
 
         public StorageChangeSetContext ProcessTransactions(Block block, IEnumerable<Transaction> transactions
-                , OracleReader oracle, BigInteger minimumFee, bool allowModify = true)
+                , OracleReader oracle, BigInteger minimumFee, out Transaction inflationTx, bool allowModify = true)
         {
             if (allowModify)
             {
@@ -198,7 +198,9 @@ namespace Phantasma.Blockchain
                 txIndex++;
             }
 
-            if (this.IsRoot)
+	        inflationTx = null;
+
+            if (this.IsRoot && allowModify)
             {
                 var inflationReady = NativeContract.LoadFieldFromStorage<bool>(changeSet, NativeContractKind.Gas, nameof(GasContract._inflationReady));
                 if (inflationReady)
@@ -218,7 +220,9 @@ namespace Phantasma.Blockchain
                         throw new ChainException("failed to execute inflation transaction");
                     }
 
+		            inflationTx = transaction;
                     block.AddTransactionHash(transaction.Hash);
+		            transactions = transactions.Concat(new [] { transaction });
                 }
             }
 
@@ -245,7 +249,7 @@ namespace Phantasma.Blockchain
             return changeSet;
         }
 
-        public StorageChangeSetContext ProcessBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
+        public StorageChangeSetContext ProcessBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, out Transaction inflationTx)
         {
 
             if (!block.Validator.IsUser)
@@ -320,7 +324,7 @@ namespace Phantasma.Blockchain
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
             }
 
-            var changeSet = ProcessTransactions(block, transactions, oracle, minimumFee);
+            var changeSet = ProcessTransactions(block, transactions, oracle, minimumFee, out inflationTx);
 
             if (oracle.Entries.Any())
             {
