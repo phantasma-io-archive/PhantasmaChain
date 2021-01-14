@@ -131,9 +131,12 @@ namespace Phantasma.Blockchain
 
         public virtual T Read<T>(Timestamp time, string url) where T : class
         {
-            if (_entries.ContainsKey(url))
+            Console.WriteLine("read oracle: " + url);
+            Console.WriteLine("cache count: " + _txEntries.Count);
+            if (TryGetOracleCache(url, out byte[] cachedEntry))
             {
-                return (_entries[url].Content) as T;
+                Console.WriteLine("contains: " + url);
+                return cachedEntry as T;
             }
 
             T content;
@@ -184,17 +187,17 @@ namespace Phantasma.Blockchain
 
                     var stakingURL = priceTag + DomainSettings.StakingTokenSymbol;
                     decimal soulPriceDec = 0;
-                    if (_entries.ContainsKey(stakingURL))
+                    if (TryGetOracleCache(stakingURL, out byte[] cachedContent))
                     {
                         BigInteger soulPriceBi;
                         if (ProtocolVersion >= 3)
                         {
-                            soulPriceBi = BigInteger.FromSignedArray(_entries[url].Content);
+                            soulPriceBi = BigInteger.FromSignedArray(cachedContent);
                         }
                         else
                         {
                             content = val.ToUnsignedByteArray() as T;
-                            soulPriceBi = BigInteger.FromUnsignedArray(_entries[url].Content, true);
+                            soulPriceBi = BigInteger.FromUnsignedArray(cachedContent, true);
                         }
 
                         soulPriceDec = UnitConversion.ToDecimal(soulPriceBi, DomainSettings.FiatTokenDecimals);
@@ -257,9 +260,34 @@ namespace Phantasma.Blockchain
                 content = PullData<T>(time, url);
             }
 
+            Console.WriteLine("cache now: " + url);
             CacheOracleData<T>(url, content);
         
             return content;
+        }
+
+        private bool TryGetOracleCache(string url, out byte[] content)
+        {
+            lock (_txEntries)
+            {
+                if (_txEntries.ContainsKey(url))
+                {
+                    content = _txEntries[url].Content;
+                    return true;
+                }
+            }
+
+            lock (_entries)
+            {
+                if (_entries.ContainsKey(url))
+                {
+                    content = _entries[url].Content;
+                    return true;
+                }
+            }
+
+            content = null;
+            return false;
         }
 
         private void CacheOracleData<T>(string url, T content)

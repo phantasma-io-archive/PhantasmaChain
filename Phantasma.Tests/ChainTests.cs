@@ -1956,6 +1956,30 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void PriceOracle()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal,
+                () => ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .CallInterop("Oracle.Price", owner.Address, "SOUL")
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            //simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal,
+            //    () => ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
+            //        .CallInterop("Oracle.Price", owner.Address, "SOUL")
+            //        .SpendGas(owner.Address)
+            //        .EndScript());
+            simulator.EndBlock();
+
+            throw new Exception();
+        }
+
+        [TestMethod]
         public void DuplicateTransferTest()
         {
             var owner = PhantasmaKeys.Generate();
