@@ -95,14 +95,31 @@ namespace Phantasma.Tests
 
             var msgBytes = Encoding.ASCII.GetBytes("Phantasma");
 
+            // CryptoExtensions.SignECDsa()/.VerifySignatureECDsa() tests.
             var signature = CryptoExtensions.SignECDsa(msgBytes, privateKey, publicKey, ECDsaCurve.Secp256k1);
             Assert.IsNotNull(signature);
+
+            Console.WriteLine("CryptoExtensions.SignECDsa() signature: " + Base16.Encode(signature));
 
             var signatureUncompressed = CryptoExtensions.SignECDsa(msgBytes, privateKey, uncompressedPublicKey, ECDsaCurve.Secp256k1);
             Assert.IsNotNull(signatureUncompressed);
 
             Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, publicKey, ECDsaCurve.Secp256k1));
             Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, uncompressedPublicKey, ECDsaCurve.Secp256k1));
+
+            // ECDsaSignature.Generate()/ECDsaSignature.Verify() tests.
+
+            var ethKeys = Ethereum.EthereumKey.FromPrivateKey(key);
+
+            // Verifying previous signature, received from CryptoExtensions.SignECDsa().
+            var ecdsaSignature = new ECDsaSignature(signature, ECDsaCurve.Secp256k1);
+            Console.WriteLine("ECDsaSignature() signature: " + Base16.Encode(ecdsaSignature.ToByteArray()));
+            Assert.IsTrue(ecdsaSignature.Verify(msgBytes, Phantasma.Cryptography.Address.FromKey(ethKeys)));
+
+            // Generating new signature with ECDsaSignature.Generate() and verifying it.
+            var ecdsaSignature2 = ECDsaSignature.Generate(ethKeys, msgBytes, ECDsaCurve.Secp256k1);
+            Console.WriteLine("ECDsaSignature() signature2: " + Base16.Encode(ecdsaSignature2.ToByteArray()));
+            Assert.IsTrue(ecdsaSignature.Verify(msgBytes, Phantasma.Cryptography.Address.FromKey(ethKeys)));
         }
 
         [TestMethod]
