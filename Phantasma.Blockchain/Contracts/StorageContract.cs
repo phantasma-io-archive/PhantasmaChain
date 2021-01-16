@@ -186,6 +186,42 @@ namespace Phantasma.Blockchain.Contracts
             }
         }
 
+        public void Migrate(Address from, Address target)
+        {
+            Runtime.Expect(Runtime.ProtocolVersion >= 5, "invalid protocol version");
+
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            Runtime.Expect(!_dataQuotas.ContainsKey<Address>(target), "target address already in use");
+
+            var usedQuota = _dataQuotas.Get<Address, BigInteger>(from);
+            _dataQuotas.Remove<Address>(from);
+            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+            var oldPermissions = _permissionMap.Get<Address, StorageList>(from);
+            var newPermissions = _permissionMap.Get<Address, StorageList>(target);
+
+            var count = oldPermissions.Count();
+            for (int i=0; i<count; i++)
+            {
+                var permission = oldPermissions.Get<Address>(i);
+                newPermissions.Add(permission);
+            }
+            oldPermissions.Clear();
+
+            var oldList = _storageMap.Get<Address, StorageList>(from);
+            var newList = _storageMap.Get<Address, StorageList>(target);
+            Runtime.Expect(newList.Count() == 0, "target address already has archives");
+
+            count = oldList.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var hash = oldList.Get<Hash>(i);
+                newList.Add(hash);
+            }
+            oldList.Clear();
+        }
+
         public BigInteger GetUsedSpace(Address from)
         {
             //if (!_storageMap.ContainsKey<Address>(from))
