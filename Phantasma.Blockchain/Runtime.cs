@@ -404,6 +404,7 @@ namespace Phantasma.Blockchain
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
             var bytes = Oracle.Read<byte[]>(this.Time, "price://" + symbol);
             var value = BigInteger.FromUnsignedArray(bytes, true);
+            Console.WriteLine("GetTOkenPrice: " + value);
 
             Expect(value > 0, "token price not available for " + symbol);
 
@@ -1482,7 +1483,7 @@ namespace Phantasma.Blockchain
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
             var nft = ReadToken(tokenSymbol, tokenID);
-            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Infusion, true);
+            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Timestamp, nft.Infusion, true);
         }
 
         public TokenContent ReadToken(string tokenSymbol, BigInteger tokenID)
@@ -1675,7 +1676,7 @@ namespace Phantasma.Blockchain
             return this.Chain.GetContractOwner(this.Storage, address);
         }
 
-        public ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode, BigInteger gasLimit)
+        public ITask StartTask(Address from, string contractName, ContractMethod method, uint frequency, uint delay, TaskFrequencyMode mode, BigInteger gasLimit)
         {
             var vm = this;
 
@@ -1703,7 +1704,7 @@ namespace Phantasma.Blockchain
 
             vm.Expect(IsWitness(from), "invalid witness");
 
-            var result = this.Chain.StartTask(this.Storage, from, contractName, method, frequency, mode, gasLimit);
+            var result = this.Chain.StartTask(this.Storage, from, contractName, method, frequency, delay, mode, gasLimit);
             vm.Expect(result != null, "could not start task");
 
             this.Notify(EventKind.TaskStart, from, result.ID);
