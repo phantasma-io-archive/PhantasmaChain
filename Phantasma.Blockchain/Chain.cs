@@ -144,9 +144,12 @@ namespace Phantasma.Blockchain
                 Nexus.PluginTriggerBlock(this, block);
         }
 
+        // signingKeys should be null if the block should not be modified
         public StorageChangeSetContext ProcessTransactions(Block block, IEnumerable<Transaction> transactions
-                , OracleReader oracle, BigInteger minimumFee, out Transaction inflationTx, bool allowModify = true)
+                , OracleReader oracle, BigInteger minimumFee, out Transaction inflationTx, PhantasmaKeys signingKeys)
         {
+            bool allowModify = signingKeys != null;
+
             if (allowModify)
             {
                 block.CleanUp();
@@ -213,6 +216,8 @@ namespace Phantasma.Blockchain
 
                     var transaction = new Transaction(this.Nexus.Name, this.Name, script, block.Timestamp.Value + 1, "SYSTEM");
 
+                    transaction.Sign(signingKeys);
+
                     VMObject vmResult;
 
                     if (!ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
@@ -249,7 +254,7 @@ namespace Phantasma.Blockchain
             return changeSet;
         }
 
-        public StorageChangeSetContext ProcessBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, out Transaction inflationTx)
+        public StorageChangeSetContext ProcessBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, out Transaction inflationTx, PhantasmaKeys signingKeys)
         {
 
             if (!block.Validator.IsUser)
@@ -324,7 +329,7 @@ namespace Phantasma.Blockchain
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
             }
 
-            var changeSet = ProcessTransactions(block, transactions, oracle, minimumFee, out inflationTx);
+            var changeSet = ProcessTransactions(block, transactions, oracle, minimumFee, out inflationTx, signingKeys);
 
             if (oracle.Entries.Any())
             {
@@ -337,7 +342,12 @@ namespace Phantasma.Blockchain
 
         private bool ExecuteTransaction(int index, Transaction transaction, byte[] script, Address validator, Timestamp time, StorageChangeSetContext changeSet
                 , Action<Hash, Event> onNotify, OracleReader oracle, ITask task, BigInteger minimumFee, out VMObject result, bool allowModify = true)
-        { 
+        {
+            if (!transaction.HasSignatures)
+            {
+                throw new ChainException("Cannot execute unsigned transaction");
+            }
+
             result = null;
 
             uint offset = 0;

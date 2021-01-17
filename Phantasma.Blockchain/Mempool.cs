@@ -301,7 +301,7 @@ namespace Phantasma.Blockchain
                         using (var m = new ProfileMarker("Chain.ProcessBlock"))
                         {
 			                Transaction inflationTx = null;
-                            changeSet = Chain.ProcessBlock(block, transactions, minFee, out inflationTx);
+                            changeSet = Chain.ProcessBlock(block, transactions, minFee, out inflationTx, Mempool.ValidatorKeys);
 
 			                if (inflationTx != null)
 		                    {

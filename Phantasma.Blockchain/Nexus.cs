@@ -1544,7 +1544,7 @@ namespace Phantasma.Blockchain
             var block = new Block(Chain.InitialHeight, rootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, owner.Address, payload);
 
 	        Transaction inflationTx = null;
-            var changeSet = rootChain.ProcessBlock(block, transactions, 1, out inflationTx);
+            var changeSet = rootChain.ProcessBlock(block, transactions, 1, out inflationTx, owner);
 	        if (inflationTx != null)
  	        {
 		        transactions.Add(inflationTx);
