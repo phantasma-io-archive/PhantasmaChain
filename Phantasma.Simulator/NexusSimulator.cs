@@ -342,7 +342,7 @@ namespace Phantasma.Simulator
                             try
                             {
 				                Transaction inflationTx = null;
-                                var changeSet = chain.ProcessBlock(block, transactions, MinimumFee, out inflationTx);
+                                var changeSet = chain.ProcessBlock(block, transactions, MinimumFee, out inflationTx, this.blockValidator);
 				                if (inflationTx != null)
 				                {
 				                    transactions.Add(inflationTx);
