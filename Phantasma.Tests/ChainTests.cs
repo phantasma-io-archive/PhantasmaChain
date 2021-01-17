@@ -351,6 +351,85 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void AccountMigrate()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var symbol = DomainSettings.FuelTokenSymbol;
+
+            var testUser = PhantasmaKeys.Generate();
+
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
+            var amount = UnitConversion.ToBigInteger(10, token.Decimals);
+
+            var stakeAmount = UnitConversion.ToBigInteger(3, DomainSettings.StakingTokenDecimals);
+
+            // Send from Genesis address to test user
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, symbol, amount);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUser.Address);
+            Assert.IsTrue(balance == amount);
+
+            // make user stake enough to register a name
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().
+                    AllowGas(testUser.Address, Address.Null, 1, 9999).
+                    CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).
+                    EndScript());
+            simulator.EndBlock();
+
+            var targetName = "hello";
+            Assert.IsTrue(targetName == targetName.ToLower());
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateAccountRegistration(testUser, targetName);
+            var lastBlock = simulator.EndBlock().FirstOrDefault();
+
+            if (lastBlock != null)
+            {
+                Assert.IsTrue(tx != null);
+
+                var evts = lastBlock.GetEventsForTransaction(tx.Hash);
+                Assert.IsTrue(evts.Any(x => x.Kind == Domain.EventKind.AddressRegister));
+            }
+
+
+            var currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            Assert.IsTrue(currentName == targetName);
+
+            var someAddress = nexus.LookUpName(nexus.RootStorage, targetName);
+            Assert.IsTrue(someAddress == testUser.Address);
+
+            var migratedUser = PhantasmaKeys.Generate();
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+            {
+                return ScriptUtils.BeginScript().
+                     AllowGas(testUser.Address, Address.Null, 400, 9999).
+                     CallContract(NativeContractKind.Account, nameof(AccountContract.Migrate), testUser.Address, migratedUser.Address).
+                     SpendGas(testUser.Address).
+                     EndScript();
+            });
+            simulator.EndBlock().FirstOrDefault();
+
+            currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            Assert.IsFalse(currentName == targetName);
+
+            currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, migratedUser.Address);
+            Assert.IsTrue(currentName == targetName);
+        }
+
+        [TestMethod]
         public void SimpleTransfer()
         {
             var owner = PhantasmaKeys.Generate();

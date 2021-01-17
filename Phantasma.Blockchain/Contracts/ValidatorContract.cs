@@ -295,7 +295,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             Runtime.Expect(Runtime.IsWitness(from), "witness failed");
-            Runtime.Expect(Runtime.IsWitness(to), "second witness failed");
 
             Runtime.Expect(to.IsUser, "destination must be user address");
 

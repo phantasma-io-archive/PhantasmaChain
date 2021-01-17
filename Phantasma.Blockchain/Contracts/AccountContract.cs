@@ -222,11 +222,11 @@ namespace Phantasma.Blockchain.Contracts
             if (_addressMap.ContainsKey(from))
             {
                 var name = _addressMap.Get<Address, string>(from);
-                _addressMap.Remove(target);
+                _addressMap.Remove(from);
+
                 _addressMap.Set<Address, string>(target, name);
                 _nameMap.Set<string, Address>(name, target);
             }
-
 
             if (_abiMap.ContainsKey(target))
             {
@@ -235,9 +235,28 @@ namespace Phantasma.Blockchain.Contracts
                 _abiMap.Set<Address, byte[]>(target, abi);
             }
 
-            Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Migrate), from, target);
-            Runtime.CallNativeContext(NativeContractKind.Validator, nameof(ValidatorContract.Migrate), from, target);
-            Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.Migrate), from, target);
+            var unclaimed = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), from).AsNumber();
+            if (unclaimed > 0)
+            {
+                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Claim), from, from);
+            }
+
+            var stake = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetStake), from).AsNumber();
+            if (stake > 0)
+            {
+                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Migrate), from, target);
+            }
+
+            if (Runtime.IsKnownValidator(from))
+            {
+                Runtime.CallNativeContext(NativeContractKind.Validator, nameof(ValidatorContract.Migrate), from, target);
+            }
+
+            var usedSpace = Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.GetUsedSpace), from).AsNumber(); 
+            if (usedSpace > 0)
+            {
+                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.Migrate), from, target);
+            }
         }
 
 

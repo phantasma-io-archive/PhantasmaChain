@@ -226,7 +226,10 @@ namespace Phantasma.Blockchain.Contracts
             _masterClaims.Remove<Address>(from);
             _masterClaims.Set<Address, Timestamp>(to, claimDate);
 
-            Runtime.MigrateMember(DomainSettings.MastersOrganizationName, this.Address, from, to);
+            if (Runtime.IsStakeMaster(from))
+            {
+                Runtime.MigrateMember(DomainSettings.MastersOrganizationName, this.Address, from, to);
+            }
 
             //migrate voting power
             var votingLogbook = _voteHistory.Get<Address, StorageList>(from);

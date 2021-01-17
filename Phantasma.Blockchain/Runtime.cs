@@ -190,6 +190,9 @@ namespace Phantasma.Blockchain
 
         public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)
         {
+            var tempContext = this.PreviousContext;
+            this.PreviousContext = this.CurrentContext;
+
             var context = LoadContext(contextName);
             Expect(context != null, "could not call context: " + contextName);
 
@@ -217,6 +220,8 @@ namespace Phantasma.Blockchain
             {
                 throw new VMException(this, "runtimeVM implementation bug detected: address stack");
             }
+
+            this.PreviousContext = tempContext;
 
             if (this.Stack.Count > 0)
             {
@@ -705,8 +710,7 @@ namespace Phantasma.Blockchain
             }
 
             // workaround for supporting txs done in older nodes
-            if (!accountResult && this.IsRootChain() && this.ProtocolVersion == 1
-                    && this.NexusName == DomainSettings.NexusMainnet)
+            if (!accountResult && this.IsRootChain() && this.ProtocolVersion < 5 && this.NexusName == DomainSettings.NexusMainnet)
             {
                 accountResult = this.Transaction.IsSignedBy(this.GenesisAddress);
             }
