@@ -89,8 +89,6 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(_inflationReady, "inflation not ready");
 
-            Runtime.Expect(Runtime.TransactionIndex == -1, "invalid transaction index");
-
             Runtime.Expect(Runtime.IsRootChain(), "only on root chain");
 
             var currentSupply = Runtime.GetTokenSupply(DomainSettings.StakingTokenSymbol);
