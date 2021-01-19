@@ -199,13 +199,11 @@ namespace Phantasma.Neo.Core
 
                 foreach (var entry in verified.Children)
                 {
-                    Console.WriteLine("ver entry: " + entry.AsString());
                     result.Add(entry.AsString());
                 }
 
                 foreach (var entry in unverified.Children)
                 {
-                    Console.WriteLine("unv entry: " + entry.AsString());
                     result.Add(entry.AsString());
                 }
             }
@@ -213,7 +211,6 @@ namespace Phantasma.Neo.Core
             {
                 foreach (var entry in resultNode.Children)
                 {
-                    Console.WriteLine("entry: " + entry.AsString());
                     result.Add(entry.AsString());
                 }
             }
