@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
 using Phantasma.Cryptography;
 using Phantasma.Neo.Cryptography;
 
@@ -34,47 +30,6 @@ namespace Phantasma.Neo.Utils
             T[] result = new T[length];
             Array.Copy(data, index, result, 0, length);
             return result;
-        }
-
-        public static byte[] AesDecrypt(this byte[] data, byte[] key, byte[] iv)
-        {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using (Aes aes = Aes.Create())
-            {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform decryptor = aes.CreateDecryptor(key, iv))
-                {
-                    return decryptor.TransformFinalBlock(data, 0, data.Length);
-                }
-            }
-        }
-
-        public static byte[] AesEncrypt(this byte[] data, byte[] key, byte[] iv)
-        {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using (Aes aes = Aes.Create())
-            {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform encryptor = aes.CreateEncryptor(key, iv))
-                {
-                    return encryptor.TransformFinalBlock(data, 0, data.Length);
-                }
-            }
-        }
-
-        internal static byte[] ToAesKey(this string password)
-        {
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
-                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
-                Array.Clear(passwordBytes, 0, passwordBytes.Length);
-                Array.Clear(passwordHash, 0, passwordHash.Length);
-                return passwordHash2;
-            }
         }
 
         public static byte[] AddressToScriptHash(this string s)

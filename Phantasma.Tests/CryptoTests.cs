@@ -211,44 +211,6 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void SeedPhrases()
-        {
-            string passphrase = "hello world";
-            string seedPhrase;
-            var keys = SeedPhraseGenerator.Generate(passphrase, out seedPhrase);
-
-            Assert.IsTrue(keys != null);
-            Assert.IsTrue(keys.PrivateKey.Length == PhantasmaKeys.PrivateKeyLength);
-            Assert.IsTrue(keys.Address.ToByteArray().Length == Address.LengthInBytes);
-
-            var otherKeys = SeedPhraseGenerator.FromSeedPhrase(passphrase, seedPhrase);
-            Assert.IsTrue(otherKeys != null);
-            Assert.IsTrue(keys.Address.Text == otherKeys.Address.Text);
-        }
-
-        [TestMethod]
-        public void SharedSecret()
-        {
-            var keyA = PhantasmaKeys.Generate();
-            var keyB = PhantasmaKeys.Generate();
-            var secret = "Hello Phantasma!";
-
-            var curve = ECDsaCurve.Secp256k1.GetCurve();
-
-            var pubA = curve.G * keyA.PrivateKey;
-            var pubB = curve.G * keyB.PrivateKey;
-
-            var sA = (pubB * keyA.PrivateKey).EncodePoint(false);
-            var sB = (pubA * keyB.PrivateKey).EncodePoint(false);
-            Assert.IsTrue(sA.SequenceEqual(sB));
-
-            var encryptedMessage = Cryptography.SharedSecret.Encrypt(secret, keyA, pubB);
-            var decryptedMessage = Cryptography.SharedSecret.Decrypt<string>(encryptedMessage, keyB, pubA);
-
-            Assert.IsTrue(decryptedMessage == secret);
-        }
-
-        [TestMethod]
         public void SignatureSwap()
         {
             var rawTx = Base16.Decode("80000001AA2F638AE527480F6976CBFC268E06048040F77328F78A8F269F9DAB660715C70000029B7CFFDAA674BEAE0F930EBE6085AF9093E5FE56B34A5C220CCDCF6EFC336FC500E1F50500000000D9020CC50B04E75027E19A5D5A9E377A042A0BB59B7CFFDAA674BEAE0F930EBE6085AF9093E5FE56B34A5C220CCDCF6EFC336FC500C2EB0B000000005B1258432BE2AB39C5CD1CAAFBD2B7AAA4B0F034014140A24433C702A47174B9DC1CC6DA90611AA8895B09A5BAD82406CCEF77D594A7343F79084D42BBF8D7C818C4540B38A2E168A7B932D2C0999059A0B3A3B43F6D31232102FC1D6F42B05D00E6AEDA82DF286EB6E2578042F6CAEBE72144342466113BD81EAC");

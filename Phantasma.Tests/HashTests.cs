@@ -64,22 +64,6 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestAdler()
-        {
-            string source =
-                "asdçflkjasçfjaçrlgjaçorigjkljbçladkfjgsaºperouiwa89tuhyjkvsldkfjçaoigfjsadfjkhsdkgjhdlkgjhdkfjbnsdflçkgsriaugfukasyfgskaruyfgsaekufygvsanfbvsdj,fhgwukaygsja,fvkusayfguwayfgsnvfuksaygfkuybhsngfukayeghsmafbsjkfgwlauifgjkshfbilçehrkluayh";
-
-            var adler32Target = 0xa1036a10; //https://hash.online-convert.com/adler32-generator
-
-            for (int i = 0; i < 10000; i++)
-            {
-                var adler32Test = source.Adler32();
-
-                Assert.IsTrue(adler32Target == adler32Test);
-            }
-        }
-
-        [TestMethod]
         public void TestKeccak()
         {
             byte[] source = Encoding.ASCII.GetBytes(

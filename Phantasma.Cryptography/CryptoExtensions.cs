@@ -27,20 +27,6 @@ namespace Phantasma.Cryptography
             }
         }
 
-        public static byte[] AES256Encrypt(this byte[] block, byte[] key, bool padding = false)
-        {
-            using (var aes = NetCrypto.Aes.Create())
-            {
-                aes.Key = key;
-                aes.Mode = NetCrypto.CipherMode.ECB;
-                aes.Padding = (padding) ? NetCrypto.PaddingMode.PKCS7: NetCrypto.PaddingMode.None;
-                using (var encryptor = aes.CreateEncryptor())
-                {
-                    return encryptor.TransformFinalBlock(block, 0, block.Length);
-                }
-            }
-        }
-
         public static byte[] AESGenerateIV(int vectorSize)
         {
             var ivBytes = new byte[vectorSize];
@@ -114,63 +100,6 @@ namespace Phantasma.Cryptography
             }
         }
 
-        /*
-        public static byte[] AesDecrypt(this byte[] data, byte[] key, byte[] iv)
-        {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using (Aes aes = Aes.Create))
-            {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform decryptor = aes.CreateDecryptor(key, iv))
-                {
-                    return decryptor.TransformFinalBlock(data, 0, data.Length);
-                }
-            }
-        }
-
-        public static byte[] AesEncrypt(this byte[] data, byte[] key, byte[] iv)
-        {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using (Aes aes = Aes.Create())
-            {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform encryptor = aes.CreateEncryptor(key, iv))
-                {
-                    return encryptor.TransformFinalBlock(data, 0, data.Length);
-                }
-            }
-        }
-        
-        internal static byte[] ToAesKey(this string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
-                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
-                Array.Clear(passwordBytes, 0, passwordBytes.Length);
-                Array.Clear(passwordHash, 0, passwordHash.Length);
-                return passwordHash2;
-            }
-        }
-
-        internal static byte[] ToAesKey(this SecureString password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                byte[] passwordBytes = password.ToArray();
-                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
-                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
-                Array.Clear(passwordBytes, 0, passwordBytes.Length);
-                Array.Clear(passwordHash, 0, passwordHash.Length);
-                return passwordHash2;
-            }
-        }
-
-             */
-
         public static byte[] Base58CheckDecode(this string input)
         {
             byte[] buffer = Base58.Decode(input);
@@ -216,49 +145,6 @@ namespace Phantasma.Cryptography
         public static byte[] Sha256(this byte[] value, uint offset, uint count)
         {
             return new Hashing.SHA256().ComputeHash(value, offset, count);
-        }
-
-        private static byte[] TranscodeSignatureToConcat(byte[] derSignature, int outputLength)
-        {
-            if (derSignature.Length < 8 || derSignature[0] != 48) throw new Exception("Invalid ECDSA signature format");
-
-            int offset;
-            if (derSignature[1] > 0)
-                offset = 2;
-            else if (derSignature[1] == 0x81)
-                offset = 3;
-            else
-                throw new Exception("Invalid ECDSA signature format");
-
-            var rLength = derSignature[offset + 1];
-
-            int i = rLength;
-            while (i > 0
-                   && derSignature[offset + 2 + rLength - i] == 0)
-                i--;
-
-            var sLength = derSignature[offset + 2 + rLength + 1];
-
-            int j = sLength;
-            while (j > 0
-                   && derSignature[offset + 2 + rLength + 2 + sLength - j] == 0)
-                j--;
-
-            var rawLen = Math.Max(i, j);
-            rawLen = Math.Max(rawLen, outputLength / 2);
-
-            if ((derSignature[offset - 1] & 0xff) != derSignature.Length - offset
-                || (derSignature[offset - 1] & 0xff) != 2 + rLength + 2 + sLength
-                || derSignature[offset] != 2
-                || derSignature[offset + 2 + rLength] != 2)
-                throw new Exception("Invalid ECDSA signature format");
-
-            var concatSignature = new byte[2 * rawLen];
-
-            Array.Copy(derSignature, offset + 2 + rLength - i, concatSignature, rawLen - i, i);
-            Array.Copy(derSignature, offset + 2 + rLength + 2 + sLength - j, concatSignature, 2 * rawLen - j, j);
-
-            return concatSignature;
         }
 
         private static NetCrypto.ECPoint ECPointDecode(byte[] pubKey, ECDsaCurve curve)
@@ -373,29 +259,6 @@ namespace Phantasma.Cryptography
 #endif
         }
 
-        public static bool ConstantTimeEquals(byte[] x, byte[] y)
-        {
-            if (x == null)
-                throw new ArgumentNullException("x");
-            if (y == null)
-                throw new ArgumentNullException("y");
-            if (x.Length != y.Length)
-                throw new ArgumentException("x.Length must equal y.Length");
-            return InternalConstantTimeEquals(x, 0, y, 0, x.Length) != 0;
-        }
-
-        public static bool ConstantTimeEquals(ArraySegment<byte> x, ArraySegment<byte> y)
-        {
-            if (x.Array == null)
-                throw new ArgumentNullException("x.Array");
-            if (y.Array == null)
-                throw new ArgumentNullException("y.Array");
-            if (x.Count != y.Count)
-                throw new ArgumentException("x.Count must equal y.Count");
-
-            return InternalConstantTimeEquals(x.Array, x.Offset, y.Array, y.Offset, x.Count) != 0;
-        }
-
         public static bool ConstantTimeEquals(byte[] x, int xOffset, byte[] y, int yOffset, int length)
         {
             if (x == null)
@@ -431,26 +294,6 @@ namespace Phantasma.Cryptography
             InternalWipe(data, 0, data.Length);
         }
 
-        public static void Wipe(byte[] data, int offset, int count)
-        {
-            if (data == null)
-                throw new ArgumentNullException("data");
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException("offset");
-            if (count < 0)
-                throw new ArgumentOutOfRangeException("count", "Requires count >= 0");
-            if ((uint)offset + (uint)count > (uint)data.Length)
-                throw new ArgumentException("Requires offset + count <= data.Length");
-            InternalWipe(data, offset, count);
-        }
-
-        public static void Wipe(ArraySegment<byte> data)
-        {
-            if (data.Array == null)
-                throw new ArgumentNullException("data.Array");
-            InternalWipe(data.Array, data.Offset, data.Count);
-        }
-
         // Secure wiping is hard
         // * the GC can move around and copy memory
         //   Perhaps this can be avoided by using unmanaged memory or by fixing the position of the array in memory
@@ -463,31 +306,6 @@ namespace Phantasma.Cryptography
         internal static void InternalWipe(byte[] data, int offset, int count)
         {
             Array.Clear(data, offset, count);
-        }
-
-        // shallow wipe of structs
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        internal static void InternalWipe<T>(ref T data)
-            where T : struct
-        {
-            data = default(T);
-        }
-
-        private static int BitLen(int w)
-        {
-            return (w < 1 << 15 ? (w < 1 << 7
-                ? (w < 1 << 3 ? (w < 1 << 1
-                ? (w < 1 << 0 ? (w < 0 ? 32 : 0) : 1)
-                : (w < 1 << 2 ? 2 : 3)) : (w < 1 << 5
-                ? (w < 1 << 4 ? 4 : 5)
-                : (w < 1 << 6 ? 6 : 7)))
-                : (w < 1 << 11
-                ? (w < 1 << 9 ? (w < 1 << 8 ? 8 : 9) : (w < 1 << 10 ? 10 : 11))
-                : (w < 1 << 13 ? (w < 1 << 12 ? 12 : 13) : (w < 1 << 14 ? 14 : 15)))) : (w < 1 << 23 ? (w < 1 << 19
-                ? (w < 1 << 17 ? (w < 1 << 16 ? 16 : 17) : (w < 1 << 18 ? 18 : 19))
-                : (w < 1 << 21 ? (w < 1 << 20 ? 20 : 21) : (w < 1 << 22 ? 22 : 23))) : (w < 1 << 27
-                ? (w < 1 << 25 ? (w < 1 << 24 ? 24 : 25) : (w < 1 << 26 ? 26 : 27))
-                : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
         internal static BigInteger NextBigInteger(int sizeInBits)
