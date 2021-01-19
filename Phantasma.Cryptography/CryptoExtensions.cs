@@ -13,20 +13,6 @@ namespace Phantasma.Cryptography
 {
     public static class CryptoExtensions
     {
-        public static byte[] AES256Decrypt(this byte[] block, byte[] key, bool padding = false)
-        {
-            using (var aes = NetCrypto.Aes.Create())
-            {
-                aes.Key = key;
-                aes.Mode = NetCrypto.CipherMode.ECB;
-                aes.Padding = (padding) ? NetCrypto.PaddingMode.PKCS7: NetCrypto.PaddingMode.None;
-                using (var decryptor = aes.CreateDecryptor())
-                {
-                    return decryptor.TransformFinalBlock(block, 0, block.Length);
-                }
-            }
-        }
-
         public static byte[] AESGenerateIV(int vectorSize)
         {
             var ivBytes = new byte[vectorSize];
@@ -335,11 +321,6 @@ namespace Phantasma.Cryptography
             rng.GetBytes(bytes);
             bytes[bytes.Length - 1] = 0;
             return BigInteger.FromSignedArray(bytes) % max;
-        }
-
-        public static byte[] Hash256(byte[] message)
-        {
-            return message.SHA256().SHA256();
         }
     }
 }
