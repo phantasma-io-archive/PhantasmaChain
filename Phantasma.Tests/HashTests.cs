@@ -18,9 +18,11 @@ namespace Phantasma.Tests
             byte[] source = Encoding.ASCII.GetBytes(
                 "asjdhweiurhwiuthedkgsdkfjh4otuiheriughdfjkgnsdçfjherslighjsghnoçiljhoçitujgpe8rotu89pearthkjdf.");
 
+            var predefinedTestHash = Base16.Decode("B76548B963712E003AE163BA57159142AC5931EB271FF1C3BD8DB5F36BBEC444");
+
             SHA256 sharedTest = new SHA256();
 
-            int testFails = 0; //differences in reused and fresh custom sha256 hashes
+            //differences in reused and fresh custom sha256 hashes
 
             for (int i = 0; i < 10000; i++)
             {
@@ -29,10 +31,9 @@ namespace Phantasma.Tests
                 var sharedTestHash = sharedTest.ComputeHash(source);
                 var freshTestHash = freshTest.ComputeHash(source);
 
-                testFails += sharedTestHash.SequenceEqual(freshTestHash) ? 0 : 1;
+                Assert.IsTrue(sharedTestHash.SequenceEqual(freshTestHash));
+                Assert.IsTrue(sharedTestHash.SequenceEqual(predefinedTestHash));
             }
-
-            Assert.IsTrue(testFails == 0);
         }
 
         [TestMethod]
@@ -102,6 +103,8 @@ namespace Phantasma.Tests
             byte[] source = Encoding.ASCII.GetBytes(
                 "asdçflkjasçfjaçrlgjaçorigjkljbçladkfjgsaºperouiwa89tuhyjkvsldkfjçaoigfjsadfjkhsdkgjhdlkgjhdkfjbnsdflçkgsriaugfukasyfgskaruyfgsaekufygvsanfbvsdj,fhgwukaygsja,fvkusayfguwayfgsnvfuksaygfkuybhsngfukayeghsmafbsjkfgwlauifgjkshfbilçehrkluayh");
 
+            var predefinedTestHash = 3943225125;
+
             var murmurTest = Murmur32.Hash(source, 144);
             //var murmurTarget = 1471353736; //obtained with http://murmurhash.shorelabs.com, MurmurHash3 32bit x86
             var murmurTarget = murmurTest;
@@ -110,6 +113,7 @@ namespace Phantasma.Tests
             {
                 murmurTest = Murmur32.Hash(source, 144);
                 Assert.IsTrue(murmurTest == murmurTarget);
+                Assert.IsTrue(murmurTest == predefinedTestHash);
             }
 
         }
