@@ -245,7 +245,7 @@ namespace Phantasma.Storage.Context
                 keys.Add(key);
             }, count, map.BaseKey);
 
-            Throw.If(keys.Count != count + 1, $"map.clear failed to fetch all existing keys keys: {keys.Count} count: {count}");
+            Throw.If(keys.Count != count, $"map.clear failed to fetch all existing keys keys: {keys.Count} count: {count}");
 
             foreach (var key in keys)
             {

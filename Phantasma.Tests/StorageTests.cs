@@ -135,7 +135,7 @@ namespace Phantasma.Tests
             }
 
             System.Console.WriteLine("COUNT: " + all.Count());
-            Assert.IsTrue(all.Count() == 3);
+            Assert.IsTrue(all.Count() == 2);
         }
 
         [TestMethod]
