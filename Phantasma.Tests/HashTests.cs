@@ -179,5 +179,32 @@ namespace Phantasma.Tests
             }
         }
 
+
+        [TestMethod]
+        public void TestHMAC512()
+        {
+            var key = Encoding.ASCII.GetBytes("Key");
+            var key2 = Encoding.ASCII.GetBytes("igjkljbçladkfjgsaºperouiwa8");
+            var key3 = Encoding.ASCII.GetBytes("2351531453414444");
+
+            byte[] source = Encoding.ASCII.GetBytes(
+                "asdçflkjasçfjaçrlgjaçorigjkljbçladkfjgsaºperouiwa89tuhyjkvsldkfjçaoigfjsadfjkhsdkgjhdlkgjhdkfjbnsdflçkgsriaugfukasyfgskaruyfgsaekufygvsanfbvsdj,fhgwukaygsja,fvkusayfguwayfgsnvfuksaygfkuybhsngfukayeghsmafbsjkfgwlauifgjkshfbilçehrkluayh");
+
+            for (int i = 0; i < 1000; i++)
+            {
+                var hmac512Test = Cryptography.HMAC512.ComputeHash(key, source);
+                var hmac512Test2 = Cryptography.HMAC512.ComputeHash(key2, source);
+                var hmac512Test3 = Cryptography.HMAC512.ComputeHash(key3, source);
+                
+                var hmac512Target = Base16.Decode("86C240B77CABA527D60A5D3A8B705FA345D3C51145A3BCC38121713C1AA0134AB447953EC56203A3DEBDB9A02AACBEF3218692CB243CEBB6AA0582CA71BCCDC2");
+                var hmac512Target2 = Base16.Decode("E6E3F96B970EC5EADFBDF5D80FE71D03558CCA2F707A651597293CC4BAA5965C6C0607EDC91778126166B40D85C051695BE52EFFFD5B23BD672C0BC313C71434");
+                var hmac512Target3 = Base16.Decode("4D25C3584EDBFB76F880110CE952E5AC8C15206515F1C41F3BBF084150DB02318E5EC539B35C1E841B0F5CFED6C78FD91544A33D329C79E0DDF4C22A924B957B");
+
+                Assert.IsTrue(hmac512Test.SequenceEqual(hmac512Target));
+                Assert.IsTrue(hmac512Test2.SequenceEqual(hmac512Target2));
+                Assert.IsTrue(hmac512Test3.SequenceEqual(hmac512Target3));
+            }
+        }
+
     }
 }
