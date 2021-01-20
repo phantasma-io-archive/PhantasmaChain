@@ -36,34 +36,6 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestSha512Repeatability()
-        {
-            byte[] source = Encoding.ASCII.GetBytes(
-                "asjdhweiurhwiuthedkgsdkfjh4otuiheriughdfjkgnsdçfjherslighjsghnoçiljhoçitujgpe8rotu89pearthkjdf.");
-
-            SHA512 sharedTest = new SHA512();
-
-            int testFails = 0; //differences in reused and fresh custom sha256 hashes
-
-            for (int i = 0; i < 10000; i++)
-            {
-                SHA512 freshTest = new SHA512();
-
-                sharedTest.Update(source, 0, source.Length);
-                freshTest.Update(source, 0, source.Length);
-
-                var sharedTestHash = sharedTest.Finish();
-                var freshTestHash = freshTest.Finish();
-
-                testFails += sharedTestHash.SequenceEqual(freshTestHash) ? 0 : 1;
-
-                sharedTest.Init();
-            }
-
-            Assert.IsTrue(testFails == 0);
-        }
-
-        [TestMethod]
         public void TestKeccak()
         {
             byte[] source = Encoding.ASCII.GetBytes(
