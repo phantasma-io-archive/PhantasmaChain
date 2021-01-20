@@ -235,12 +235,17 @@ namespace Phantasma.Storage.Context
             var keys = new List<byte[]>();
             var count = (uint)map.Count();
 
+            if (count == 0)
+            {
+                return;
+            }
+
             map.Context.Visit((key, value) =>
             {
                 keys.Add(key);
             }, count, map.BaseKey);
 
-            Throw.If(keys.Count != count, "map.clear failed to fetch all existing keys");
+            Throw.If(keys.Count != count + 1, $"map.clear failed to fetch all existing keys keys: {keys.Count} count: {count}");
 
             foreach (var key in keys)
             {
