@@ -213,6 +213,16 @@ namespace Phantasma.Cryptography
 
             if ((thisBytes == null) || (otherBytes == null))
             {
+                if (thisBytes == null && otherBytes != null && otherAddress.IsNull)
+                {
+                    return true;
+                }
+
+                if (otherBytes == null && thisBytes != null && this.IsNull)
+                {
+                    return true;
+                }
+
                 return (thisBytes == null) == (otherBytes == null);
             }
 
