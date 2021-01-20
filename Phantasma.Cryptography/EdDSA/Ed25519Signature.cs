@@ -52,7 +52,7 @@ namespace Phantasma.Cryptography.EdDSA
 
         public static Ed25519Signature Generate(IKeyPair keypair, byte[] message)
         {
-            var sign = Ed25519.Sign(message, Ed25519.ExpandedPrivateKeyFromSeed(keypair.PrivateKey));
+            var sign = Ed25519.Sign(message, keypair.PrivateKey);
             return new Ed25519Signature(sign);
         }
     }
