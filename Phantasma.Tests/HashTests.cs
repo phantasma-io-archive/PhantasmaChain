@@ -182,5 +182,20 @@ namespace Phantasma.Tests
             }
         }
 
+        [TestMethod]
+        public void TestRIPEMD160()
+        {
+            byte[] source = Encoding.ASCII.GetBytes(
+                "asdçflkjasçfjaçrlgjaçorigjkljbçladkfjgsaºperouiwa89tuhyjkvsldkfjçaoigfjsadfjkhsdkgjhdlkgjhdkfjbnsdflçkgsriaugfukasyfgskaruyfgsaekufygvsanfbvsdj,fhgwukaygsja,fvkusayfguwayfgsnvfuksaygfkuybhsngfukayeghsmafbsjkfgwlauifgjkshfbilçehrkluayh");
+
+            var ripemd160Target = Base16.Decode("A48CF4E64382BA1EBBA4B7359A4C78E340E341CB");
+
+            for (int i = 0; i < 1000; i++)
+            {
+                var ripemd160Test = new Cryptography.RIPEMD160().ComputeHash(source);
+
+                Assert.IsTrue(ripemd160Test.SequenceEqual(ripemd160Target));
+            }
+        }
     }
 }
