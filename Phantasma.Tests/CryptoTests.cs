@@ -188,38 +188,6 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void ECDsa()
-        {
-            var privateKey = Base16.Decode("6f6784731c4e526c97fa6a97b6f22e96f307588c5868bc2c545248bc31207eb1");
-            Assert.IsTrue(privateKey.Length == 32);
-
-            var curve = ECCurve.Secp256r1;
-
-            var publicKey = curve.G * privateKey;
-
-            var msg = "Hello phantasma";
-
-            var msgBytes = Encoding.ASCII.GetBytes(msg);
-
-            var signer = new ECDsa(privateKey, ECCurve.Secp256r1);
-            var signature = signer.GenerateSignature(msgBytes);
-            Assert.IsNotNull(signature);
-
-            var verified = Cryptography.ECC.ECDsa.VerifySignature(msgBytes, signature, curve, publicKey);
-            Assert.IsTrue(verified);
-
-            // make sure that Verify fails for other addresses
-
-            var otherPrivateKey = Base16.Decode("97b6f22e96f307588c5868bc2c545248bc31207eb16f6784731c4e526c97fa6a");
-            Assert.IsTrue(otherPrivateKey.Length == 32);
-
-            var otherPublicKey = ECCurve.Secp256r1.G * otherPrivateKey;
-
-            verified = Cryptography.ECC.ECDsa.VerifySignature(msgBytes, signature, curve, otherPublicKey);
-            Assert.IsFalse(verified);
-        }
-
-        [TestMethod]
         public void RingSignatures()
         {
             var rand = new Random();
