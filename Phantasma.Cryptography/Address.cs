@@ -269,6 +269,8 @@ namespace Phantasma.Cryptography
                     return _textToAddressCache[text];
                 }
 
+                var originalText = text;
+
                 var prefix = text[0];
 
                 text = text.Substring(1);
@@ -296,7 +298,7 @@ namespace Phantasma.Cryptography
                         throw new Exception("invalid address prefix: " + prefix);
                 }
 
-                _textToAddressCache[text] = addr;
+                _textToAddressCache[originalText] = addr;
             }
 
             return addr;
