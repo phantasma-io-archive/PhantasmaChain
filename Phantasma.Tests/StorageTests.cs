@@ -58,6 +58,38 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestStorageMapClear()
+        {
+            var context = new MemoryStorageContext();
+
+            var map = new StorageMap("test".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
+
+            map.Set(1, "hello");
+            map.Set(3, "world");
+            Assert.IsTrue(map.Count() == 2);
+
+            Assert.IsFalse(map.ContainsKey(0));
+            Assert.IsTrue(map.ContainsKey(1));
+            Assert.IsFalse(map.ContainsKey(2));
+            Assert.IsTrue(map.ContainsKey(3));
+
+            map.Clear();
+            Assert.IsTrue(map.Count() == 0);
+        }
+
+        [TestMethod]
+        public void TestStorageMapClearEmpty()
+        {
+            var context = new MemoryStorageContext();
+
+            var map = new StorageMap("test".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
+            map.Clear();
+            Assert.IsTrue(map.Count() == 0);
+        }
+
+        [TestMethod]
         public void TestStorageMapBigInt()
         {
             var context = new MemoryStorageContext();
@@ -103,7 +135,7 @@ namespace Phantasma.Tests
             }
 
             System.Console.WriteLine("COUNT: " + all.Count());
-            Assert.IsTrue(all.Count() == 3);
+            Assert.IsTrue(all.Count() == 2);
         }
 
         [TestMethod]
