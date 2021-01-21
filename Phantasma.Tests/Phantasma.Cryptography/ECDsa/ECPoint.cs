@@ -25,10 +25,10 @@ namespace Phantasma.Tests
 
             var publicKey = pKey.EncodePoint(true).ToArray();
 
-            var bytes = Phantasma.Cryptography.ECC.ECPoint.DecodePoint(publicKey, ECCurve.Secp256r1).EncodePoint(false);
+            var bytes = Phantasma.Cryptography.ECC.ECPoint.DecodePoint(publicKey, ECCurve.Secp256k1).EncodePoint(false);
             Console.WriteLine("bytes: " + Base16.Encode(bytes));
 
-            Assert.IsTrue(Base16.Encode(bytes) == "042F5AE314AB517F917CECCFFD889DE6928A0770E005B67DE1A08CBAA732121EE9C6DC7F68B38DB2D52393397D1A9DBCEB6511CF238E32C4ABFF001581FF2EAF71");
+            Assert.IsTrue(Base16.Encode(bytes) == "042F5AE314AB517F917CECCFFD889DE6928A0770E005B67DE1A08CBAA732121EE9E80D946523F0FF6436A2C7D55080CFFEBA4960858222EF049408A347B3B2D70D");
         }
     }
 }
