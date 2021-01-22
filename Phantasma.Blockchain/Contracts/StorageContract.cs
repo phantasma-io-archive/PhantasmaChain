@@ -188,7 +188,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Migrate(Address from, Address target)
         {
-            Runtime.Expect(Runtime.ProtocolVersion >= 5, "invalid protocol version");
+            Runtime.Expect(Runtime.PreviousContext.Name == "account", "invalid context");
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 

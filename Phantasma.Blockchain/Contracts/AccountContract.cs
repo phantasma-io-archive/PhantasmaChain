@@ -180,8 +180,6 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Migrate(Address from, Address target)
         {
-            Runtime.Expect(Runtime.ProtocolVersion >=5, "invalid protocol version");
-
             Runtime.Expect(target != from, "addresses must be different");
             Runtime.Expect(target.IsUser, "must be user address");
 
