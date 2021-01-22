@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
-using Phantasma.Cryptography.ECC;
 using Phantasma.Numerics;
 
 namespace Phantasma.Cryptography
@@ -129,80 +128,6 @@ namespace Phantasma.Cryptography
         public static byte[] Sha256(this byte[] value, uint offset, uint count)
         {
             return new Hashing.SHA256().ComputeHash(value, offset, count);
-        }
-
-        public static byte[] FromDER(byte[] sig)
-        {
-            var decoder = new Org.BouncyCastle.Asn1.Asn1InputStream(sig);
-            var seq = decoder.ReadObject() as Org.BouncyCastle.Asn1.DerSequence;
-            if (seq == null || seq.Count != 2)
-                throw new FormatException("Invalid DER Signature");
-            var R = ((Org.BouncyCastle.Asn1.DerInteger)seq[0]).Value.ToByteArrayUnsigned();
-            var S = ((Org.BouncyCastle.Asn1.DerInteger)seq[1]).Value.ToByteArrayUnsigned();
-
-            byte[] concatenated = new byte[R.Length + S.Length];
-            System.Buffer.BlockCopy(R, 0, concatenated, 0, R.Length);
-            System.Buffer.BlockCopy(S, 0, concatenated, R.Length, S.Length);
-
-            return concatenated;
-        }
-
-        public static byte[] SignECDsa(byte[] message, byte[] prikey, byte[] pubkey, ECDsaCurve curve)
-        {
-            var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA256withECDSA");
-            Org.BouncyCastle.Asn1.X9.X9ECParameters ecCurve;
-            switch (curve)
-            {
-                case Phantasma.Cryptography.ECC.ECDsaCurve.Secp256k1:
-                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
-                    break;
-                default:
-                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
-                    break;
-            }
-            var dom = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(ecCurve.Curve, ecCurve.G, ecCurve.N, ecCurve.H);
-            var privateKeyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPrivateKeyParameters(new Org.BouncyCastle.Math.BigInteger(1, prikey), dom);
-
-            signer.Init(true, privateKeyParameters);
-            signer.BlockUpdate(message, 0, message.Length);
-            var sig = signer.GenerateSignature();
-
-            return FromDER(sig);
-        }
-
-        public static bool VerifySignatureECDsa(byte[] message, byte[] signature, byte[] pubkey, ECDsaCurve curve)
-        {
-            var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA256withECDSA");
-            Org.BouncyCastle.Asn1.X9.X9ECParameters ecCurve;
-            switch (curve)
-            {
-                case Phantasma.Cryptography.ECC.ECDsaCurve.Secp256k1:
-                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
-                    break;
-                default:
-                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
-                    break;
-            }
-            var dom = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(ecCurve.Curve, ecCurve.G, ecCurve.N, ecCurve.H);
-
-            Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters publicKeyParameters;
-            if (pubkey.Length == 33)
-                publicKeyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters(dom.Curve.DecodePoint(pubkey), dom);
-            else
-                publicKeyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters(dom.Curve.CreatePoint(new Org.BouncyCastle.Math.BigInteger(1, pubkey.Take(pubkey.Length / 2).ToArray()), new Org.BouncyCastle.Math.BigInteger(1, pubkey.Skip(pubkey.Length / 2).ToArray())), dom);
-
-            signer.Init(false, publicKeyParameters);
-            signer.BlockUpdate(message, 0, message.Length);
-
-            // We convert from concatenated "raw" R + S format to DER format that Bouncy Castle uses.
-            signature = new Org.BouncyCastle.Asn1.DerSequence(
-                // first 32 bytes is "R" number
-                new Org.BouncyCastle.Asn1.DerInteger(new Org.BouncyCastle.Math.BigInteger(1, signature.Take(32).ToArray())),
-                // last 32 bytes is "S" number
-                new Org.BouncyCastle.Asn1.DerInteger(new Org.BouncyCastle.Math.BigInteger(1, signature.Skip(32).ToArray())))
-                .GetDerEncoded();
-
-            return signer.VerifySignature(signature);
         }
 
         internal static BigInteger NextBigInteger(int sizeInBits)

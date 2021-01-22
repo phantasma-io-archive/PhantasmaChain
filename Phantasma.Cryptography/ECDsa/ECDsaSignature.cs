@@ -40,7 +40,7 @@ namespace Phantasma.Cryptography.ECC
 
                 var pubKey = ExtractPublicKeyFromAddress(address);
 
-                if (CryptoExtensions.VerifySignatureECDsa(message, this.Bytes, pubKey, this.Curve))
+                if (ECDsa.Verify(message, this.Bytes, pubKey, this.Curve))
                 {
                     return true;
                 }
@@ -72,7 +72,7 @@ namespace Phantasma.Cryptography.ECC
             if (customSignFunction != null)
                 signature = customSignFunction(message, keypair.PrivateKey, keypair.PublicKey);
             else
-                signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey, curve);
+                signature = ECDsa.Sign(message, keypair.PrivateKey, curve);
             
             return new ECDsaSignature(signature, curve);
         }

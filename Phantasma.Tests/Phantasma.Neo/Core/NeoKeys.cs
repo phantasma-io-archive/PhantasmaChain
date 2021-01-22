@@ -99,16 +99,16 @@ namespace Phantasma.Tests
             var ecdsaSignature = (ECDsaSignature)signature;
 
             // Checking correct message and correct key
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, ecdsaSignature.Bytes, key.PublicKey, ECDsaCurve.Secp256r1));
+            Assert.IsTrue(ECDsa.Verify(msgBytes, ecdsaSignature.Bytes, key.PublicKey, ECDsaCurve.Secp256r1));
 
             // Checking incorrect message and correct key
-            Assert.IsFalse(CryptoExtensions.VerifySignatureECDsa(msgIncorrectBytes, ecdsaSignature.Bytes, key.PublicKey, ECDsaCurve.Secp256r1));
+            Assert.IsFalse(ECDsa.Verify(msgIncorrectBytes, ecdsaSignature.Bytes, key.PublicKey, ECDsaCurve.Secp256r1));
 
             // Checking correct message and incorrect key
-            Assert.IsFalse(CryptoExtensions.VerifySignatureECDsa(msgBytes, ecdsaSignature.Bytes, keyIncorrect.PublicKey, ECDsaCurve.Secp256r1));
+            Assert.IsFalse(ECDsa.Verify(msgBytes, ecdsaSignature.Bytes, keyIncorrect.PublicKey, ECDsaCurve.Secp256r1));
 
             // Checking incorrect message and incorrect key
-            Assert.IsFalse(CryptoExtensions.VerifySignatureECDsa(msgIncorrectBytes, ecdsaSignature.Bytes, keyIncorrect.PublicKey, ECDsaCurve.Secp256r1));
+            Assert.IsFalse(ECDsa.Verify(msgIncorrectBytes, ecdsaSignature.Bytes, keyIncorrect.PublicKey, ECDsaCurve.Secp256r1));
         }
     }
 }

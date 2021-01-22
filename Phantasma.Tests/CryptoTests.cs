@@ -92,24 +92,18 @@ namespace Phantasma.Tests
             var msgBytes = Encoding.ASCII.GetBytes("Phantasma");
 
             // CryptoExtensions.SignECDsa()/.VerifySignatureECDsa() tests.
-            var signature = CryptoExtensions.SignECDsa(msgBytes, privateKey, publicKey, curveEnum);
+            var signature = ECDsa.Sign(msgBytes, privateKey, curveEnum);
             Assert.IsNotNull(signature);
 
             Console.WriteLine("CryptoExtensions.SignECDsa() signature: " + Base16.Encode(signature));
 
-            var signatureUncompressed = CryptoExtensions.SignECDsa(msgBytes, privateKey, uncompressedPublicKey, curveEnum);
-            Assert.IsNotNull(signatureUncompressed);
-
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, publicKey, curveEnum));
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, uncompressedPublicKey, curveEnum));
-
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signatureUncompressed, publicKey, curveEnum));
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signatureUncompressed, uncompressedPublicKey, curveEnum));
+            Assert.IsTrue(ECDsa.Verify(msgBytes, signature, publicKey, curveEnum));
+            Assert.IsTrue(ECDsa.Verify(msgBytes, signature, uncompressedPublicKey, curveEnum));
 
             // Correct predefined signature.
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, Base16.Decode("0E3A48373F966F48B8DD179C7505EE985772B4187E36C55DA24D56FBDB13CFA50F61BF203F8BBEC0CD2326DBE3514F81C7EF84CABF31E6E467EDE760B3E93ED8"), publicKey, curveEnum));
+            Assert.IsTrue(ECDsa.Verify(msgBytes, Base16.Decode("0E3A48373F966F48B8DD179C7505EE985772B4187E36C55DA24D56FBDB13CFA50F61BF203F8BBEC0CD2326DBE3514F81C7EF84CABF31E6E467EDE760B3E93ED8"), publicKey, curveEnum));
             // Incorrect predefined signature.
-            Assert.IsFalse(CryptoExtensions.VerifySignatureECDsa(msgBytes, Base16.Decode("0E3A48373F966F48B8DD179C7505EE985772B4187E36C55DA24D56FBDB13CFA50F61BF203F8BBEC0CD2326DBE3514F81C7EF84CABF31E6E467EDE760B3E93ED9"), publicKey, curveEnum));
+            Assert.IsFalse(ECDsa.Verify(msgBytes, Base16.Decode("0E3A48373F966F48B8DD179C7505EE985772B4187E36C55DA24D56FBDB13CFA50F61BF203F8BBEC0CD2326DBE3514F81C7EF84CABF31E6E467EDE760B3E93ED9"), publicKey, curveEnum));
 
             // ECDsaSignature.Generate()/ECDsaSignature.Verify() tests.
 
@@ -149,24 +143,18 @@ namespace Phantasma.Tests
             var msgBytes = Encoding.ASCII.GetBytes("Phantasma");
 
             // CryptoExtensions.SignECDsa()/.VerifySignatureECDsa() tests.
-            var signature = CryptoExtensions.SignECDsa(msgBytes, privateKey, publicKey, curveEnum);
+            var signature = ECDsa.Sign(msgBytes, privateKey, curveEnum);
             Assert.IsNotNull(signature);
 
             Console.WriteLine("CryptoExtensions.SignECDsa() signature: " + Base16.Encode(signature));
 
-            var signatureUncompressed = CryptoExtensions.SignECDsa(msgBytes, privateKey, uncompressedPublicKey, curveEnum);
-            Assert.IsNotNull(signatureUncompressed);
-
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, publicKey, curveEnum));
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, uncompressedPublicKey, curveEnum));
-
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signatureUncompressed, publicKey, curveEnum));
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signatureUncompressed, uncompressedPublicKey, curveEnum));
+            Assert.IsTrue(ECDsa.Verify(msgBytes, signature, publicKey, curveEnum));
+            Assert.IsTrue(ECDsa.Verify(msgBytes, signature, uncompressedPublicKey, curveEnum));
 
             // Correct predefined signature.
-            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, Base16.Decode("DC959D270B3268D1DF5D46CFE509C7162068DFCE68EBEAAFF26E85DA4C2CFF7588F2D4C0915FF8420F88A3EC8C633E8B1F8788CCE8B044208029233742884862"), publicKey, curveEnum));
+            Assert.IsTrue(ECDsa.Verify(msgBytes, Base16.Decode("DC959D270B3268D1DF5D46CFE509C7162068DFCE68EBEAAFF26E85DA4C2CFF7588F2D4C0915FF8420F88A3EC8C633E8B1F8788CCE8B044208029233742884862"), publicKey, curveEnum));
             // Incorrect predefined signature.
-            Assert.IsFalse(CryptoExtensions.VerifySignatureECDsa(msgBytes, Base16.Decode("DC959D270B3268D1DF5D46CFE509C7162068DFCE68EBEAAFF26E85DA4C2CFF7588F2D4C0915FF8420F88A3EC8C633E8B1F8788CCE8B044208029233742884863"), publicKey, curveEnum));
+            Assert.IsFalse(ECDsa.Verify(msgBytes, Base16.Decode("DC959D270B3268D1DF5D46CFE509C7162068DFCE68EBEAAFF26E85DA4C2CFF7588F2D4C0915FF8420F88A3EC8C633E8B1F8788CCE8B044208029233742884863"), publicKey, curveEnum));
 
             // ECDsaSignature.Generate()/ECDsaSignature.Verify() tests.
 
