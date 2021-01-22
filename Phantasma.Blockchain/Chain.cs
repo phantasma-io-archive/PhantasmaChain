@@ -142,6 +142,10 @@ namespace Phantasma.Blockchain
 
             using (var m = new ProfileMarker("Nexus.PluginTriggerBlock"))
                 Nexus.PluginTriggerBlock(this, block);
+
+            // safeguard for data corruption
+            var temp = GetBlockByHash(block.Hash);
+            Throw.If(temp == null || temp.Hash != block.Hash, "block corruption safeguard triggered");
         }
 
         // signingKeys should be null if the block should not be modified
