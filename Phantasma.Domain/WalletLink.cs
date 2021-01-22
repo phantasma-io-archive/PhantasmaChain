@@ -18,7 +18,7 @@ namespace Phantasma.Domain
     public abstract class WalletLink
     {
         public const int WebSocketPort = 7090;
-        public const int LinkProtocol = 1;
+        public const int LinkProtocol = 2;
 
         public struct Error : IAPIResult
         {
