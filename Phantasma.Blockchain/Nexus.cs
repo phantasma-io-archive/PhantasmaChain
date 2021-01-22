@@ -43,7 +43,6 @@ namespace Phantasma.Blockchain
         public readonly static string ValidatorContractName = NativeContractKind.Validator.GetContractName();
         public readonly static string InteropContractName = NativeContractKind.Interop.GetContractName();
         public readonly static string ExchangeContractName = NativeContractKind.Exchange.GetContractName();
-        public readonly static string PrivacyContractName = NativeContractKind.Privacy.GetContractName();
         public readonly static string RelayContractName = NativeContractKind.Relay.GetContractName();
         public readonly static string RankingContractName = NativeContractKind.Ranking.GetContractName();
         public readonly static string MailContractName = NativeContractKind.Mail.GetContractName();
@@ -324,7 +323,6 @@ namespace Phantasma.Blockchain
                 RegisterContract<RankingContract>();
                 RegisterContract<FriendsContract>();
                 RegisterContract<MailContract>();
-                RegisterContract<PrivacyContract>();
                 RegisterContract<SaleContract>();
            }
 
@@ -1258,7 +1256,6 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, owner.Address, StorageContractName);
             sb.CallInterop(deployInterop, owner.Address, RelayContractName);
             sb.CallInterop(deployInterop, owner.Address, RankingContractName);
-            sb.CallInterop(deployInterop, owner.Address, PrivacyContractName);
             sb.CallInterop(deployInterop, owner.Address, MailContractName);
             sb.CallInterop(deployInterop, owner.Address, "friends");
             sb.CallInterop(deployInterop, owner.Address, "market");

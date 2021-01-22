@@ -28,7 +28,6 @@ namespace Phantasma.Domain
         Validator,
         Interop,
         Exchange,
-        Privacy,
         Relay,
         Ranking,
         Market,
