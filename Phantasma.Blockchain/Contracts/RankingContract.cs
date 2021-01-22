@@ -16,6 +16,11 @@ namespace Phantasma.Blockchain.Contracts
         {
         }
 
+        public bool Exists(string name)
+        {
+            return _leaderboards.ContainsKey<string>(name);
+        }
+
         public void CreateLeaderboard(Address from, string name, BigInteger size)
         {
             Runtime.Expect(size >= 5, "size invalid");
@@ -23,7 +28,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(!from.IsInterop, "address cannot be interop");
 
-            Runtime.Expect(!_leaderboards.ContainsKey<string>(name), "leaderboard already exists");
+            Runtime.Expect(!Exists(name), "leaderboard already exists");
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid name");
@@ -42,7 +47,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public void ResetLeaderboard(Address from, string name)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            Runtime.Expect(Exists(name), "invalid leaderboard");
             var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
 
             Runtime.Expect(from == leaderboard.owner, "invalid leaderboard owner");
@@ -58,14 +63,13 @@ namespace Phantasma.Blockchain.Contracts
 
         public Leaderboard GetLeaderboard(string name)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            Runtime.Expect(Exists(name), "invalid leaderboard");
             return _leaderboards.Get<string, Leaderboard>(name);
         }
 
         public LeaderboardRow[] GetRows(string name)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
-            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+            Runtime.Expect(Exists(name), "invalid leaderboard");
             var rows = _rows.Get<string, StorageList>(name);
 
             return rows.All<LeaderboardRow>();
@@ -73,8 +77,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger GetScoreByAddress(string name, Address target)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
-            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+            Runtime.Expect(Exists(name), "invalid leaderboard");
 
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
@@ -93,8 +96,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger GetScoreByIndex(string name, BigInteger index)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
-            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+            Runtime.Expect(Exists(name), "invalid leaderboard");
 
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
@@ -110,8 +112,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public Address GetAddressByIndex(string name, BigInteger index)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
-            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+            Runtime.Expect(Exists(name), "invalid leaderboard");
 
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
@@ -127,8 +128,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger GetSize(string name)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
-            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+            Runtime.Expect(Exists(name), "invalid leaderboard");
 
             var rows = _rows.Get<string, StorageList>(name);
             return rows.Count();
@@ -136,7 +136,8 @@ namespace Phantasma.Blockchain.Contracts
 
         public void InsertScore(Address from, Address target, string name, BigInteger score)
         {
-            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            Runtime.Expect(Exists(name), "invalid leaderboard");
+            
             var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
 
             Runtime.Expect(from == leaderboard.owner, "invalid leaderboard owner");
