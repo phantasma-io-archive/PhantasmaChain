@@ -128,7 +128,6 @@ namespace Phantasma.Tests
         [TestMethod]
         public void ECDsaSecP256k1()
         {
-            var curve = ECCurve.Secp256k1;
             var curveEnum = ECDsaCurve.Secp256k1;
 
             var address = "0x66571c32d77c4852be4c282eb952ba94efbeac20";

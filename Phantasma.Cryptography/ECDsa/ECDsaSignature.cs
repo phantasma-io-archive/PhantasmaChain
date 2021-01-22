@@ -1,6 +1,4 @@
-﻿using Phantasma.Core;
-using Phantasma.Core.Utils;
-using Phantasma.Storage.Utils;
+﻿using Phantasma.Storage.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;

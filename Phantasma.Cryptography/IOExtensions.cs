@@ -9,10 +9,9 @@ namespace Phantasma.Cryptography
 {
     public static class IOExtensions
     {
-        public static void WritePublicKey(this BinaryWriter writer, ECC.ECPoint publicKey)
+        public static void WritePublicKey(this BinaryWriter writer, byte[] publicKey)
         {
-            var bytes = publicKey.EncodePoint(true);
-            writer.WriteByteArray(bytes);
+            writer.WriteByteArray(publicKey);
         }
 
         public static void WriteAddress(this BinaryWriter writer, Address address)
@@ -37,11 +36,10 @@ namespace Phantasma.Cryptography
             signature.SerializeData(writer);
         }
 
-        public static ECC.ECPoint ReadPublicKey(this BinaryReader reader)
+        public static byte[] ReadPublicKey(this BinaryReader reader)
         {
             var bytes = reader.ReadByteArray();
-            var publicKey = ECC.ECPoint.DecodePoint(bytes, ECC.ECCurve.Secp256r1);
-            return publicKey;
+            return bytes;
         }
 
         public static Address ReadAddress(this BinaryReader reader)
