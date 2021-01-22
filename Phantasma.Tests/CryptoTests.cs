@@ -76,7 +76,6 @@ namespace Phantasma.Tests
         [TestMethod]
         public void ECDsaSecP256r1()
         {
-            var curve = ECCurve.Secp256r1;
             var curveEnum = ECDsaCurve.Secp256r1;
 
             var key = "05329371ecfd126ad7d1f946dc18d5b03a5dd2470a6da8aab83bec5b81d47735";
@@ -84,11 +83,10 @@ namespace Phantasma.Tests
             Assert.IsTrue(key.Length == 64);
 
             var privateKey = key.HexToByteArray();
-            var pKey = curve.G * privateKey;
 
-            var publicKey = pKey.EncodePoint(true).ToArray();
+            var publicKey = ECDsa.GetPublicKey(privateKey, true, curveEnum);
             Assert.IsTrue(Base16.Encode(publicKey) == "023B7412A73F8F344DF626DFE85ACDCD7CBC0163C44FDD6F43C05BD6105EA27DC7");
-            var uncompressedPublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
+            var uncompressedPublicKey = ECDsa.GetPublicKey(privateKey, false, curveEnum).Skip(1).ToArray();
             Assert.IsTrue(Base16.Encode(uncompressedPublicKey) == "3B7412A73F8F344DF626DFE85ACDCD7CBC0163C44FDD6F43C05BD6105EA27DC796E8B58603844196DD3FDD6D60C83E31D09FBC3B360020A82D65067994DBE6EC");
 
             var msgBytes = Encoding.ASCII.GetBytes("Phantasma");
@@ -138,11 +136,10 @@ namespace Phantasma.Tests
             Assert.IsTrue(key.Length == 64);
 
             var privateKey = key.HexToByteArray();
-            var pKey = curve.G * privateKey;
 
-            var publicKey = pKey.EncodePoint(true).ToArray();
+            var publicKey = ECDsa.GetPublicKey(privateKey, true, curveEnum);
             Assert.IsTrue(Base16.Encode(publicKey) == "0314953E3853945DFEA47C562CA363D7A9856DD3394AB5C1A03A1A71F3AE155E57");
-            var uncompressedPublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
+            var uncompressedPublicKey = ECDsa.GetPublicKey(privateKey, false, curveEnum).Skip(1).ToArray();
             Assert.IsTrue(Base16.Encode(uncompressedPublicKey) == "14953E3853945DFEA47C562CA363D7A9856DD3394AB5C1A03A1A71F3AE155E57D8BE683B82770F7070B8BB5A6F26A066373E5A772C204221BC45C94138801957");
 
             var kak = new Phantasma.Ethereum.Util.Sha3Keccack().CalculateHash(uncompressedPublicKey);

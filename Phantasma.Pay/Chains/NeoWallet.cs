@@ -116,9 +116,7 @@ namespace Phantasma.Pay.Chains
 
         protected override string DeriveAddress(PhantasmaKeys keys)
         {
-            ECPoint pKey = ECCurve.Secp256r1.G * keys.PrivateKey;
-
-            var bytes = pKey.EncodePoint(true);
+            var bytes = ECDsa.GetPublicKey(keys.PrivateKey, true, ECDsaCurve.Secp256r1);
 
             var script = new byte[bytes.Length + 2];
             script[0] = 0x21;// OpCode.PUSHBYTES33;
