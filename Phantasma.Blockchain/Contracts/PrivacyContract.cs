@@ -1,6 +1,5 @@
 ﻿using Phantasma.Core;
 using Phantasma.Cryptography;
-using Phantasma.Cryptography.Ring;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;

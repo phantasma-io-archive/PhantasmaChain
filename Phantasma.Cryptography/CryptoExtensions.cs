@@ -129,17 +129,5 @@ namespace Phantasma.Cryptography
         {
             return new Hashing.SHA256().ComputeHash(value, offset, count);
         }
-
-        public static BigInteger GenerateInteger(this HMACDRBG rng, BigInteger max, int securityParameter = 64)
-        {
-            // The simple modular method from the NIST SP800-90A recommendation
-            Throw.If(securityParameter < 64, "Given security parameter, " + securityParameter + ", is too low.");
-
-            var bytesToRepresent = max.ToSignedByteArray().Length;
-            var bytes = new byte[bytesToRepresent + securityParameter / 8 + 1];
-            rng.GetBytes(bytes);
-            bytes[bytes.Length - 1] = 0;
-            return BigInteger.FromSignedArray(bytes) % max;
-        }
     }
 }

@@ -4,7 +4,6 @@
     {
         None,
         Ed25519,
-        ECDSA,
-        Ring,
+        ECDSA
     }
 }

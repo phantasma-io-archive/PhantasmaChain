@@ -1,6 +1,5 @@
 ﻿using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.EdDSA;
-using Phantasma.Cryptography.Ring;
 using Phantasma.Storage.Utils;
 using System;
 using System.IO;
@@ -67,7 +66,6 @@ namespace Phantasma.Cryptography
 
                 case SignatureKind.Ed25519: signature = new Ed25519Signature(); break;
                 case SignatureKind.ECDSA: signature = new ECDsaSignature(); break;
-                case SignatureKind.Ring: signature = new RingSignature(); break;
 
                 default:
                     throw new NotImplementedException("read signature: " + kind);

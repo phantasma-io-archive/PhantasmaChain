@@ -6,7 +6,6 @@ using System.Text;
 
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.Cryptography.Ring;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 using Phantasma.Neo.Core;
@@ -169,62 +168,6 @@ namespace Phantasma.Tests
             var ecdsaSignature2 = ECDsaSignature.Generate(ethKeys, msgBytes, curveEnum);
             Console.WriteLine("ECDsaSignature() signature2: " + Base16.Encode(ecdsaSignature2.ToByteArray()));
             Assert.IsTrue(ecdsaSignature.Verify(msgBytes, Phantasma.Cryptography.Address.FromKey(ethKeys)));
-        }
-
-        [TestMethod]
-        public void RingSignatures()
-        {
-            var rand = new Random();
-
-            int participants = 5;
-            var messages = new[] { "hello", "phantasma chain", "welcome to the future" }.Select(Encoding.UTF8.GetBytes).ToArray();
-            var keys = Enumerable.Range(0, participants).Select(i => RingSignature.GenerateKeyPair(PhantasmaKeys.Generate())).ToArray();
-            foreach (var key in keys)
-            {
-                Assert.IsTrue(BigInteger.ModPow(RingSignature.GroupParameters.Generator, key.PrivateKey, RingSignature.GroupParameters.Prime) == key.PublicKey);
-            }
-
-            var publicKeys = keys.Select(k => k.PublicKey).ToArray();
-
-            var signatures = new RingSignature[participants, messages.Length];
-            for (int i = 0; i < participants; ++i)
-            {
-                for (int j = 0; j < messages.Length; ++j)
-                {
-                    signatures[i, j] = RingSignature.GenerateSignature(messages[j], publicKeys, keys[i].PrivateKey, i);
-                    Assert.IsTrue(signatures[i, j].VerifySignature(messages[j], publicKeys));
-
-                    for (int k = 0; k < messages.Length; ++k)
-                    {
-                        Assert.IsFalse(signatures[i, j].VerifySignature(messages[k], publicKeys) != (k == j));
-                    }
-
-                    var orig = signatures[i, j];
-                    var tampered = new RingSignature(orig.Y0, orig.S.FlipBit(rand.Next(orig.S.GetBitLength())), orig.C);
-                    Assert.IsFalse(tampered.VerifySignature(messages[j], publicKeys));
-
-                    tampered = new RingSignature(orig.Y0.FlipBit(rand.Next(orig.Y0.GetBitLength())), orig.S, orig.C);
-                    Assert.IsFalse(tampered.VerifySignature(messages[j], publicKeys));
-
-                    var s = (BigInteger[])orig.C.Clone();
-                    var t = rand.Next(s.Length);
-                    s[t] = s[t].FlipBit(rand.Next(s[t].GetBitLength()));
-                    tampered = new RingSignature(orig.Y0, orig.S, s);
-                    Assert.IsFalse(tampered.VerifySignature(messages[j], publicKeys));
-                }
-            }
-
-            for (int i = 0; i < participants; ++i)
-            {
-                for (int j = 0; j < messages.Length; ++j)
-                {
-                    for (int k = 0; k < participants; ++k)
-                        for (int l = 0; l < messages.Length; ++l)
-                        {
-                            Assert.IsTrue(signatures[i, j].IsLinked(signatures[k, l]) == (i == k));
-                        }
-                }
-            }
         }
 
         [TestMethod]

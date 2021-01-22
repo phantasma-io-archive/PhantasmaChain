@@ -192,12 +192,6 @@ namespace Phantasma.Blockchain
                     break; // dont waste time if we already reached a majority
                 }
 
-                //ring signature not supported yet here
-                if (sig.Kind == SignatureKind.Ring)
-                {
-                    continue;
-                }
-
                 foreach (var addr in members)
                 {
                     if (sig.Verify(msg, addr))
