@@ -297,7 +297,7 @@ namespace Phantasma.Domain
                                 var nexus = args[1];
                                 if (nexus == this.Nexus)
                                 {
-                                    args = args.Skip(1).ToArray();
+                                    args = (new string[] { args[0] }.Concat(args.Skip(2))).ToArray();
                                 }
                                 else
                                 {
