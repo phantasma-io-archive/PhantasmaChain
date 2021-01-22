@@ -350,6 +350,9 @@ namespace Phantasma.API
         [APIDescription("Read-only data of token, hex encoded")]
         public string rom;
 
+        [APIDescription("Status of nft")]
+        public string status;
+
         public TokenPropertyResult[] infusion;
 
         public TokenPropertyResult[] properties;

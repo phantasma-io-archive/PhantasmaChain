@@ -24,6 +24,11 @@ namespace Phantasma.RocksDB
             this.path = Path.GetDirectoryName(fileName);
             this.logger = logger;
 
+            if (string.IsNullOrEmpty(path))
+            {
+                throw new Exception("Rocksdb storage path was not configured properly");
+            }
+
             if (!path.EndsWith("/"))
             {
                 path += '/';

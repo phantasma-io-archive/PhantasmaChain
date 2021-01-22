@@ -1,6 +1,5 @@
 ﻿using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.EdDSA;
-using Phantasma.Cryptography.Ring;
 using Phantasma.Storage.Utils;
 using System;
 using System.IO;
@@ -9,10 +8,9 @@ namespace Phantasma.Cryptography
 {
     public static class IOExtensions
     {
-        public static void WritePublicKey(this BinaryWriter writer, ECC.ECPoint publicKey)
+        public static void WritePublicKey(this BinaryWriter writer, byte[] publicKey)
         {
-            var bytes = publicKey.EncodePoint(true);
-            writer.WriteByteArray(bytes);
+            writer.WriteByteArray(publicKey);
         }
 
         public static void WriteAddress(this BinaryWriter writer, Address address)
@@ -37,11 +35,10 @@ namespace Phantasma.Cryptography
             signature.SerializeData(writer);
         }
 
-        public static ECC.ECPoint ReadPublicKey(this BinaryReader reader)
+        public static byte[] ReadPublicKey(this BinaryReader reader)
         {
             var bytes = reader.ReadByteArray();
-            var publicKey = ECC.ECPoint.DecodePoint(bytes, ECC.ECCurve.Secp256r1);
-            return publicKey;
+            return bytes;
         }
 
         public static Address ReadAddress(this BinaryReader reader)
@@ -69,7 +66,6 @@ namespace Phantasma.Cryptography
 
                 case SignatureKind.Ed25519: signature = new Ed25519Signature(); break;
                 case SignatureKind.ECDSA: signature = new ECDsaSignature(); break;
-                case SignatureKind.Ring: signature = new RingSignature(); break;
 
                 default:
                     throw new NotImplementedException("read signature: " + kind);

@@ -88,6 +88,32 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
             var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
 
+            EndSaleInternal(from, symbol, tokenID, auction);
+
+            Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price });
+        }
+
+        public void CancelSale(string symbol, BigInteger tokenID)
+        {
+            var auctionID = symbol + "." + tokenID;
+
+            Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
+            var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
+
+            var from = auction.Creator;
+
+            if (Runtime.Time < auction.EndDate)
+            {
+                Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            }
+
+            EndSaleInternal(from, symbol, tokenID, auction);
+
+            Runtime.Notify(EventKind.OrderCancelled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = 0 });
+        }
+
+        private void EndSaleInternal(Address from, string symbol, BigInteger tokenID, MarketAuction auction)
+        {
             Runtime.Expect(Runtime.TokenExists(auction.BaseSymbol), "invalid base token");
             var baseToken = Runtime.GetToken(auction.BaseSymbol);
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
@@ -132,27 +158,9 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.TransferToken(baseToken.Symbol, this.Address, from, auction.TokenID);
 
+            var auctionID = symbol + "." + tokenID;
             _auctionMap.Remove<string>(auctionID);
             _auctionIds.Remove<string>(auctionID);
-
-            if (auction.Creator == from)
-            {
-                Runtime.Notify(EventKind.OrderCancelled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = 0 });
-            }
-            else
-            {
-                Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price });
-            }
-        }
-
-        public void CancelSale(string symbol, BigInteger tokenID)
-        {
-            var auctionID = symbol + "." + tokenID;
-
-            Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
-            var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
-
-            BuyToken(auction.Creator, symbol, tokenID);
         }
 
         public MarketAuction[] GetAuctions()

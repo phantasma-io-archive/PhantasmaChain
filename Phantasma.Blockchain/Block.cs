@@ -98,6 +98,12 @@ namespace Phantasma.Blockchain
             this._dirty = true;
         }
 
+        public void AddTransactionHash(Hash hash)
+        {
+            _transactionHashes.Add(hash);
+            this._dirty = true;
+        }
+
         public void Sign(IKeyPair keys)
         {
             var msg = this.ToByteArray(false);

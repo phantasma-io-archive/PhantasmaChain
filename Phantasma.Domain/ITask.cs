@@ -26,9 +26,12 @@ namespace Phantasma.Domain
         string ContextName { get; }
         string Method { get; }
         uint Frequency { get; }
+        uint Delay { get; }        
         TaskFrequencyMode Mode { get; }
         BigInteger GasLimit { get; }
+        BigInteger Height { get; }
     }
+
 
 }
 

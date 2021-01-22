@@ -364,7 +364,7 @@ namespace Phantasma.API
         public bool acceptTransactions;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
-        private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
+        private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>(StringComparer.InvariantCultureIgnoreCase);
 
         private const int PaginationMaxResults = 99999;
 
@@ -398,7 +398,7 @@ namespace Phantasma.API
                 var temp = new APIEntry(this, entry);
                 if (temp.ReturnType != null)
                 {
-                    _methods[entry.Name.ToLower()] = temp;
+                    _methods[entry.Name] = temp;
                 }
             }
 
@@ -407,10 +407,9 @@ namespace Phantasma.API
 
         public string Execute(string methodName, object[] args)
         {
-            var uniformizedName = methodName.ToLower();
-            if (_methods.ContainsKey(uniformizedName))
+            if (_methods.ContainsKey(methodName))
             {
-                return _methods[uniformizedName].Execute(methodName, args);
+                return _methods[methodName].Execute(methodName, args);
             }
             else
             {
@@ -419,14 +418,14 @@ namespace Phantasma.API
         }
 
         #region UTILS
-        private TokenResult FillToken(string tokenSymbol, bool extended)
+        private TokenResult FillToken(string tokenSymbol, bool fillSeries, bool extended)
         {
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
             var seriesList = new List<TokenSeriesResult>();
 
-            if (!tokenInfo.IsFungible())
+            if (!tokenInfo.IsFungible() && fillSeries)
             {
                 var seriesIDs = Nexus.GetAllSeriesForToken(Nexus.RootStorage, tokenSymbol);
                 //  HACK wont work if token has non-sequential series
@@ -1306,7 +1305,7 @@ namespace Phantasma.API
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
             foreach (var token in symbols)
             {
-                var entry = FillToken(token, extended);
+                var entry = FillToken(token, false, extended);
                 tokenList.Add(entry);
             }
 
@@ -1404,14 +1403,14 @@ namespace Phantasma.API
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
             foreach (var token in symbols)
             {
-                var entry = FillToken(token, extended);
+                var entry = FillToken(token, false, extended);
                 tokenList.Add(entry);
             }
 
             return new ArrayResult() { values = tokenList.ToArray() };
         }
 
-        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, -1)]
+        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, 120)]
         public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol, bool extended = false)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
@@ -1420,7 +1419,7 @@ namespace Phantasma.API
             }
 
             var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
-            var result = FillToken(symbol, extended);
+            var result = FillToken(symbol, true, extended);
 
             return result;
         }
@@ -1482,7 +1481,19 @@ namespace Phantasma.API
 
             var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
 
-            return new TokenDataResult() { chainName = info.CurrentChain, creatorAddress = info.Creator.Text, ownerAddress = info.CurrentOwner.Text, series = info.SeriesID.ToString(), mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM), infusion = infusion, properties = properties.ToArray()};
+            return new TokenDataResult() { 
+                chainName = info.CurrentChain, 
+                creatorAddress = info.Creator.Text, 
+                ownerAddress = info.CurrentOwner.Text, 
+                series = info.SeriesID.ToString(), 
+                mint = info.MintID.ToString(), 
+                ID = ID.ToString(), 
+                rom = Base16.Encode(info.ROM), 
+                ram = Base16.Encode(info.RAM), 
+                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused": "active", 
+                infusion = infusion, 
+                properties = properties.ToArray()
+            };
         }
 
 

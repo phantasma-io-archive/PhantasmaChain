@@ -17,12 +17,12 @@ namespace Phantasma.Domain
 
         ITask CurrentTask { get; }
 
+        ExecutionContext CurrentContext { get; }
+        ExecutionContext PreviousContext { get; }
+
         Address GasTarget { get; }
         BigInteger UsedGas { get; }
         BigInteger GasPrice { get; }
-
-        string CurrentContextName { get; }
-        string PreviousContextName { get; }
 
         IBlock GetBlockByHash(Hash hash);
         IBlock GetBlockByHeight(BigInteger height);
@@ -155,7 +155,7 @@ namespace Phantasma.Domain
 
         byte[] ReadOracle(string URL);
 
-        ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode, BigInteger gasLimit);
+        ITask StartTask(Address from, string contractName, ContractMethod method, uint frequency, uint delay, TaskFrequencyMode mode, BigInteger gasLimit);
         void StopTask(ITask task);
         ITask GetTask(BigInteger taskID);
     }

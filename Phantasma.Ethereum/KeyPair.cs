@@ -21,10 +21,9 @@ namespace Phantasma.Ethereum
                 throw new ArgumentException();
             this.PrivateKey = new byte[32];
             Buffer.BlockCopy(privateKey, privateKey.Length - 32, PrivateKey, 0, 32);
-            var pKey = ECCurve.Secp256k1.G * privateKey;
 
-            this.PublicKey = pKey.EncodePoint(true).ToArray();
-            this.UncompressedPublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
+            this.PublicKey = ECDsa.GetPublicKey(privateKey, true, ECDsaCurve.Secp256k1);
+            this.UncompressedPublicKey = ECDsa.GetPublicKey(privateKey, false, ECDsaCurve.Secp256k1).Skip(1).ToArray();
 
             var kak = new Sha3Keccack().CalculateHash(this.UncompressedPublicKey);
             this.Address = "0x"+Base16.Encode( kak.Skip(12).ToArray());

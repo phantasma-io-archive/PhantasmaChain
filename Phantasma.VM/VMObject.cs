@@ -346,6 +346,12 @@ namespace Phantasma.VM
         public T AsInterop<T>()
         {
             Throw.If(this.Type != VMType.Object, $"Invalid cast: expected object, got {this.Type}");
+
+            if (this.Data == null)
+            {
+                return default(T);
+            }
+
             Throw.IfNot(this.Data is T, "invalid interop type");
 
             return (T)Data;
@@ -445,6 +451,12 @@ namespace Phantasma.VM
                 case VMType.Bool:
                     {
                         this.Data = false;
+                        break;
+                    }
+
+                case VMType.Object:
+                    {
+                        this.Data = null;
                         break;
                     }
 
@@ -702,7 +714,7 @@ namespace Phantasma.VM
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";
                 case VMType.Enum: return $"[Enum] => {((uint)Data)}";
-                case VMType.Object: return $"[Object] => {Data.GetType().Name}";
+                case VMType.Object: return $"[Object] => {(Data == null? "null" : Data.GetType().Name)}";
                 default: return "Unknown";
             }
         }

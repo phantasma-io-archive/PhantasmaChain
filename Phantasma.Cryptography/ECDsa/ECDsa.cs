@@ -1,169 +1,118 @@
+using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
 using System;
-using System.IO;
 using System.Linq;
-using System.Numerics;
 
 namespace Phantasma.Cryptography.ECC
 {
-    public class ECDsa
+    public enum ECDsaCurve
     {
-        private readonly byte[] privateKey;
-        private readonly ECPoint publicKey;
-        private readonly ECCurve curve;
+        Secp256r1,
+        Secp256k1,
+    }
 
-        public ECDsa(byte[] privateKey, ECCurve curve)
-            : this(curve.G * privateKey)
+    public static class ECDsa
+    {
+        public static byte[] GetPublicKey(byte[] privateKey, bool compressed, ECDsaCurve curve)
         {
-            this.privateKey = privateKey;
-        }
-
-        public ECDsa(ECPoint publicKey)
-        {
-            this.publicKey = publicKey;
-            this.curve = publicKey.Curve;
-        }
-
-        private static BigInteger CalculateE(BigInteger n, byte[] message)
-        {
-            int messageBitLength = message.Length * 8;
-            BigInteger trunc = new BigInteger(message.Reverse().Concat(new byte[1]).ToArray());
-            if (n.GetBitLength() < messageBitLength)
+            X9ECParameters ecCurve;
+            switch (curve)
             {
-                trunc >>= messageBitLength - n.GetBitLength();
+                case ECDsaCurve.Secp256k1:
+                    ecCurve = SecNamedCurves.GetByName("secp256k1");
+                    break;
+                default:
+                    ecCurve = SecNamedCurves.GetByName("secp256r1");
+                    break;
             }
-            return trunc;
+
+            var dom = new ECDomainParameters(ecCurve.Curve, ecCurve.G, ecCurve.N, ecCurve.H);
+
+            var d = new BigInteger(1, privateKey);
+            var q = dom.G.Multiply(d);
+
+            var publicParams = new ECPublicKeyParameters(q, dom);
+            return publicParams.Q.GetEncoded(compressed);
         }
 
-        public byte[] GenerateSignature(byte[] message)
+        public static byte[] Sign(byte[] message, byte[] prikey, ECDsaCurve curve)
         {
-            if (privateKey == null) throw new InvalidOperationException();
-            BigInteger e = CalculateE(curve.N, message);
-            BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
-            BigInteger r, s;
-
-            do
+            var signer = SignerUtilities.GetSigner("SHA256withECDSA");
+            X9ECParameters ecCurve;
+            switch (curve)
             {
-                BigInteger k;
-                do
-                {
-                    do
-                    {
-                        k = CryptoExtensions.NextBigInteger(curve.N.GetBitLength());
-                    }
-                    while (k.Sign== 0 || k.CompareTo(curve.N) >= 0);
-                    ECPoint p = ECPoint.Multiply(curve.G, k);
-                    BigInteger x = p.X.Value;
-                    r = x.Mod(curve.N);
-                }
-                while (r.Sign== 0);
-                s = (k.ModInverse(curve.N) * (e + d * r)).Mod(curve.N);
-                if (s > curve.N / 2)
-                {
-                    s = curve.N - s;
-                }
+                case ECDsaCurve.Secp256k1:
+                    ecCurve = SecNamedCurves.GetByName("secp256k1");
+                    break;
+                default:
+                    ecCurve = SecNamedCurves.GetByName("secp256r1");
+                    break;
             }
-            while (s.Sign== 0);
-            return EncodeSignatureDER(r, s);
+            var dom = new ECDomainParameters(ecCurve.Curve, ecCurve.G, ecCurve.N, ecCurve.H);
+            var privateKeyParameters = new ECPrivateKeyParameters(new BigInteger(1, prikey), dom);
+
+            signer.Init(true, privateKeyParameters);
+            signer.BlockUpdate(message, 0, message.Length);
+            var signature = signer.GenerateSignature();
+
+            return FromDER(signature);
         }
 
-        private byte[] EncodeSignatureDER(BigInteger r, BigInteger s)
+        public static bool Verify(byte[] message, byte[] signature, byte[] pubkey, ECDsaCurve curve)
         {
-            if (r.Sign< 1 || s.Sign< 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
+            var signer = SignerUtilities.GetSigner("SHA256withECDSA");
+            X9ECParameters ecCurve;
+            switch (curve)
             {
-                return null;
+                case ECDsaCurve.Secp256k1:
+                    ecCurve = SecNamedCurves.GetByName("secp256k1");
+                    break;
+                default:
+                    ecCurve = SecNamedCurves.GetByName("secp256r1");
+                    break;
             }
+            var dom = new ECDomainParameters(ecCurve.Curve, ecCurve.G, ecCurve.N, ecCurve.H);
 
-            var rBytes = r.ToByteArray().Reverse().ToArray();
-            var sBytes = s.ToByteArray().Reverse().ToArray();
+            ECPublicKeyParameters publicKeyParameters;
+            if (pubkey.Length == 33)
+                publicKeyParameters = new ECPublicKeyParameters(dom.Curve.DecodePoint(pubkey), dom);
+            else
+                publicKeyParameters = new ECPublicKeyParameters(dom.Curve.CreatePoint(new BigInteger(1, pubkey.Take(pubkey.Length / 2).ToArray()), new BigInteger(1, pubkey.Skip(pubkey.Length / 2).ToArray())), dom);
 
-            using (var stream = new MemoryStream()) {
-                using (var writer = new BinaryWriter(stream))
-                {
-                    var lenZ = (byte)(rBytes.Length + sBytes.Length + 4);
-                    writer.Write((byte)0x30);
-                    writer.Write((byte)lenZ); // len(z)
-                    writer.Write((byte)2);
-                    writer.Write((byte)rBytes.Length); // len(r)
-                    writer.Write(rBytes);
-                    writer.Write((byte)2);
-                    writer.Write((byte)sBytes.Length); // len(s)
-                    writer.Write(sBytes);
-                    writer.Write((byte)1); // hashtype
-                }
+            signer.Init(false, publicKeyParameters);
+            signer.BlockUpdate(message, 0, message.Length);
 
-                return stream.ToArray();
-            }
+            return signer.VerifySignature(ToDER(signature));
         }
 
-        private static ECPoint SumOfTwoMultiplies(ECPoint P, BigInteger k, ECPoint Q, BigInteger l)
+        public static byte[] FromDER(byte[] signature)
         {
-            int m = Math.Max(k.GetBitLength(), l.GetBitLength());
-            ECPoint Z = P + Q;
-            ECPoint R = P.Curve.Infinity;
-            for (int i = m - 1; i >= 0; --i)
-            {
-                R = R.Twice();
-                if (k.TestBit(i))
-                {
-                    if (l.TestBit(i))
-                        R = R + Z;
-                    else
-                        R = R + P;
-                }
-                else
-                {
-                    if (l.TestBit(i))
-                        R = R + Q;
-                }
-            }
-            return R;
+            var decoder = new Asn1InputStream(signature);
+            var seq = decoder.ReadObject() as DerSequence;
+            if (seq == null || seq.Count != 2)
+                throw new FormatException("Invalid DER Signature");
+            var R = ((DerInteger)seq[0]).Value.ToByteArrayUnsigned();
+            var S = ((DerInteger)seq[1]).Value.ToByteArrayUnsigned();
+
+            byte[] concatenated = new byte[R.Length + S.Length];
+            Buffer.BlockCopy(R, 0, concatenated, 0, R.Length);
+            Buffer.BlockCopy(S, 0, concatenated, R.Length, S.Length);
+
+            return concatenated;
         }
-
-        public static bool VerifySignature(byte[] message, byte[] sig, ECCurve curve, ECPoint publicKey)
+        public static byte[] ToDER(byte[] signature)
         {
-            using (var stream = new MemoryStream(sig))
-            {
-                using (var reader = new BinaryReader(stream))
-                {
-                    var header = reader.ReadByte(); //0x30
-                    reader.ReadByte(); // lenz
-
-                    var typeR = reader.ReadByte(); // int type
-                    if (typeR != 2)
-                    {
-                        return false;
-                    }
-
-                    var lenR = reader.ReadByte();
-                    var bytesR = reader.ReadBytes(lenR).Reverse().ToArray();
-
-                    var typeS =reader.ReadByte(); // int type
-                    if (typeS != 2)
-                    {
-                        return false;
-                    }
-
-                    var lenS = reader.ReadByte();
-                    var bytesS = reader.ReadBytes(lenS).Reverse().ToArray();
-
-                    var R = new BigInteger(bytesR);
-                    var S = new BigInteger(bytesS);
-                    return VerifySignature(message, R, S, curve, publicKey);
-                }
-            }
-        }
-
-        public static bool VerifySignature(byte[] message, BigInteger r, BigInteger s, ECCurve curve, ECPoint publicKey)
-        {
-            if (r.Sign< 1 || s.Sign< 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
-                return false;
-            BigInteger e = CalculateE(curve.N, message);
-            BigInteger c = s.ModInverse(curve.N);
-            BigInteger u1 = (e * c).Mod(curve.N);
-            BigInteger u2 = (r * c).Mod(curve.N);
-            ECPoint point = SumOfTwoMultiplies(curve.G, u1, publicKey, u2);
-            BigInteger v = point.X.Value.Mod(curve.N);
-            return v.Equals(r);
+            // We convert from concatenated "raw" R + S format to DER format that Bouncy Castle uses.
+            return new DerSequence(
+                // first 32 bytes is "R" number
+                new DerInteger(new BigInteger(1, signature.Take(32).ToArray())),
+                // last 32 bytes is "S" number
+                new DerInteger(new BigInteger(1, signature.Skip(32).ToArray())))
+                .GetDerEncoded();
         }
     }
 }

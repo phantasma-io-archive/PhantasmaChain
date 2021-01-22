@@ -1,6 +1,4 @@
-﻿using Phantasma.Core;
-using Phantasma.Core.Utils;
-using Phantasma.Storage.Utils;
+﻿using Phantasma.Storage.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,7 +40,7 @@ namespace Phantasma.Cryptography.ECC
 
                 var pubKey = ExtractPublicKeyFromAddress(address);
 
-                if (CryptoExtensions.VerifySignatureECDsa(message, this.Bytes, pubKey, this.Curve))
+                if (ECDsa.Verify(message, this.Bytes, pubKey, this.Curve))
                 {
                     return true;
                 }
@@ -74,7 +72,7 @@ namespace Phantasma.Cryptography.ECC
             if (customSignFunction != null)
                 signature = customSignFunction(message, keypair.PrivateKey, keypair.PublicKey);
             else
-                signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey, curve);
+                signature = ECDsa.Sign(message, keypair.PrivateKey, curve);
             
             return new ECDsaSignature(signature, curve);
         }

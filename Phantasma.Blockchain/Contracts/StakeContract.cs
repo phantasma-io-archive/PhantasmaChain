@@ -62,6 +62,8 @@ namespace Phantasma.Blockchain.Contracts
 
         public const string MasterStakeThresholdTag = "stake.master.threshold";
         public const string VotingStakeThresholdTag = "stake.vote.threshold";
+        public const string StakeSingleBonusPercentTag = "stake.bonus.percent";
+        public const string StakeMaxBonusPercentTag = "stake.bonus.max";
 
         public readonly static BigInteger MaxVotingPowerBonus = 1000;
         public readonly static BigInteger DailyVotingBonus = 1;
@@ -201,6 +203,11 @@ namespace Phantasma.Blockchain.Contracts
         // migrates the full stake from one address to other
         public void Migrate(Address from, Address to)
         {
+            if (Runtime.ProtocolVersion >= 5)
+            {
+                Runtime.Expect(Runtime.PreviousContext.Name == "account", "invalid context");
+            }
+
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(to.IsUser, "destination must be user address");
 
@@ -220,7 +227,10 @@ namespace Phantasma.Blockchain.Contracts
             _masterClaims.Remove<Address>(from);
             _masterClaims.Set<Address, Timestamp>(to, claimDate);
 
-            Runtime.MigrateMember(DomainSettings.MastersOrganizationName, this.Address, from, to);
+            if (Runtime.IsStakeMaster(from))
+            {
+                Runtime.MigrateMember(DomainSettings.MastersOrganizationName, this.Address, from, to);
+            }
 
             //migrate voting power
             var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
@@ -541,6 +551,25 @@ namespace Phantasma.Blockchain.Contracts
 
             var claimList = _claimMap.Get<Address, StorageList>(from);
 
+            uint[] crownDays;
+
+
+            if (Runtime.ProtocolVersion >= 5)
+            {
+                var crowns = Runtime.GetOwnerships(DomainSettings.RewardTokenSymbol, from);
+
+                // calculate how many days each CROWN is hold at current address and use older ones first
+                crownDays = crowns.Select(id => (Runtime.Time - Runtime.ReadToken(DomainSettings.RewardTokenSymbol, id).Timestamp) / SecondsInDay).OrderByDescending(k => k).ToArray();
+            }
+            else
+            {
+                crownDays = new uint[0];
+            }
+
+
+            var bonusPercent = (int)Runtime.GetGovernanceValue(StakeSingleBonusPercentTag);
+            var maxPercent = (int)Runtime.GetGovernanceValue(StakeMaxBonusPercentTag);
+
             var count = claimList.Count();
             for (int i = 0; i < count; i++)
             {
@@ -549,20 +578,41 @@ namespace Phantasma.Blockchain.Contracts
                 if (Runtime.Time >= entry.claimDate)
                 {
                     var claimDiff = Runtime.Time - entry.claimDate;
-                    var clamDays = (claimDiff / SecondsInDay);
+                    var claimDays = (claimDiff / SecondsInDay);
                     if (entry.isNew)
                     {
-                        clamDays++;
+                        claimDays++;
                     }
 
-                    if (clamDays >= 1)
+                    if (claimDays >= 1)
                     {
                         var amount = StakeToFuel(entry.stakeAmount);
-                        amount *= clamDays;
+                        amount *= claimDays;
                         total += amount;
+
+                        int bonusAccum = 0;
+                        var bonusAmount = (amount * bonusPercent) / 100;
+
+                        var dailyBonus = bonusAmount / claimDays;
+
+                        foreach (var bonusDays in crownDays)
+                        {
+                            if (bonusDays >= 1)
+                            {
+                                bonusAccum += bonusPercent;
+                                if (bonusAccum > maxPercent)
+                                {
+                                    break;
+                                }
+
+                                var maxBonusDays = bonusDays > claimDays ? claimDays : bonusDays;
+                                total += dailyBonus * maxBonusDays;                                
+                            }
+                        }
                     }
                 }
             }
+
 
             if (_leftoverMap.ContainsKey<Address>(from))
             {
@@ -578,6 +628,23 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var unclaimedAmount = GetUnclaimed(stakeAddress);
+
+            if (Runtime.ProtocolVersion < 5)
+            {
+                var crownCount = Runtime.GetBalance(DomainSettings.RewardTokenSymbol, from);
+
+                var bonusPercent = Runtime.GetGovernanceValue(StakeSingleBonusPercentTag);
+                var maxPercent = Runtime.GetGovernanceValue(StakeMaxBonusPercentTag);
+
+                bonusPercent *= crownCount;
+                if (bonusPercent > maxPercent)
+                {
+                    bonusPercent = maxPercent;
+                }
+
+                var bonusAmount = (unclaimedAmount * bonusPercent) / 100;
+                unclaimedAmount += bonusAmount;
+            }
 
             Runtime.Expect(unclaimedAmount > 0, "nothing unclaimed");
 

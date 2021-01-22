@@ -292,50 +292,52 @@ namespace Phantasma.Blockchain
                             , Mempool.ValidatorAddress
                             , Mempool.Payload);
 
-                try
-                {
-                    using (var m = new ProfileMarker("Chain.ProcessBlock"))
-                    {
-                        Chain.ProcessBlock(block, transactions, minFee);
-                    }
-                }
-                catch (InvalidTransactionException e)
-                {
-                    using (var m = new ProfileMarker("InvalidTransactionException"))
-                    {
-                        int index = -1;
-
-                        for (int i = 0; i < transactions.Count; i++)
-                        {
-                            if (transactions[i].Hash == e.Hash)
-                            {
-                                index = i;
-                                break;
-                            }
-                        }
-
-                        lock (_pending)
-                        {
-                            if (index >= 0)
-                            {
-                                transactions.RemoveAt(index);
-                            }
-
-                            _pending.Remove(e.Hash);
-                            Mempool.RegisterRejectionReason(e.Hash, e.Message);
-                        }
-
-                        Mempool.OnTransactionFailed?.Invoke(e.Hash);
-                        continue;
-                    }
-                }
 
                 try
                 {
                     StorageChangeSetContext changeSet;
-                    using (var m = new ProfileMarker("block.process"))
+                    try
                     {
-                        changeSet = Chain.ProcessBlock(block, transactions, minFee);
+                        using (var m = new ProfileMarker("Chain.ProcessBlock"))
+                        {
+			                Transaction inflationTx = null;
+                            changeSet = Chain.ProcessBlock(block, transactions, minFee, out inflationTx, Mempool.ValidatorKeys);
+
+			                if (inflationTx != null)
+		                    {
+	                            transactions.Add(inflationTx);
+			                }
+                        }
+                    }
+                    catch (InvalidTransactionException e)
+                    {
+                        using (var m = new ProfileMarker("InvalidTransactionException"))
+                        {
+                            int index = -1;
+
+                            for (int i = 0; i < transactions.Count; i++)
+                            {
+                                if (transactions[i].Hash == e.Hash)
+                                {
+                                    index = i;
+                                    break;
+                                }
+                            }
+
+                            lock (_pending)
+                            {
+                                if (index >= 0)
+                                {
+                                    transactions.RemoveAt(index);
+                                }
+
+                                _pending.Remove(e.Hash);
+                                Mempool.RegisterRejectionReason(e.Hash, e.Message);
+                            }
+
+                            Mempool.OnTransactionFailed?.Invoke(e.Hash);
+                            continue;
+                        }
                     }
 
                     using (var m = new ProfileMarker("block.Sign"))

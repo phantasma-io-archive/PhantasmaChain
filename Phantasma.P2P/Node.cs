@@ -83,6 +83,8 @@ namespace Phantasma.Network.P2P
         {
             Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
 
+            this.Logger = Logger.Init(log);
+
             this.Version = version;
             this.Nexus = nexus;
             this.Port = port;
@@ -109,8 +111,6 @@ namespace Phantasma.Network.P2P
             Throw.IfNull(ip, nameof(ip));
 
             this.PublicIP = ip.ToString();
-
-            this.Logger = Logger.Init(log);
 
             QueueEndpoints(seeds.Select(seed => ParseEndpoint(seed)));
 
@@ -141,9 +141,13 @@ namespace Phantasma.Network.P2P
                     {
                         return IPAddress.Parse(webclient.DownloadString(service));
                     }
-                    catch { }
+                    catch
+                    { 
+                        Logger.Message($"Getting public ip from {service} failed!");
+                    }
                 }
             }
+
             return null;
         }
 
@@ -456,7 +460,8 @@ namespace Phantasma.Network.P2P
             try
             {
                 var oracle = new BlockOracleReader(Nexus, block);
-                var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
+		        Transaction inflationTx;
+                var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, out inflationTx, null); // null, because we don't want to modify the block
     
                 chain.AddBlock(block, transactions, 1, changeSet);
             }
