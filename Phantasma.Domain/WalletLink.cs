@@ -412,8 +412,8 @@ namespace Phantasma.Domain
                                 SignatureKind signatureKind;
 
                                 if (connection.Version >= 2) {
-                                    platform = args[3].ToLower();
-                                    signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[4], true);
+                                    signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[3], true);
+                                    platform = args[4].ToLower();
                                 }
                                 else {
                                     platform = "phantasma";
@@ -486,11 +486,11 @@ namespace Phantasma.Domain
 
                 case "writeArchive":
                     {
-                        if (args.Length == 4)
+                        if (args.Length == 3)
                         {
-                            var archiveHash = Hash.Parse(args[1]);
-                            var blockIndex = int.Parse(args[2]);
-                            var bytes = Base16.Decode(args[3], false);
+                            var archiveHash = Hash.Parse(args[0]);
+                            var blockIndex = int.Parse(args[1]);
+                            var bytes = Base16.Decode(args[2], false);
 
                             if (bytes == null)
                             {
