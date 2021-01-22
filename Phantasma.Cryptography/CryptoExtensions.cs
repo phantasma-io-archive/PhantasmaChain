@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using NetCrypto = System.Security.Cryptography;
 using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
@@ -133,116 +131,78 @@ namespace Phantasma.Cryptography
             return new Hashing.SHA256().ComputeHash(value, offset, count);
         }
 
-        private static NetCrypto.ECPoint ECPointDecode(byte[] pubKey, ECDsaCurve curve)
+        public static byte[] FromDER(byte[] sig)
         {
-            ECCurve usedCurve = ECC.ECCurve.Secp256r1;
-            switch (curve)
-            {
-                case ECDsaCurve.Secp256r1:
-                    // default
-                    break;
+            var decoder = new Org.BouncyCastle.Asn1.Asn1InputStream(sig);
+            var seq = decoder.ReadObject() as Org.BouncyCastle.Asn1.DerSequence;
+            if (seq == null || seq.Count != 2)
+                throw new FormatException("Invalid DER Signature");
+            var R = ((Org.BouncyCastle.Asn1.DerInteger)seq[0]).Value.ToByteArrayUnsigned();
+            var S = ((Org.BouncyCastle.Asn1.DerInteger)seq[1]).Value.ToByteArrayUnsigned();
 
-                case ECDsaCurve.Secp256k1:
-                    usedCurve = ECC.ECCurve.Secp256k1;
-                    break;
-            };
+            byte[] concatenated = new byte[R.Length + S.Length];
+            System.Buffer.BlockCopy(R, 0, concatenated, 0, R.Length);
+            System.Buffer.BlockCopy(S, 0, concatenated, R.Length, S.Length);
 
-            byte[] bytes;
-            if (pubKey.Length == 32)
-            {
-                pubKey = ByteArrayUtils.ConcatBytes(new byte[] { 2 }, pubKey.Skip(1).ToArray());
-            }
-
-            if (pubKey.Length == 33 && (pubKey[0] == 0x02 || pubKey[0] == 0x03))
-            {
-                try
-                {
-                    bytes = ECC.ECPoint.DecodePoint(pubKey, usedCurve).EncodePoint(false).Skip(1).ToArray();
-                }
-                catch
-                {
-                    throw new ArgumentException();
-                }
-            }
-            else if (pubKey.Length == 65 && pubKey[0] == 0x04)
-            {
-                bytes = pubKey.Skip(1).ToArray();
-            }
-            else 
-            if (pubKey.Length != 64)
-            {
-                throw new ArgumentException();
-            }
-            else
-            {
-                bytes = pubKey;
-            }
-
-            return new NetCrypto.ECPoint
-            {
-                X = bytes.Take(32).ToArray(),
-                Y = bytes.Skip(32).ToArray()
-            };
+            return concatenated;
         }
 
         public static byte[] SignECDsa(byte[] message, byte[] prikey, byte[] pubkey, ECDsaCurve curve)
         {
-            NetCrypto.ECCurve usedCurve = NetCrypto.ECCurve.NamedCurves.nistP256;
+            var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA256withECDSA");
+            Org.BouncyCastle.Asn1.X9.X9ECParameters ecCurve;
             switch (curve)
             {
-                case ECDsaCurve.Secp256r1:
-                    // default
+                case Phantasma.Cryptography.ECC.ECDsaCurve.Secp256k1:
+                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
                     break;
-
-                case ECDsaCurve.Secp256k1:
-                    var oid = NetCrypto.Oid.FromFriendlyName("secP256k1", NetCrypto.OidGroup.PublicKeyAlgorithm);
-                    usedCurve = NetCrypto.ECCurve.CreateFromOid(oid);
+                default:
+                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
                     break;
-            };
-
-            using (var ecdsa = NetCrypto.ECDsa.Create(new NetCrypto.ECParameters
-            {
-                Curve = usedCurve,
-                D = prikey,
-                Q = ECPointDecode(pubkey, curve)
-            }))
-            {
-                return ecdsa.SignData(message, NetCrypto.HashAlgorithmName.SHA256);
             }
+            var dom = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(ecCurve.Curve, ecCurve.G, ecCurve.N, ecCurve.H);
+            var privateKeyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPrivateKeyParameters(new Org.BouncyCastle.Math.BigInteger(1, prikey), dom);
+
+            signer.Init(true, privateKeyParameters);
+            signer.BlockUpdate(message, 0, message.Length);
+            var sig = signer.GenerateSignature();
+
+            return FromDER(sig);
         }
 
         public static bool VerifySignatureECDsa(byte[] message, byte[] signature, byte[] pubkey, ECDsaCurve curve)
         {
-            NetCrypto.ECCurve usedCurve = NetCrypto.ECCurve.NamedCurves.nistP256;
+            var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA256withECDSA");
+            Org.BouncyCastle.Asn1.X9.X9ECParameters ecCurve;
             switch (curve)
             {
-                case ECDsaCurve.Secp256r1:
-                    // default
+                case Phantasma.Cryptography.ECC.ECDsaCurve.Secp256k1:
+                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
                     break;
+                default:
+                    ecCurve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
+                    break;
+            }
+            var dom = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(ecCurve.Curve, ecCurve.G, ecCurve.N, ecCurve.H);
 
-                case ECDsaCurve.Secp256k1:
-                    var oid = NetCrypto.Oid.FromFriendlyName("secP256k1", NetCrypto.OidGroup.PublicKeyAlgorithm);
-                    usedCurve = NetCrypto.ECCurve.CreateFromOid(oid);
-                    break;
-            };
-#if NET461
-            const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
-            pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
-            using (CngKey key = CngKey.Import(pubkey, CngKeyBlobFormat.EccPublicBlob))
-            using (ECDsaCng ecdsa = new ECDsaCng(key))
-            {
-                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
-            }
-#else
-            using (var ecdsa = NetCrypto.ECDsa.Create(new NetCrypto.ECParameters
-            {
-                Curve = usedCurve,
-                Q = ECPointDecode(pubkey, curve)
-            }))
-            {
-                return ecdsa.VerifyData(message, signature, NetCrypto.HashAlgorithmName.SHA256);
-            }
-#endif
+            Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters publicKeyParameters;
+            if (pubkey.Length == 33)
+                publicKeyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters(dom.Curve.DecodePoint(pubkey), dom);
+            else
+                publicKeyParameters = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters(dom.Curve.CreatePoint(new Org.BouncyCastle.Math.BigInteger(1, pubkey.Take(pubkey.Length / 2).ToArray()), new Org.BouncyCastle.Math.BigInteger(1, pubkey.Skip(pubkey.Length / 2).ToArray())), dom);
+
+            signer.Init(false, publicKeyParameters);
+            signer.BlockUpdate(message, 0, message.Length);
+
+            // We convert from concatenated "raw" R + S format to DER format that Bouncy Castle uses.
+            signature = new Org.BouncyCastle.Asn1.DerSequence(
+                // first 32 bytes is "R" number
+                new Org.BouncyCastle.Asn1.DerInteger(new Org.BouncyCastle.Math.BigInteger(1, signature.Take(32).ToArray())),
+                // last 32 bytes is "S" number
+                new Org.BouncyCastle.Asn1.DerInteger(new Org.BouncyCastle.Math.BigInteger(1, signature.Skip(32).ToArray())))
+                .GetDerEncoded();
+
+            return signer.VerifySignature(signature);
         }
 
         internal static BigInteger NextBigInteger(int sizeInBits)
