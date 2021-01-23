@@ -68,6 +68,18 @@ namespace Phantasma.Domain
         Custom = 64,
     }
 
+    public struct OrganizationEventData
+    {
+        public readonly string Organization;
+        public readonly Address MemberAddress;
+
+        public OrganizationEventData(string organization, Address memberAddress)
+        {
+            this.Organization = organization;
+            this.MemberAddress = memberAddress;
+        }
+    }
+
     public struct TokenEventData
     {
         public readonly string Symbol;
