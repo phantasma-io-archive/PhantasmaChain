@@ -146,6 +146,12 @@ namespace Phantasma.Blockchain
             // safeguard for data corruption
             var temp = GetBlockByHash(block.Hash);
             Throw.If(temp == null || temp.Hash != block.Hash, "block corruption safeguard triggered");
+
+            foreach (var txHash in block.TransactionHashes)
+            {
+                var tx = GetTransactionByHash(txHash);
+                Throw.If(tx == null || tx.Hash != txHash, "block transaction corruption safeguard triggered");
+            }
         }
 
         // signingKeys should be null if the block should not be modified
