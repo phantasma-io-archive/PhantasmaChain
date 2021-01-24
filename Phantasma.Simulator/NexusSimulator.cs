@@ -348,7 +348,7 @@ namespace Phantasma.Simulator
 				                    transactions.Add(inflationTx);
 				                }
                                 block.Sign(this.blockValidator);
-                                chain.AddBlock(block, txs, MinimumFee, changeSet);
+                                chain.AddBlock(block, transactions, MinimumFee, changeSet);
                                 submitted = true;
                             }
                             catch (Exception e)
