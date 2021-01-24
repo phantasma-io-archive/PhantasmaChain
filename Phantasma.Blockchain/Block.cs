@@ -210,23 +210,26 @@ namespace Phantasma.Blockchain
                 writer.WriteByteArray(entry.Content);
             }
 
-            if (Payload != null)
+            if (Payload == null)
             {
-                writer.WriteVarInt(_events.Count);
-                foreach (var evt in _events)
-                {
-                    evt.Serialize(writer);
-                }
-
-                writer.WriteAddress(this.Validator);
-                writer.WriteByteArray(this.Payload);
-                writer.Write((byte)0); // indicates the end of the block
-
-                if (withSignatures)
-                {
-                    writer.WriteSignature(this.Signature);
-                }
+                Payload = new byte[0];
             }
+
+            writer.WriteVarInt(_events.Count);
+            foreach (var evt in _events)
+            {
+                evt.Serialize(writer);
+            }
+
+            writer.WriteAddress(this.Validator);
+            writer.WriteByteArray(this.Payload);
+
+            if (withSignatures)
+            {
+                writer.WriteSignature(this.Signature);
+            }
+
+            writer.Write((byte)0); // indicates the end of the block
         }
 
         public static Block Unserialize(byte[] bytes)
@@ -258,6 +261,8 @@ namespace Phantasma.Blockchain
         {
             Serialize(writer, true);
         }
+
+        public static bool OldMode = false;
 
         public void UnserializeData(BinaryReader reader)
         {
@@ -323,7 +328,10 @@ namespace Phantasma.Blockchain
                 Validator = reader.ReadAddress();
                 Payload = reader.ReadByteArray();
 
-                var blockEnd = reader.ReadByte();
+                if (OldMode)
+                {
+                    var blockEnd = reader.ReadByte();
+                }
 
                 Signature = reader.ReadSignature();
             }
@@ -332,6 +340,11 @@ namespace Phantasma.Blockchain
                 Payload = null;
                 Validator = Address.Null;
                 Signature = null;
+            }
+
+            if (!OldMode)
+            {
+                var blockEnd = reader.ReadByte();
             }
 
             _transactionHashes = new List<Hash>();
