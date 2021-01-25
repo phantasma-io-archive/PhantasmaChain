@@ -351,7 +351,15 @@ namespace Phantasma.Domain
                             }
                             else
                             {
-                                var signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[1], true);
+                                SignatureKind signatureKind;
+
+                                if (!Enum.TryParse<SignatureKind>(args[1], out signatureKind))
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signData: Invalid signature: " + args[1] });
+                                    callback(id, answer, false);
+                                    _isPendingRequest = false;
+                                    return;
+                                }
 
                                 var platform = connection.Version >= 2 ? args[2].ToLower() : "phantasma";
 
@@ -412,7 +420,14 @@ namespace Phantasma.Domain
                                 SignatureKind signatureKind;
 
                                 if (connection.Version >= 2) {
-                                    signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[3], true);
+                                    if (!Enum.TryParse<SignatureKind>(args[3], out signatureKind))
+                                    {
+                                        answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid signature: " + args[3] });
+                                        callback(id, answer, false);
+                                        _isPendingRequest = false;
+                                        return;
+                                    }
+
                                     platform = args[4].ToLower();
                                 }
                                 else {
