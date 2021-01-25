@@ -393,7 +393,7 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.RemoveMember(DomainSettings.StakersOrganizationName, this.Address, from);
 
                 var name = Runtime.GetAddressName(from);
-                if (name != ValidationUtils.ANONYMOUS)
+                if (name != ValidationUtils.ANONYMOUS_NAME)
                 {
                     Runtime.CallNativeContext(NativeContractKind.Account, "UnregisterName", from);
                 }
