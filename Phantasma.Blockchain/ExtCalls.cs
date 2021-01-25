@@ -81,7 +81,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Map.Clear", Map_Clear);
 
             vm.RegisterMethod("Account.Name", Account_Name);
-            vm.RegisterMethod("Account.Activity", Account_Activity);
+            vm.RegisterMethod("Account.LastActivity", Account_Activity);
             vm.RegisterMethod("Account.Transactions", Account_Transactions);
 
             vm.RegisterMethod("Oracle.Read", Oracle_Read);
