@@ -895,7 +895,7 @@ namespace Phantasma.Blockchain
             if (destination.IsSystem)
             {
                 var destName = Runtime.Chain.GetNameFromAddress(Runtime.Storage, destination);
-                Runtime.Expect(destName != ValidationUtils.ANONYMOUS, "anonymous system address as destination");
+                Runtime.Expect(destName != ValidationUtils.ANONYMOUS_NAME, "anonymous system address as destination");
             }
 
             var balances = new BalanceSheet(token.Symbol);

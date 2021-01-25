@@ -21,8 +21,9 @@ namespace Phantasma.Domain
 
     public static class ValidationUtils
     {
-        public static readonly string ANONYMOUS = "anonymous";
-        public static readonly string GENESIS = "genesis";
+        public static readonly string ANONYMOUS_NAME = "anonymous";
+        public static readonly string GENESIS_NAME = "genesis";
+        public static readonly string NULL_NAME = "null";
 
         public static string[] prefixNames = new string[] {
             "phantasma", "neo", "ethereum", "bitcoin", "litecoin", "eos",
@@ -51,6 +52,11 @@ namespace Phantasma.Domain
         public static bool IsReservedIdentifier(string name)
         {
             if (name == DomainSettings.InfusionName)
+            {
+                return true;
+            }
+
+            if (name == NULL_NAME)
             {
                 return true;
             }
@@ -92,7 +98,7 @@ namespace Phantasma.Domain
                 return false;
             }
 
-            if (name == ANONYMOUS || name == GENESIS || name == VirtualMachine.EntryContextName)
+            if (name == ANONYMOUS_NAME || name == GENESIS_NAME || name == VirtualMachine.EntryContextName)
             {
                 return false;
             }

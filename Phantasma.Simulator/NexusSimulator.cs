@@ -252,7 +252,7 @@ namespace Phantasma.Simulator
             foreach (var address in pendingNames)
             {
                 var currentName = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, address);
-                if (currentName != ValidationUtils.ANONYMOUS)
+                if (currentName != ValidationUtils.ANONYMOUS_NAME)
                 {
                     readyNames.Add(address);
                 }
@@ -927,7 +927,7 @@ namespace Phantasma.Simulator
                                 }
 
                                 var currentName = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, source.Address);
-                                if (currentName == ValidationUtils.ANONYMOUS)
+                                if (currentName == ValidationUtils.ANONYMOUS_NAME)
                                 {
                                     var lookup = Nexus.LookUpName(Nexus.RootStorage, randomName);
                                     if (lookup.IsNull)

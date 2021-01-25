@@ -1294,6 +1294,11 @@ namespace Phantasma.Blockchain
 
         public string GetNameFromAddress(StorageContext storage, Address address)
         {
+            if (address.IsNull)
+            {
+                return ValidationUtils.NULL_NAME;
+            }
+
             if (address.IsSystem)
             {
                 if (address == DomainSettings.InfusionAddress)
@@ -1320,7 +1325,7 @@ namespace Phantasma.Blockchain
                         return org.ID;
                     }
 
-                    return ValidationUtils.ANONYMOUS;
+                    return ValidationUtils.ANONYMOUS_NAME;
                 }
             }
 
