@@ -484,6 +484,22 @@ namespace Phantasma.VM
             return this;
         }
 
+        public VMObject SetValue(Hash hash)
+        {
+            this.Type = VMType.Object;
+            this.Data = hash;
+            this._localSize = 4;
+            return this;
+        }
+
+        public VMObject SetValue(Address address)
+        {
+            this.Type = VMType.Object;
+            this.Data = address;
+            this._localSize = 4;
+            return this;
+        }
+
         public VMObject SetValue(object val)
         {
             var type = val.GetType();

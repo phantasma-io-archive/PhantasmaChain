@@ -75,6 +75,7 @@ namespace Phantasma.Domain
                         gasCost = 200;
                         break;
 
+                    case "Account":
                     case "Leaderboard":
                         gasCost = 100;
                         break;

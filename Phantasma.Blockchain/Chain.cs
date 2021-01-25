@@ -26,7 +26,7 @@ namespace Phantasma.Blockchain
         private const string BlockHashMapTag = ".blocks";
         private const string BlockHeightListTag = ".height";
         private const string TxBlockHashMapTag = ".txblmp";
-        private const string AddressBlockHashMapTag = ".adblmp";
+        private const string AddressTxHashMapTag = ".adblmp";
         private const string TaskListTag = ".tasks";
 
         #region PUBLIC
@@ -132,7 +132,7 @@ namespace Phantasma.Blockchain
                         addresses.Add(evt.Address);
                     }
 
-                    var addressTxMap = new StorageMap(AddressBlockHashMapTag, this.Storage);
+                    var addressTxMap = new StorageMap(AddressTxHashMapTag, this.Storage);
                     foreach (var address in addresses)
                     {
                         var addressList = addressTxMap.Get<Address, StorageList>(address);
@@ -881,9 +881,32 @@ namespace Phantasma.Blockchain
 
         public Hash[] GetTransactionHashesForAddress(Address address)
         {
-            var addressTxMap = new StorageMap(AddressBlockHashMapTag, this.Storage);
+            var addressTxMap = new StorageMap(AddressTxHashMapTag, this.Storage);
             var addressList = addressTxMap.Get<Address, StorageList>(address);
             return addressList.All<Hash>();
+        }
+
+        public Timestamp GetLastActivityOfAddress(Address address)
+        {
+            var addressTxMap = new StorageMap(AddressTxHashMapTag, this.Storage);
+            var addressList = addressTxMap.Get<Address, StorageList>(address);
+            var count = addressList.Count();
+            if (count <=0)
+            {
+                return Timestamp.Null;
+            }
+
+            var lastTxHash = addressList.Get<Hash>(count - 1);
+            var blockHash = GetBlockHashOfTransaction(lastTxHash);
+
+            var block = GetBlockByHash(blockHash);
+
+            if (block == null) // should never happen
+            {
+                return Timestamp.Null;
+            }
+
+            return block.Timestamp;
         }
 
         #region SWAPS

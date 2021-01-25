@@ -80,6 +80,10 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Map.Count", Map_Count);
             vm.RegisterMethod("Map.Clear", Map_Clear);
 
+            vm.RegisterMethod("Account.Name", Account_Name);
+            vm.RegisterMethod("Account.Activity", Account_Activity);
+            vm.RegisterMethod("Account.Transactions", Account_Transactions);
+
             vm.RegisterMethod("Oracle.Read", Oracle_Read);
             vm.RegisterMethod("Oracle.Price", Oracle_Price);
             vm.RegisterMethod("Oracle.Quote", Oracle_Quote);
@@ -1388,6 +1392,7 @@ namespace Phantasma.Blockchain
             }
         }
 
+        #region TASKS
         private static ExecutionState Task_Current(RuntimeVM vm)
         {
             var result = new VMObject();
@@ -1446,6 +1451,59 @@ namespace Phantasma.Blockchain
 
             return ExecutionState.Running;
         }
+
+        #endregion
+
+        #region ACCOUNT 
+        private static ExecutionState Account_Name(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            var address = vm.PopAddress();
+
+            var result = vm.GetAddressName(address);
+            vm.Stack.Push(VMObject.FromObject(result));
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Account_Activity(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            var address = vm.PopAddress();
+
+            var result = vm.Chain.GetLastActivityOfAddress(address);
+            vm.Stack.Push(VMObject.FromObject(result));
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Account_Transactions(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            var address = vm.PopAddress();
+
+            var result = vm.Chain.GetTransactionHashesForAddress(address);
+
+            var dict = new Dictionary<VMObject, VMObject>();
+            for (int i=0; i< result.Length; i++)
+            {
+                var hash = result[i];
+                var temp = new VMObject();
+                temp.SetValue(hash);
+                dict[VMObject.FromObject(i)] = temp;
+            }
+
+            var obj = new VMObject();
+            obj.SetValue(dict);
+            vm.Stack.Push(obj);
+
+            return ExecutionState.Running;
+        }
+
+        #endregion
 
     }
 }

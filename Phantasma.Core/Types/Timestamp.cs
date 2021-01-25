@@ -17,6 +17,7 @@ namespace Phantasma.Core.Types
         }
 
         public static Timestamp Now => DateTime.UtcNow;
+        public readonly static Timestamp Null = new Timestamp(0);
 
         public int CompareTo(Timestamp other)
         {
