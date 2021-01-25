@@ -122,7 +122,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(targetIndex >= 0, "archive not found");
 
             Runtime.Expect(Runtime.RemoveOwnerFromArchive(targetHash, from), "owner removal failed");
-            list.RemoveAt<Hash>(targetIndex);
+            list.RemoveAt(targetIndex);
         }
 
         // Checks if external address has permission to add files to target address

@@ -1037,7 +1037,7 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    taskList.RemoveAt<BigInteger>(i);
+                    taskList.RemoveAt(i);
                 }
 
                 if (tx != null)

@@ -137,7 +137,7 @@ namespace Phantasma.Blockchain
 
             if (index >= 0)
             {
-                list.RemoveAt<Address>(index);
+                list.RemoveAt(index);
             }
         }
 

@@ -458,7 +458,7 @@ namespace Phantasma.Blockchain.Contracts
                 else
                 {
                     subtractedAmount = entry.stakeAmount;
-                    claimList.RemoveAt<EnergyClaim>(bestIndex);
+                    claimList.RemoveAt(bestIndex);
                     count--;
                 }
 
@@ -536,7 +536,7 @@ namespace Phantasma.Blockchain.Contracts
                 else
                 {
                     amount -= votingEntry.amount;
-                    votingLogbook.RemoveAt<VotingLogEntry>(i);
+                    votingLogbook.RemoveAt(i);
                 }
             }
         }
@@ -855,7 +855,7 @@ namespace Phantasma.Blockchain.Contracts
                 }
             }
 
-            stakersList.RemoveAt<EnergyProxy>(index);
+            stakersList.RemoveAt(index);
             receiversList.Remove<Address>(from);
             Runtime.Notify(EventKind.AddressUnlink, from, to);
         }

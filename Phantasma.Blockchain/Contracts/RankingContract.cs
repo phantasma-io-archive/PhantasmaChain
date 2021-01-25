@@ -172,7 +172,7 @@ namespace Phantasma.Blockchain.Contracts
                     rows.Replace<LeaderboardRow>(i, entry);
                 }
 
-                rows.RemoveAt<LeaderboardRow>(count);
+                rows.RemoveAt(count);
             }
 
             int bestIndex = 0;

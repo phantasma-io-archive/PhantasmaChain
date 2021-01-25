@@ -80,6 +80,14 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Map.Count", Map_Count);
             vm.RegisterMethod("Map.Clear", Map_Clear);
 
+            vm.RegisterMethod("List.Get", List_Get);
+            vm.RegisterMethod("List.Add", List_Add);
+            vm.RegisterMethod("List.Replace", List_Replace);
+            //vm.RegisterMethod("List.Remove", List_Remove); TODO implement later, remove by value instead of index
+            vm.RegisterMethod("List.RemoveAt", List_RemoveAt);
+            vm.RegisterMethod("List.Count", List_Count);
+            vm.RegisterMethod("List.Clear", List_Clear);
+
             vm.RegisterMethod("Account.Name", Account_Name);
             vm.RegisterMethod("Account.LastActivity", Account_Activity);
             vm.RegisterMethod("Account.Transactions", Account_Transactions);
@@ -670,6 +678,141 @@ namespace Phantasma.Blockchain
             var map = new StorageMap(mapKey, vm.Storage);
 
             var count = map.Count();
+            var val = VMObject.FromObject(count);
+            vm.Stack.Push(val);
+
+            return ExecutionState.Running;
+        }
+        #endregion
+
+        #region LIST
+        private static ExecutionState List_Get(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(4);
+
+            var contractName = vm.PopString("contract");
+            var field = vm.PopString("field");
+            var listKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var index = vm.PopNumber("index");
+            vm.Expect(index >= 0, "invalid index");
+
+            var type_obj = vm.Stack.Pop();
+            var vmType = type_obj.AsEnum<VMType>();
+
+            var list = new StorageList(listKey, vm.Storage);
+
+            var value_bytes = list.GetRaw(index);
+
+            var val = new VMObject();
+
+            if (value_bytes == null)
+            {
+                val.SetDefaultValue(vmType);
+            }
+            else
+            {
+                val.SetValue(value_bytes, vmType);
+            }
+            vm.Stack.Push(val);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState List_Add(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
+
+            var field = vm.PopString("field");
+            var listKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var value = vm.Stack.Pop();
+
+            var list = new StorageList(listKey, vm.Storage);
+
+            var value_bytes = value.AsByteArray();
+
+            list.AddRaw(value_bytes);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState List_Replace(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(3);
+
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
+
+            var field = vm.PopString("field");
+            var listKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var index = vm.PopNumber("index");
+            vm.Expect(index >= 0, "invalid index");
+
+            var value = vm.Stack.Pop();
+
+            var list = new StorageList(listKey, vm.Storage);
+
+            var value_bytes = value.AsByteArray();
+
+            list.ReplaceRaw(index, value_bytes);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState List_RemoveAt(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+
+            var field = vm.PopString("field");
+            var listKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var index = vm.PopNumber("index");
+            vm.Expect(index >= 0, "invalid index");
+
+            var list = new StorageList(listKey, vm.Storage);
+
+            list.RemoveAt(index);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState List_Clear(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+
+            var field = vm.PopString("field");
+            var listKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var list = new StorageList(listKey, vm.Storage);
+            list.Clear();
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState List_Count(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            var contractName = vm.PopString("contract");
+            var field = vm.PopString("field");
+            var listKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var list = new StorageList(listKey, vm.Storage);
+
+            var count = list.Count();
             var val = VMObject.FromObject(count);
             vm.Stack.Push(val);
 
