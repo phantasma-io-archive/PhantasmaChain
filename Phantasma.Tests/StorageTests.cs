@@ -21,7 +21,7 @@ namespace Phantasma.Tests
             list.Add("world");
             Assert.IsTrue(list.Count() == 2);
 
-            list.RemoveAt<string>(0);
+            list.RemoveAt(0);
             Assert.IsTrue(list.Count() == 1);
 
             var temp = list.Get<string>(0);
@@ -194,7 +194,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(count == 2);
 
             // note: here we remove from one list and count the other, should be same since both are references to same storage list
-            another.RemoveAt<string>(0);
+            another.RemoveAt(0);
             count = list.Count();
             Assert.IsTrue(count == 1);
         }

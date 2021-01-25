@@ -1282,7 +1282,17 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-        public string LookUpAddressName(StorageContext storage, Address address)
+        public Address LookUpName(StorageContext storage, string name)
+        {
+            if (IsContractDeployed(storage, name))
+            {
+                return SmartContract.GetAddressForName(name);
+            }
+
+            return this.Nexus.LookUpName(storage, name);
+        }
+
+        public string GetNameFromAddress(StorageContext storage, Address address)
         {
             if (address.IsSystem)
             {

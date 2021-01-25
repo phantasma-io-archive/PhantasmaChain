@@ -341,7 +341,7 @@ namespace Phantasma.Tests
             Assert.IsFalse(registerName(testUser, targetName + "!"));
             Assert.IsTrue(registerName(testUser, targetName));
 
-            var currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            var currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, testUser.Address);
             Assert.IsTrue(currentName == targetName);
 
             var someAddress = nexus.LookUpName(nexus.RootStorage, targetName);
@@ -403,7 +403,7 @@ namespace Phantasma.Tests
             }
 
 
-            var currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            var currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, testUser.Address);
             Assert.IsTrue(currentName == targetName);
 
             var someAddress = nexus.LookUpName(nexus.RootStorage, targetName);
@@ -422,10 +422,10 @@ namespace Phantasma.Tests
             });
             simulator.EndBlock().FirstOrDefault();
 
-            currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, testUser.Address);
             Assert.IsFalse(currentName == targetName);
 
-            currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, migratedUser.Address);
+            currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, migratedUser.Address);
             Assert.IsTrue(currentName == targetName);
         }
 

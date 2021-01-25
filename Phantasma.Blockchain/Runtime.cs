@@ -236,8 +236,11 @@ namespace Phantasma.Blockchain
 
         public void Notify(EventKind kind, Address address, byte[] bytes)
         {
-            var contract = CurrentContext.Name;
+            Notify(kind, address, bytes, CurrentContext.Name);
+        }
 
+        public void Notify(EventKind kind, Address address, byte[] bytes, string contract)
+        {
             switch (kind)
             {
                 case EventKind.GasEscrow:
@@ -596,7 +599,7 @@ namespace Phantasma.Blockchain
                 // propagate events to the other runtime
                 foreach (var evt in runtime.Events)
                 {
-                    this.Notify(evt.Kind, evt.Address, evt.Data);
+                    this.Notify(evt.Kind, evt.Address, evt.Data, evt.Contract);
                 }
 
                 return TriggerResult.Success;
@@ -872,7 +875,7 @@ namespace Phantasma.Blockchain
 
         public Address LookUpName(string name)
         {
-            return Nexus.LookUpName(this.RootStorage, name);
+            return this.Chain.LookUpName(this.RootStorage, name);
         }
 
         public bool HasAddressScript(Address from)
@@ -887,7 +890,7 @@ namespace Phantasma.Blockchain
 
         public string GetAddressName(Address from)
         {
-            return Chain.LookUpAddressName(this.RootStorage, from);
+            return Chain.GetNameFromAddress(this.RootStorage, from);
         }
 
         public Event[] GetTransactionEvents(Hash transactionHash)
