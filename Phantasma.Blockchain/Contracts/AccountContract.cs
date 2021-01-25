@@ -126,7 +126,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             if (target == Runtime.GenesisAddress)
             {
-                return ValidationUtils.GENESIS;
+                return ValidationUtils.GENESIS_NAME;
             }
 
             if (_addressMap.ContainsKey(target))
@@ -134,7 +134,7 @@ namespace Phantasma.Blockchain.Contracts
                 return _addressMap.Get<Address, string>(target);
             }
 
-            return ValidationUtils.ANONYMOUS;
+            return ValidationUtils.ANONYMOUS_NAME;
         }
 
         public byte[] LookUpScript(Address target)
@@ -159,12 +159,12 @@ namespace Phantasma.Blockchain.Contracts
 
         public Address LookUpName(string name)
         {
-            if (name == ValidationUtils.ANONYMOUS)
+            if (name == ValidationUtils.ANONYMOUS_NAME || name == ValidationUtils.NULL_NAME)
             {
                 return Address.Null;
             }
 
-            if (name == ValidationUtils.GENESIS)
+            if (name == ValidationUtils.GENESIS_NAME)
             {
                 return Runtime.GenesisAddress;
             }
