@@ -89,8 +89,6 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(_inflationReady, "inflation not ready");
 
-            Runtime.Expect(Runtime.TransactionIndex == -1, "invalid transaction index");
-
             Runtime.Expect(Runtime.IsRootChain(), "only on root chain");
 
             var currentSupply = Runtime.GetTokenSupply(DomainSettings.StakingTokenSymbol);
@@ -166,6 +164,11 @@ namespace Phantasma.Blockchain.Contracts
                 var phantomFunding = inflationAmount / 3;
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, phantomOrg.Address, phantomFunding);
                 inflationAmount -= phantomFunding;
+
+                if (phantomOrg.Size == 1)
+                {
+                    Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Stake), phantomOrg.Address, phantomFunding);
+                }
             }
 
             var bpOrg = Runtime.GetOrganization(DomainSettings.ValidatorsOrganizationName);

@@ -74,7 +74,7 @@ namespace Phantasma.Simulator
 
             if (!Nexus.HasGenesis)
             {
-                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, 4))
+                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, 5))
                 {
                     throw new ChainException("Genesis block failure");
                 }
@@ -251,8 +251,8 @@ namespace Phantasma.Simulator
             var readyNames = new List<Address>();
             foreach (var address in pendingNames)
             {
-                var currentName = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, address);
-                if (currentName != ValidationUtils.ANONYMOUS)
+                var currentName = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, address);
+                if (currentName != ValidationUtils.ANONYMOUS_NAME)
                 {
                     readyNames.Add(address);
                 }
@@ -341,9 +341,14 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                var changeSet = chain.ProcessBlock(block, transactions, MinimumFee);
+				                Transaction inflationTx = null;
+                                var changeSet = chain.ProcessBlock(block, transactions, MinimumFee, out inflationTx, this.blockValidator);
+				                if (inflationTx != null)
+				                {
+				                    transactions.Add(inflationTx);
+				                }
                                 block.Sign(this.blockValidator);
-                                chain.AddBlock(block, txs, MinimumFee, changeSet);
+                                chain.AddBlock(block, transactions, MinimumFee, changeSet);
                                 submitted = true;
                             }
                             catch (Exception e)
@@ -921,8 +926,8 @@ namespace Phantasma.Simulator
                                         break;
                                 }
 
-                                var currentName = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, source.Address);
-                                if (currentName == ValidationUtils.ANONYMOUS)
+                                var currentName = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, source.Address);
+                                if (currentName == ValidationUtils.ANONYMOUS_NAME)
                                 {
                                     var lookup = Nexus.LookUpName(Nexus.RootStorage, randomName);
                                     if (lookup.IsNull)
@@ -1032,7 +1037,7 @@ namespace Phantasma.Simulator
             EndBlock();
         }
 
-        public void TimeSkipDays(double days, bool roundUp = false)
+        public void TimeSkipDays(double days, bool roundUp = false, Action<Block> block = null)
         {
             CurrentTime = CurrentTime.AddDays(days);
 
@@ -1054,7 +1059,12 @@ namespace Phantasma.Simulator
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
                     .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
                     SpendGas(_owner.Address).EndScript());
-            EndBlock();
+            
+            var blocks = EndBlock();
+            if (block != null)
+            {
+                block.Invoke(blocks.First());
+            }
 
             var txCost = Nexus.RootChain.GetTransactionFee(tx);
             

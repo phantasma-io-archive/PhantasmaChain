@@ -459,7 +459,8 @@ namespace Phantasma.Network.P2P
             try
             {
                 var oracle = new BlockOracleReader(Nexus, block);
-                var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
+		        Transaction inflationTx;
+                var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, out inflationTx, null); // null, because we don't want to modify the block
     
                 chain.AddBlock(block, transactions, 1, changeSet);
             }

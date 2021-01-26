@@ -15,7 +15,6 @@ namespace Phantasma.Blockchain.Contracts
         internal StorageMap _nameMap; //<string, Address> 
         internal StorageMap _scriptMap; //<Address, byte[]> 
         internal StorageMap _abiMap; //<Address, byte[]> 
-        internal StorageMap _metadata;
 
         public static readonly BigInteger RegistrationCost = UnitConversion.ToBigInteger(0.1m, DomainSettings.FuelTokenDecimals);
 
@@ -127,7 +126,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             if (target == Runtime.GenesisAddress)
             {
-                return ValidationUtils.GENESIS;
+                return ValidationUtils.GENESIS_NAME;
             }
 
             if (_addressMap.ContainsKey(target))
@@ -135,7 +134,7 @@ namespace Phantasma.Blockchain.Contracts
                 return _addressMap.Get<Address, string>(target);
             }
 
-            return ValidationUtils.ANONYMOUS;
+            return ValidationUtils.ANONYMOUS_NAME;
         }
 
         public byte[] LookUpScript(Address target)
@@ -160,12 +159,12 @@ namespace Phantasma.Blockchain.Contracts
 
         public Address LookUpName(string name)
         {
-            if (name == ValidationUtils.ANONYMOUS)
+            if (name == ValidationUtils.ANONYMOUS_NAME || name == ValidationUtils.NULL_NAME)
             {
                 return Address.Null;
             }
 
-            if (name == ValidationUtils.GENESIS)
+            if (name == ValidationUtils.GENESIS_NAME)
             {
                 return Runtime.GenesisAddress;
             }
@@ -177,6 +176,87 @@ namespace Phantasma.Blockchain.Contracts
 
             return Address.Null;
         }
+
+
+        public void Migrate(Address from, Address target)
+        {
+            Runtime.Expect(target != from, "addresses must be different");
+            Runtime.Expect(target.IsUser, "must be user address");
+
+            if (!Runtime.IsWitness(Runtime.GenesisAddress))
+            {
+                Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            }
+
+            var symbols = Runtime.GetTokens();
+            foreach (var symbol in symbols)
+            {
+                var balance = Runtime.GetBalance(symbol, from);
+                if (balance > 0)
+                {
+                    var info = Runtime.GetToken(symbol);
+                    if (info.IsFungible())
+                    {
+                        Runtime.TransferTokens(symbol, from, target, balance);
+                    }
+                    else
+                    {
+                        var tokenIDs = Runtime.GetOwnerships(symbol, from);
+                        foreach (var tokenID in tokenIDs)
+                        {
+                            Runtime.TransferToken(symbol, from, target, tokenID);
+                        }
+                    }                            
+                }
+            }
+
+            if (_scriptMap.ContainsKey(target))
+            {
+                var script = _scriptMap.Get<Address, byte[]>(from);
+                _scriptMap.Remove(from);
+                _scriptMap.Set<Address, byte[]>(target, script);
+            }
+
+            if (_addressMap.ContainsKey(from))
+            {
+                var name = _addressMap.Get<Address, string>(from);
+                _addressMap.Remove(from);
+
+                _addressMap.Set<Address, string>(target, name);
+                _nameMap.Set<string, Address>(name, target);
+            }
+
+            if (_abiMap.ContainsKey(target))
+            {
+                var abi = _abiMap.Get<Address, byte[]>(from);
+                _abiMap.Remove(from);
+                _abiMap.Set<Address, byte[]>(target, abi);
+            }
+
+            var unclaimed = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), from).AsNumber();
+            if (unclaimed > 0)
+            {
+                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Claim), from, from);
+            }
+
+            var stake = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetStake), from).AsNumber();
+            if (stake > 0)
+            {
+                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Migrate), from, target);
+            }
+
+            if (Runtime.IsKnownValidator(from))
+            {
+                Runtime.CallNativeContext(NativeContractKind.Validator, nameof(ValidatorContract.Migrate), from, target);
+            }
+
+            var usedSpace = Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.GetUsedSpace), from).AsNumber(); 
+            if (usedSpace > 0)
+            {
+                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.Migrate), from, target);
+            }
+        }
+
 
         public static ContractMethod GetTriggerForABI(AccountTrigger trigger)
         {

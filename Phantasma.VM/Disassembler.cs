@@ -181,6 +181,11 @@ namespace Phantasma.VM
             return result;
         }
 
+        public override string ToString()
+        {
+            return string.Join(System.Environment.NewLine , this.Instructions);
+        }
+
         #region IO 
         private byte Read8()
         {

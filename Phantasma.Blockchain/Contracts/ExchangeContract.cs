@@ -319,7 +319,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     if (makerEscrowUsage == makerEscrow)
                     {
-                        makerOrders.RemoveAt<ExchangeOrder>(bestIndex);
+                        makerOrders.RemoveAt(bestIndex);
                         _orderMap.Remove(makerOrder.Uid);
 
                         Runtime.Expect(_escrows.ContainsKey(makerOrder.Uid), "An orderbook entry must have registered escrow");
@@ -340,7 +340,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (leftoverEscrow == 0 || orderType != Limit)
             {
-                orderList.RemoveAt<ExchangeOrder>(orderIndex);
+                orderList.RemoveAt(orderIndex);
                 _orderMap.Remove(thisOrder.Uid);
                 _escrows.Remove(thisOrder.Uid);
 
@@ -394,7 +394,7 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     Runtime.Expect(Runtime.IsWitness(order.Creator), "invalid witness");
 
-                    orderList.RemoveAt<ExchangeOrder>(i);
+                    orderList.RemoveAt(i);
                     _orderMap.Remove<BigInteger>(uid);
                     _fills.Remove<BigInteger>(uid);
 

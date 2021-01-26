@@ -402,6 +402,29 @@ namespace Phantasma.VM
                     }
 
                 default:
+                    if (val is byte[])
+                    {
+                        var bytes = (byte[])val;
+
+                        var len = bytes != null ? bytes.Length : 0;
+
+                        switch (len)
+                        {
+                            case Address.LengthInBytes:
+                                this.Data = Address.FromBytes(bytes);
+                                break;
+
+                            case Hash.Length:
+                                this.Data = Hash.FromBytes(bytes);
+                                break;
+
+                            default:
+                                throw new Exception("Cannot decode interop object from bytes with length: " + len);
+                        }
+
+                        break;
+                    }
+                    else
                     {
                         throw new Exception("Cannot set value for vmtype: " + type);
                     }
@@ -481,6 +504,22 @@ namespace Phantasma.VM
             this.Type = VMType.Struct;
             this.Data = children;
             this._localSize = 4; // TODO not valid
+            return this;
+        }
+
+        public VMObject SetValue(Hash hash)
+        {
+            this.Type = VMType.Object;
+            this.Data = hash;
+            this._localSize = 4;
+            return this;
+        }
+
+        public VMObject SetValue(Address address)
+        {
+            this.Type = VMType.Object;
+            this.Data = address;
+            this._localSize = 4;
             return this;
         }
 

@@ -21,7 +21,7 @@ namespace Phantasma.Tests
             list.Add("world");
             Assert.IsTrue(list.Count() == 2);
 
-            list.RemoveAt<string>(0);
+            list.RemoveAt(0);
             Assert.IsTrue(list.Count() == 1);
 
             var temp = list.Get<string>(0);
@@ -55,6 +55,38 @@ namespace Phantasma.Tests
 
             map.Remove(1);
             Assert.IsTrue(map.Count() == 1);
+        }
+
+        [TestMethod]
+        public void TestStorageMapClear()
+        {
+            var context = new MemoryStorageContext();
+
+            var map = new StorageMap("test".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
+
+            map.Set(1, "hello");
+            map.Set(3, "world");
+            Assert.IsTrue(map.Count() == 2);
+
+            Assert.IsFalse(map.ContainsKey(0));
+            Assert.IsTrue(map.ContainsKey(1));
+            Assert.IsFalse(map.ContainsKey(2));
+            Assert.IsTrue(map.ContainsKey(3));
+
+            map.Clear();
+            Assert.IsTrue(map.Count() == 0);
+        }
+
+        [TestMethod]
+        public void TestStorageMapClearEmpty()
+        {
+            var context = new MemoryStorageContext();
+
+            var map = new StorageMap("test".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
+            map.Clear();
+            Assert.IsTrue(map.Count() == 0);
         }
 
         [TestMethod]
@@ -103,7 +135,7 @@ namespace Phantasma.Tests
             }
 
             System.Console.WriteLine("COUNT: " + all.Count());
-            Assert.IsTrue(all.Count() == 3);
+            Assert.IsTrue(all.Count() == 2);
         }
 
         [TestMethod]
@@ -162,7 +194,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(count == 2);
 
             // note: here we remove from one list and count the other, should be same since both are references to same storage list
-            another.RemoveAt<string>(0);
+            another.RemoveAt(0);
             count = list.Count();
             Assert.IsTrue(count == 1);
         }

@@ -123,7 +123,7 @@ namespace Phantasma.Blockchain.Contracts
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
                     var withdraw = _withdraws.Get<InteropWithdraw>(index);
-                    _withdraws.RemoveAt<InteropWithdraw>(index);
+                    _withdraws.RemoveAt(index);
 
                     if (Runtime.ProtocolVersion >= 3)
                     {
