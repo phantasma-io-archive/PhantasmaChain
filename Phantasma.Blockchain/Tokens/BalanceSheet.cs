@@ -15,9 +15,9 @@ namespace Phantasma.Blockchain.Tokens
 
         public BalanceException(string symbol, Address address, BigInteger amount) : base($"Address {address} lacks {amount} {symbol}")
         {
-            if (symbol != null)
+            if (BalanceException.symbol != null)
             {
-                symbol = null; // should never enter here...
+                BalanceException.symbol = null; // should never enter here...
             }
 
             BalanceException.symbol = symbol;
