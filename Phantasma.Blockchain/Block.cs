@@ -35,7 +35,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        private List<Hash> _transactionHashes;
+        private HashSet<Hash> _transactionHashes;
         public Hash[] TransactionHashes => _transactionHashes.ToArray();
         public int TransactionCount => _transactionHashes.Count;
 
@@ -76,11 +76,14 @@ namespace Phantasma.Blockchain
             this.Height = height;
             this.PreviousHash = previousHash;
 
-            _transactionHashes = new List<Hash>();
+            _transactionHashes = new HashSet<Hash>();
             foreach (var hash in hashes)
             {
                 _transactionHashes.Add(hash);
             }
+
+            var diff = hashes.Count() - _transactionHashes.Count;
+            Throw.If(diff > 0, $"{diff} duplicated tx hashes included when creating block");
 
             this.Payload = payload;
             this.Validator = validator;
@@ -347,7 +350,7 @@ namespace Phantasma.Blockchain
                 var blockEnd = reader.ReadByte();
             }
 
-            _transactionHashes = new List<Hash>();
+            _transactionHashes = new HashSet<Hash>();
             foreach (var hash in hashes)
             {
                 _transactionHashes.Add(hash);
