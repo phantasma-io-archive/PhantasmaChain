@@ -5,6 +5,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System.Linq;
 using Phantasma.Domain;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -293,6 +294,13 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var balance = Runtime.GetBalance(DomainSettings.StakingTokenSymbol, from);
+
+            if (stakeAmount > balance) 
+            {
+                var diff = stakeAmount - balance;
+                throw new BalanceException("SOUL", from, diff);
+            }
+
             Runtime.Expect(balance >= stakeAmount, $"balance: {balance} stake: {stakeAmount} not enough balance to stake at " + from);
 
             Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, from, this.Address, stakeAmount);

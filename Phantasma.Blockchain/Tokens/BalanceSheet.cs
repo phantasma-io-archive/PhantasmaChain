@@ -2,16 +2,38 @@ using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using System;
 using System.Text;
 
 namespace Phantasma.Blockchain.Tokens
 {
+    public class BalanceException : Exception
+    {
+        public static string symbol = null;
+        public static Address address;
+        public static BigInteger amount;
+
+        public BalanceException(string symbol, Address address, BigInteger amount) : base($"Address {address} lacks {amount} {symbol}")
+        {
+            if (symbol != null)
+            {
+                symbol = null; // should never enter here...
+            }
+
+            BalanceException.symbol = symbol;
+            BalanceException.address = address;
+            BalanceException.amount = amount;
+        }
+    }
+
     public struct BalanceSheet
     {
         private byte[] _prefix;
+        private string symbol;
 
         public BalanceSheet(string symbol)
         {
+            this.symbol = symbol;
             this._prefix = MakePrefix(symbol);
         }
 
@@ -72,7 +94,8 @@ namespace Phantasma.Blockchain.Tokens
             var diff = balance - amount;
             if (diff < 0)
             {
-                return false;
+                throw new BalanceException(symbol, address, -diff);
+                //return false;
             }
 
             balance -= amount;
