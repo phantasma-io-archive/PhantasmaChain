@@ -7,6 +7,7 @@ using Phantasma.Core.Performance;
 using Phantasma.VM;
 using System.Collections.Generic;
 using Phantasma.Storage;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -76,7 +77,16 @@ namespace Phantasma.Blockchain.Contracts
 
             BigInteger balance;
             using (var m = new ProfileMarker("Runtime.GetBalance"))
+            {
                 balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            }
+
+            if (maxAmount > balance)
+            {
+                var diff = maxAmount - balance;
+                throw new BalanceException("KCAL", from, diff);
+            }
+
             Runtime.Expect(balance >= maxAmount, $"not enough {DomainSettings.FuelTokenSymbol} {balance} in address {from} {maxAmount}");
 
             using (var m = new ProfileMarker("Runtime.TransferTokens"))
@@ -175,6 +185,8 @@ namespace Phantasma.Blockchain.Contracts
             if (bpOrg != null)
             {
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, bpOrg.Address, inflationAmount);
+
+                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Stake), bpOrg.Address, inflationAmount);
             }
 
             Runtime.Notify(EventKind.Inflation, from, new TokenEventData(DomainSettings.StakingTokenSymbol, mintedAmount, Runtime.Chain.Name));
