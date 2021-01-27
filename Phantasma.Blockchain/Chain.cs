@@ -179,8 +179,6 @@ namespace Phantasma.Blockchain
                     {
                         if (ExecuteTransaction(txIndex, tx, tx.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
                         {
-                            // merge transaction oracle data 
-                            oracle.MergeTxData();
                             if (vmResult != null)
                             {
                                 if (allowModify)
@@ -397,6 +395,9 @@ namespace Phantasma.Blockchain
             {
                 result = runtime.Stack.Pop();
             }
+
+            // merge transaction oracle data 
+            oracle.MergeTxData();
 
             return true;
         }
@@ -1131,9 +1132,6 @@ namespace Phantasma.Blockchain
 
                 if (ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, task, minimumFee, out vmResult, allowModify))
                 {
-                    // merge transaction oracle data 
-                    oracle.MergeTxData();
-
                     var resultBytes = Serialization.Serialize(vmResult);
                     block.SetResultForHash(transaction.Hash, resultBytes);
 

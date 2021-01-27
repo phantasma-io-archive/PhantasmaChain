@@ -389,6 +389,7 @@ namespace Phantasma.Blockchain
                 _oracleData = oracle.Entries.ToList();
                 _dirty = true;
             }
+            oracle.Clear();
         }
         #endregion
     }
