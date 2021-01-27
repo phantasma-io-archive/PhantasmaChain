@@ -2043,19 +2043,75 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(nexus, owner, 1234);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal,
-                () => ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
-                    .CallInterop("Oracle.Price", owner.Address, "SOUL")
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
                     .SpendGas(owner.Address)
                     .EndScript());
-            //simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal,
-            //    () => ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
-            //        .CallInterop("Oracle.Price", owner.Address, "SOUL")
-            //        .SpendGas(owner.Address)
-            //        .EndScript());
-            simulator.EndBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            var block = simulator.EndBlock().First();
 
-            throw new Exception();
+            foreach (var txHash in block.TransactionHashes)
+            {
+                var blkResult = block.GetResultForTransaction(txHash);
+                var vmObj = VMObject.FromBytes(blkResult);
+                Console.WriteLine("price: " + vmObj);
+            }
+
+            //TODO finish test
+        }
+
+        [TestMethod]
+        public void OracleData()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "KCAL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            var block1 = simulator.EndBlock().First();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "KCAL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            var block2 = simulator.EndBlock().First();
+
+            var oData1 = block1.OracleData.Count();
+            var oData2 = block2.OracleData.Count();
+
+            Console.WriteLine("odata1: " + oData1);
+            Console.WriteLine("odata2: " + oData2);
+
+            Assert.IsTrue(oData1 == oData2);
         }
 
         [TestMethod]

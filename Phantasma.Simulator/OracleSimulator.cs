@@ -120,14 +120,34 @@ namespace Phantasma.Simulator
 
         protected override decimal PullPrice(Timestamp time, string baseSymbol)
         {
-            decimal price;
-            Random random = new Random();
-            price = (decimal) Math.Round((random.NextDouble() / 100), 3);
-            Console.WriteLine("pull price: " + price);
-            if (price == 0)
-                price = 1;
+            // some dummy values, only really used in the test suite ...                     
+            // TODO, remove that, use random data, oracle prices are not fixed in the real world....
+            decimal price;                                                                   
+            switch (baseSymbol)                                                              
+            {                                                                                
+                case "SOUL": price = 100; break;                                             
+                case "KCAL": price = 20; break;                                              
+                case "NEO": price = 2000; break;                                             
+                case "GAS": price = 500; break;                                              
+                case "ETH": price = 40000; break;                                            
+                case "BTC": price = 800000; break;                                           
+                case "COOL": price = 300; break;                                             
+                default: throw new OracleException("Unknown token: "+baseSymbol);            
+            }                                                                                
+                                                                                             
+            price /= 1000m;                                                                  
             return price;
         }
+
+        //protected override decimal PullPrice(Timestamp time, string baseSymbol)
+        //{
+        //    decimal price;
+        //    Random random = new Random();
+        //    price = (decimal) Math.Round((random.NextDouble() / 100), 3);
+        //    if (price == 0)
+        //        price = 1;
+        //    return price;
+        //}
 
         protected override InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID)
         {

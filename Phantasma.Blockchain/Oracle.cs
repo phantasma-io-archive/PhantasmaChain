@@ -131,11 +131,8 @@ namespace Phantasma.Blockchain
 
         public virtual T Read<T>(Timestamp time, string url) where T : class
         {
-            Console.WriteLine("read oracle: " + url);
-            Console.WriteLine("cache count: " + _txEntries.Count);
             if (TryGetOracleCache(url, out byte[] cachedEntry))
             {
-                Console.WriteLine("contains: " + url);
                 return cachedEntry as T;
             }
 
@@ -260,7 +257,6 @@ namespace Phantasma.Blockchain
                 content = PullData<T>(time, url);
             }
 
-            Console.WriteLine("cache now: " + url);
             CacheOracleData<T>(url, content);
         
             return content;
