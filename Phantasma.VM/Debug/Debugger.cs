@@ -3,77 +3,31 @@ using System.Text;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Linq;
+using Phantasma.Core;
+using Phantasma.Storage;
 
 namespace Phantasma.VM.Debug
 {
-    public enum DebugOpcode
-    {
-        Invalid,
-        Log,
-        Add,
-        Delete,
-        Step,
-        Resume,
-    }
-
-    public struct DebugCommand
-    {
-        public readonly DebugOpcode Opcode;
-        public readonly string[] Args;
-
-        public DebugCommand(DebugOpcode opcode, IEnumerable<string> args)
-        {
-            Opcode = opcode;
-            Args = args.ToArray();
-        }
-
-        public static DebugCommand FromString(string str)
-        {
-            var split = str.Split(' ');
-            DebugOpcode opcode;
-            if (Enum.TryParse<DebugOpcode>(split[0], out opcode))
-            {
-                return new DebugCommand(opcode, split.Skip(1));
-            }
-
-            return new DebugCommand(DebugOpcode.Invalid, Enumerable.Empty<string>());
-        }
-    }
-
-    public class Debugger : IDisposable
+    public class Debugger : Runnable
     {
         public const int Port = 7671;
 
         private TcpClient _client;
         private NetworkStream _stream;
 
+        public Action<string> OnLog = null;
+
         public Debugger(string host = "localhost", int port = Port)
         {
             _client = new TcpClient(host, port);
-            // Get a client stream for reading and writing.
+        }
+
+        protected override void OnStart()
+        {
             _stream = _client.GetStream();
         }
 
-        private void Send(string message)
-        {
-            // Translate the passed message into ASCII and store it as a Byte array.
-            var data = Encoding.ASCII.GetBytes(message);
-
-            // Send the message to the connected TcpServer.
-            _stream.Write(data, 0, data.Length);
-        }
-
-        private string Receive()
-        {
-            var data = new byte[256];
-
-            var bytesRead = _stream.Read(data, 0, data.Length);
-            var responseData = Encoding.ASCII.GetString(data, 0, bytesRead);
-
-            return responseData;
-        }
-
-        public void Dispose()
+        protected override void OnStop()
         {
             if (_stream != null)
             {
@@ -86,24 +40,70 @@ namespace Phantasma.VM.Debug
             }
         }
 
-        public bool AddBreakpoint(string contextName, uint offset)
+        protected override bool Run()
         {
-            throw new NotImplementedException();
+            return DebugUtils.ReceiveCommand(_stream, ProcessCommand);
         }
 
-        public bool RemoveBreakpoint(string contextName, uint offset)
+        private void ProcessCommand(DebugOpcode opcode, byte[] data)
         {
-            throw new NotImplementedException();
+            switch (opcode)
+            {
+                case DebugOpcode.Add:
+                case DebugOpcode.Remove:
+                case DebugOpcode.Step:
+                case DebugOpcode.Resume:
+                    // do nothing, this only matters on the debugger client
+                    break;
+
+                case DebugOpcode.Log:
+                    {
+                        var log = Serialization.Unserialize<LogCommand>(data);
+                        this.OnLog?.Invoke(log.Message);
+                        break;
+                    }
+
+                case DebugOpcode.Status:
+                    {
+                        var status = Serialization.Unserialize<StatusCommand>(data);
+                        // TODO
+                        break;
+                    }
+
+                default:
+                    // TODO error handling / exception / disconnect
+                    break;
+
+            }
+        }
+
+        private void Send(byte[] data)
+        {
+            _stream.Write(data, 0, data.Length);
+        }
+
+        public void AddBreakpoint(Breakpoint bp)
+        {
+            var data = DebugUtils.EncodeMessage<Breakpoint>(DebugOpcode.Add, bp);
+            Send(data);
+        }
+
+        public void RemoveBreakpoint(Breakpoint bp)
+        {
+            var data = DebugUtils.EncodeMessage<Breakpoint>(DebugOpcode.Remove, bp);
+            Send(data);
         }
 
         public void Step()
         {
-            throw new NotImplementedException();
+            var data = DebugUtils.EncodeMessage(DebugOpcode.Step);
+            Send(data);
         }
 
         public void Resume()
         {
-            throw new NotImplementedException();
+            var data = DebugUtils.EncodeMessage(DebugOpcode.Resume);
+            Send(data);
         }
     }
 }

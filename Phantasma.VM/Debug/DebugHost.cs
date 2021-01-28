@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Phantasma.Core;
+using Phantasma.Storage;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -7,151 +9,190 @@ using System.Threading;
 
 namespace Phantasma.VM.Debug
 {
-    public class DebugHost
+    public class DebugHost: Runnable
     {
-        private List<Breakpoint> breakpoints = new List<Breakpoint>();
+        private Dictionary<string, Breakpoint> _breakpoints = new Dictionary<string, Breakpoint>();
 
         public bool Paused { get; private set; }
 
-        private Queue<DebugCommand> _commands = new Queue<DebugCommand>();
-
         private TcpListener _server;
         private NetworkStream _stream;
-        private StringBuilder _buffer;
 
-        private bool _active;
+        private bool _stepping;
+        private string _currentContext = "unknown";
+        private uint _currentOffset = 0;
 
-        public DebugHost()
-        {
-            _active = true;
-            var socketThread = new Thread(SocketThread);
-            socketThread.Start();
-        }
+        public bool Connected { get; private set; }
 
-        private void SocketThread()
+        protected override void OnStart()
         {
             var localAddr = IPAddress.Parse("127.0.0.1");
+            _server = new TcpListener(localAddr, Debugger.Port);
+            _server.Start();
+        }
 
-            try
-            {
-                _server = new TcpListener(localAddr, Debugger.Port);
-                _server.Start();
+        protected override bool Run()
+        {
+            try { 
+                // Perform a blocking call to accept requests.
+                // You could also use server.AcceptSocket() here.
+                TcpClient client = _server.AcceptTcpClient();
 
-                // Enter the listening loop.
-                while (_active)
+                // Get a stream object for reading and writing
+                _stream = client.GetStream();
+
+                Connected = true;
+                do
                 {
-                    // Perform a blocking call to accept requests.
-                    // You could also use server.AcceptSocket() here.
-                    TcpClient client = _server.AcceptTcpClient();
+                    Receive();
 
-                    // Get a stream object for reading and writing
-                    _stream = client.GetStream();
+                } while (Connected);
 
-                    var data = Receive();
-
-                    // Process the data sent by the client.
-                    data = data.ToUpper();
-
-                    // Send back a response.
-                    Send(data);
-
-                    // Shutdown and end connection
-                    client.Close();
-                }
+                // Shutdown and end connection
+                client.Close();
             }
             catch (SocketException e)
             {
                 Console.WriteLine("SocketException: {0}", e);
+                return false;
             }
-            finally
-            {
-                // Stop listening for new clients.
-                _server.Stop();
-            }
+
+            return true;
         }
 
-        private string Receive()
+        protected override void OnStop()
         {
-            var bytes = new Byte[256];
+            this.Disconnect();
+            _server.Stop();
+        }
 
-            string result = null;
+        public void Disconnect()
+        {
+            Connected = false;
+               
+        }
 
-            // Loop to receive all the data sent by the client
-            do
+        private void ProcessCommand(DebugOpcode opcode, byte[] data)
+        {
+            switch (opcode)
             {
-                var read = _stream.Read(bytes, 0, bytes.Length);
-                if (read == 0)
-                {
-                    return null;
-                }
+                case DebugOpcode.Log:
+                    // do nothing, this only matters on the debugger client
+                    break;
 
-                for (int i = 0; i < read; i++)
-                {
-                    var ch = (char)_buffer[i];
-
-                    if (ch == '\n')
+                case DebugOpcode.Add:
                     {
-                        if (result == null)
+                        var breakpoint = Serialization.Unserialize<Breakpoint>(data);
+                        AddBreakpoint(breakpoint);
+                        break;
+                    }
+
+                case DebugOpcode.Remove:
+                    {
+                        var breakpoint = Serialization.Unserialize<Breakpoint>(data);
+                        RemoveBreakpoint(breakpoint);
+                        break;
+                    }
+
+                case DebugOpcode.Step:
+                    {
+                        if (Paused)
                         {
-                            result = _buffer.ToString();
-                            _buffer.Clear();
+                            _stepping = true;
+                            Paused = false;
                         }
+                        break;
                     }
-                    else
-                    {
-                        _buffer.Append(ch);
-                    }
-                }
-            } while (result == null);
 
-            return result;
+                case DebugOpcode.Resume:
+                    if (Paused)
+                    {
+                        Paused = false;
+                    }
+                    break;
+
+                case DebugOpcode.Status:
+                    SendStatus();
+                    break;
+
+                default:
+                    // TODO error handling / exception / disconnect
+                    break;
+
+            }
         }
 
-        private void Send(string message)
+        private void Receive()
         {
-            byte[] msg = System.Text.Encoding.ASCII.GetBytes(message);
+            if (!DebugUtils.ReceiveCommand(_stream, ProcessCommand))
+            {
+                Disconnect();
+            }
+        }
 
-            // Send back a response.
-            _stream.Write(msg, 0, msg.Length);
-            Console.WriteLine("Sent: {0}", message);
+        private void Send(byte[] data)
+        {
+            _stream.Write(data, 0, data.Length);
         }
 
         public void OnStep(ExecutionFrame frame, Stack<VMObject> stack)
         {
-            foreach (var bp in breakpoints)
+            _currentContext = frame.Context.Name;
+            _currentOffset = frame.Offset;
+
+            if (_stepping)
             {
-                if (bp.contextName == frame.Context.Name && bp.offset == frame.Offset)
+                Paused = true;
+                _stepping = false;
+            }
+            else
+            lock (_breakpoints)
+            {
+                foreach (var bp in _breakpoints.Values)
                 {
-                    Paused = true;
-                    break;
+                    if (bp.contextName == frame.Context.Name && bp.offset == frame.Offset)
+                    {
+                        Paused = true;
+                        break;
+                    }
                 }
             }
 
             do
             {
-                lock (_commands)
-                {
-                    if (_commands.Count > 0)
-                    {
-                        var cmd = _commands.Dequeue();
-                        ExecuteCommand(cmd);
-                    }
-                }
+                Thread.Sleep(500); // wait for debugger to receive commands
             } while (Paused);
         }
 
         public void OnLog(string msg)
         {
-
+            var data = DebugUtils.EncodeMessage(DebugOpcode.Log, new LogCommand(msg));
+            this.Send(data);
         }
 
-        private void ExecuteCommand(DebugCommand cmd)
+        private void SendStatus()
         {
-            switch (cmd.Opcode)
-            {
+            var data = DebugUtils.EncodeMessage(DebugOpcode.Status, new StatusCommand(_currentContext, _currentOffset));
+            this.Send(data);
+        }
 
+        public void AddBreakpoint(Breakpoint bp)
+        {
+            lock (_breakpoints)
+            {
+                _breakpoints[bp.Key] = bp;
             }
-            throw new NotImplementedException();
+        }
+
+        public void RemoveBreakpoint(Breakpoint bp)
+        {
+            lock (_breakpoints)
+            {
+                if (_breakpoints.ContainsKey(bp.Key))
+                {
+                    _breakpoints.Remove(bp.Key);
+                }
+            }
         }
     }
 }
