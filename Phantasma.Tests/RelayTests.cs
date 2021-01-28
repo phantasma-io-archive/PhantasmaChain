@@ -49,7 +49,7 @@ namespace Phantasma.Tests
                 api = api
             };
 
-            mempool?.Start();
+            mempool?.StartInThread();
 
             return data;
         }
