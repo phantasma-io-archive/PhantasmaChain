@@ -284,7 +284,6 @@ namespace Phantasma.Neo.Core
     
                                 case OpCode.PUSHDATA1:
                                     {
-                                        Console.WriteLine($" at {entry.startOfs}");
                                         var len = reader.ReadByte();
                                         entry.data = reader.ReadBytes(len);
                                         entry.comment = "Pushes " + len + " bytes into the stack: $$";
@@ -293,7 +292,6 @@ namespace Phantasma.Neo.Core
     
                                 case OpCode.PUSHDATA2:
                                     {
-                                        Console.WriteLine($" at {entry.startOfs}");
                                         var len = reader.ReadUInt16();
                                         entry.data = reader.ReadBytes(len);
                                         entry.comment = "Pushes " + len + " bytes into the stack: $$";
@@ -303,7 +301,6 @@ namespace Phantasma.Neo.Core
     
                                 case OpCode.PUSHDATA4:
                                     {
-                                        Console.WriteLine($" at {entry.startOfs}");
                                         var len = reader.ReadInt32();
                                         entry.data = reader.ReadBytes(len);
                                         entry.comment = "Pushes " + len + " bytes into the stack: $$";
@@ -313,7 +310,6 @@ namespace Phantasma.Neo.Core
                                 case OpCode.CALL:
                                 case OpCode.CALL_I:
                                     {
-                                        Console.WriteLine($" at {entry.startOfs}");
                                         int other = reader.ReadInt16();
                                         int offset = reader.ReadInt16();
                                         break;
@@ -321,7 +317,6 @@ namespace Phantasma.Neo.Core
                                 case OpCode.CALL_E:
                                 case OpCode.CALL_ET:
                                     {
-                                        Console.WriteLine($" at {entry.startOfs}");
                                         int other = reader.ReadInt16();
                                         byte[] script_hash = reader.ReadBytes(20);
                                         entry.data = script_hash.Reverse().ToArray();
@@ -358,11 +353,11 @@ namespace Phantasma.Neo.Core
     
                                 default:
                                     {
-                                        if (!Enum.IsDefined(typeof(OpCode), opcode))
+                                        /*if (!Enum.IsDefined(typeof(OpCode), opcode))
                                         {
                                             var s = ((byte)opcode).ToString();
                                             Console.WriteLine($"Invalid opcode {s} at {entry.startOfs}");
-                                        }
+                                        }*/
     
                                         break;
                                     }

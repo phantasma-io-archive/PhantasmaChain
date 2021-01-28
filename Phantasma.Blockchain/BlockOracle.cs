@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain
         {
             T content = null;
 
-            Console.WriteLine("read url " + url);
+            //Console.WriteLine("read url " + url);
 
             string tag;
             if (ProtocolVersion >= 4)

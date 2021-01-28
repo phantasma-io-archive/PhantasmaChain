@@ -80,7 +80,7 @@ namespace Phantasma.Network.RPC
                         json = "{\"response\" : {\"error\" : \"json parsing error\"}}";
                     }
 
-                    Console.WriteLine(json);
+                    //Console.WriteLine(json);
 
                     var output = Encoding.UTF8.GetBytes(json);
                     stream.Write(output, 0, output.Length);
