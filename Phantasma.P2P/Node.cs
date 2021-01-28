@@ -100,6 +100,8 @@ namespace Phantasma.Network.P2P
 
         private Dictionary<string, PendingBlock> _pendingBlocks = new Dictionary<string, PendingBlock>();
 
+        private DateTime _lastRequestTime = DateTime.UtcNow;
+
         public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, string publicHost, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
             Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
@@ -246,14 +248,42 @@ namespace Phantasma.Network.P2P
                 if (_pendingBlocks.Count > 0)
                 {
                     var chains = Nexus.GetChains(Nexus.RootStorage).Select(x => Nexus.GetChainByName(x));
+
                     foreach (var chain in chains)
                     {
                         HandlePendingBlocks(chain);
                     }
                 }
+                else
+                {
+                    UpdateRequests();
+                }
             }
 
             return true;
+        }
+
+        private void UpdateRequests()
+        {
+            var currentTime = DateTime.UtcNow;
+            var diff = currentTime - _lastRequestTime;
+            if (diff.TotalSeconds > 10)
+            {
+                lock (_peers)
+                {
+                    if (_peers.Count > 0)
+                    {
+                        var peerList = _peers.Keys.ToArray();
+                        var randomIndex = (int)(currentTime.Ticks % peerList.Length);
+                        var peerKey = peerList[randomIndex];
+                        var peer = _peers[peerKey];
+                        _lastRequestTime = currentTime;
+
+                        var request = new RequestMessage(this.Address, this.PublicEndpoint, RequestKind.Chains, Nexus.Name);
+                        SendMessage(peer, request);
+                    }
+                }
+            }
         }
 
         protected override void OnStart()
@@ -427,7 +457,7 @@ namespace Phantasma.Network.P2P
             {
                 var entry = new EndpointEntry(peer.Endpoint);
                 _knownEndpoints.Remove(entry);
-                Logger.Debug("removed  endpoint: " + entry.endpoint);
+                Logger.Debug("removed endpoint: " + entry.endpoint);
 
                 var peerKey = peer.Endpoint.ToString();
                 if (_peers.ContainsKey(peerKey))
@@ -440,8 +470,12 @@ namespace Phantasma.Network.P2P
             socket.Close();
         }
 
+        // will return true if theres no more blocks 
         private void HandlePendingBlocks(Chain chain)
         {
+            var start = chain.Height + 1;
+            var last = start;
+
             do
             {
                 var nextHeight = chain.Height + 1;
@@ -455,12 +489,23 @@ namespace Phantasma.Network.P2P
                     }
 
                     _pendingBlocks.Remove(nextKey);
+                    last = nextHeight;
                 }
                 else
                 {
-                    return;
+                    break;
                 }
+
             } while (true);
+
+            if (start == last)
+            {
+                Logger.Message($"{this.Version}: Added block #{start} in {chain.Name}");
+            }
+            else
+            {
+                Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name}");
+            }
         }
 
         private bool HandleBlock(Chain chain, Block block, IList<Transaction> transactions)
@@ -484,7 +529,6 @@ namespace Phantasma.Network.P2P
                 throw new NodeException("block add failed");
             }
 
-            Logger.Message($"{this.Version}: Added block #{block.Height} to {chain.Name}");
             return true;
 
         }
@@ -685,6 +729,8 @@ namespace Phantasma.Network.P2P
                                         }
                                     }
                                 }
+
+                                _lastRequestTime = DateTime.UtcNow;
                                 //Thread.Sleep(10000);
                             }
                         }
