@@ -58,7 +58,6 @@ namespace Phantasma.Network.P2P
 
         private List<Peer> _peers = new List<Peer>();
 
-        private TcpClient client;
         private TcpListener listener;
 
         private List<EndpointEntry> _knownEndpoints = new List<EndpointEntry>();
@@ -117,7 +116,6 @@ namespace Phantasma.Network.P2P
             var bindAddress = IPAddress.Any;
 
             listener = new TcpListener(bindAddress, port);
-            client = new TcpClient();
         }
 
         private IPAddress GetPublicIP()
@@ -312,6 +310,7 @@ namespace Phantasma.Network.P2P
                     idx = possibleTargets[idx];
                     var target = _knownEndpoints[idx];
 
+                    var client = new TcpClient();
                     var result = client.BeginConnect(target.endpoint.Host, target.endpoint.Port, null, null);
 
                     var signal = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
