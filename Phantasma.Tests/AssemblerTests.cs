@@ -2759,7 +2759,7 @@ namespace Phantasma.Tests
             var owner = PhantasmaKeys.Generate();
             var script = AssemblerUtils.BuildScript(scriptString);
 
-            var nexus = new Nexus("asmnet", new ConsoleLogger());
+            var nexus = new Nexus("asmnet", new DebugLogger());
             nexus.CreateGenesisBlock(owner, Timestamp.Now, 1);
             var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
 
@@ -2793,7 +2793,7 @@ namespace Phantasma.Tests
             var script = AssemblerUtils.BuildScript(scriptString);
 
             var keys = PhantasmaKeys.Generate();
-            var nexus = new Nexus("asmnet", new ConsoleLogger());
+            var nexus = new Nexus("asmnet", new DebugLogger());
             nexus.CreateGenesisBlock(owner, Timestamp.Now, 1);
             tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
 

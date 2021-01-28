@@ -4,32 +4,25 @@ namespace Phantasma.Core.Log
 {
     public class ConsoleLogger : Logger
     {
-        private static object _lock = new object();
-
-        public static bool AppendTimestamp = false;
-
-        public override void Write(LogEntryKind kind, string msg)
+        public ConsoleLogger(LogLevel level) : base(level)
         {
-            if (AppendTimestamp)
-            {
-                msg = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + msg;
-            }
 
-            lock (_lock)
+        }
+
+        protected override void Write(LogLevel kind, string msg)
+        {
+            var color = Console.ForegroundColor;
+            switch (kind)
             {
-                var color = Console.ForegroundColor;
-                switch (kind)
-                {
-                    case LogEntryKind.Error: Console.ForegroundColor = ConsoleColor.Red; break;
-                    case LogEntryKind.Warning: Console.ForegroundColor = ConsoleColor.Yellow; break;
-                    case LogEntryKind.Message: Console.ForegroundColor = ConsoleColor.Gray; break;
-                    case LogEntryKind.Success: Console.ForegroundColor = ConsoleColor.Green; break;
-                    case LogEntryKind.Debug: Console.ForegroundColor = ConsoleColor.Cyan; break;
-                    default: return;
-                }
-                Console.WriteLine(msg);
-                Console.ForegroundColor = color;
+                case LogLevel.Error: Console.ForegroundColor = ConsoleColor.Red; break;
+                case LogLevel.Warning: Console.ForegroundColor = ConsoleColor.Yellow; break;
+                case LogLevel.Message: Console.ForegroundColor = ConsoleColor.Gray; break;
+                case LogLevel.Success: Console.ForegroundColor = ConsoleColor.Green; break;
+                case LogLevel.Debug: Console.ForegroundColor = ConsoleColor.Cyan; break;
+                default: return;
             }
+            Console.WriteLine(msg);
+            Console.ForegroundColor = color;
         }
     }
 }

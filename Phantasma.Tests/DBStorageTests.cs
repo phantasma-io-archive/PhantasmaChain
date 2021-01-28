@@ -10,6 +10,7 @@ using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
 using System.Text;
 using Phantasma.Storage.Context;
 using Phantasma.Numerics;
+using Phantasma.Core.Log;
 
 namespace Phantasma.Tests
 {
@@ -24,7 +25,7 @@ namespace Phantasma.Tests
         [TestInitialize()]
         public void TestInitialize()
         {
-            _adapterFactory = _adapterFactory = (name) => { return new DBPartition(new ConsoleLogger(), path + name); };
+            _adapterFactory = _adapterFactory = (name) => { return new DBPartition(new DebugLogger(), path + name); };
             _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
         }
 
