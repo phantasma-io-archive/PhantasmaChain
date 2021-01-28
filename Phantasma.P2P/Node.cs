@@ -40,7 +40,7 @@ namespace Phantasma.Network.P2P
         }
     }
 
-    public class NodeException: Exception
+    public class NodeException : Exception
     {
         public NodeException(string msg) : base(msg)
         {
@@ -48,7 +48,21 @@ namespace Phantasma.Network.P2P
         }
     }
 
-    public sealed partial class Node: Runnable
+    public struct PendingBlock
+    {
+        public string chain;
+        public readonly Block block;
+        public readonly List<Transaction> transactions;
+
+        public PendingBlock(string chain, Block block, List<Transaction> transactions)
+        {
+            this.chain = chain;
+            this.block = block;
+            this.transactions = transactions;
+        }
+    }
+
+    public sealed partial class Node : Runnable
     {
         public readonly static int MaxActiveConnections = 64;
 
@@ -68,7 +82,7 @@ namespace Phantasma.Network.P2P
 
         private Mempool _mempool;
 
-        private Dictionary<string, Peer> _peers = new Dictionary<string, Peer>();
+        private Dictionary<string, Peer> _peers = new Dictionary<string, Peer>(StringComparer.InvariantCultureIgnoreCase);
 
         private TcpListener listener;
 
@@ -84,7 +98,7 @@ namespace Phantasma.Network.P2P
         private Dictionary<string, uint> _receipts = new Dictionary<string, uint>();
         private Dictionary<Address, Cache<Event>> _events = new Dictionary<Address, Cache<Event>>();
 
-        private Dictionary<BigInteger, Tuple<Block, List<Transaction>>> _blockCache = new Dictionary<BigInteger, Tuple<Block, List<Transaction>>>();
+        private Dictionary<string, PendingBlock> _pendingBlocks = new Dictionary<string, PendingBlock>();
 
         public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, string publicHost, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
@@ -225,6 +239,20 @@ namespace Phantasma.Network.P2P
                     _lastPeerConnect = now;
                 }
             }
+
+            // check if we have any cached blocks TODO: needs to be revisited when we have multiple chains
+            lock (_pendingBlocks)
+            {
+                if (_pendingBlocks.Count > 0)
+                {
+                    var chains = Nexus.GetChains(Nexus.RootStorage).Select(x => Nexus.GetChainByName(x));
+                    foreach (var chain in chains)
+                    {
+                        HandlePendingBlocks(chain);
+                    }
+                }
+            }
+
             return true;
         }
 
@@ -255,7 +283,7 @@ namespace Phantasma.Network.P2P
                 _knownEndpoints.RemoveAll(x => x.endpoint.Protocol != PeerProtocol.TCP);
 
                 var possibleTargets = new List<int>();
-                for (int i=0; i<_knownEndpoints.Count; i++)
+                for (int i = 0; i < _knownEndpoints.Count; i++)
                 {
                     if (_knownEndpoints[i].status == EndpointStatus.Waiting)
                     {
@@ -340,7 +368,7 @@ namespace Phantasma.Network.P2P
             Throw.IfNull(peer, nameof(peer));
             Throw.IfNull(msg, nameof(msg));
 
-            Logger.Debug("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
+            Logger.Debug("Sending " + msg.GetType().Name + " to  " + peer.Endpoint);
 
             msg.Sign(this.Keys);
 
@@ -412,23 +440,51 @@ namespace Phantasma.Network.P2P
             socket.Close();
         }
 
-        private bool HandleBlock(Chain chain, Block block , IList<Transaction> transactions)
+        private void HandlePendingBlocks(Chain chain)
         {
+            do
+            {
+                var nextHeight = chain.Height + 1;
+                var nextKey = $"{chain.Name}.{nextHeight}";
+                if (_pendingBlocks.ContainsKey(nextKey))
+                {
+                    var entry = _pendingBlocks[nextKey];
+                    if (!HandleBlock(chain, entry.block, entry.transactions))
+                    {
+                        throw new NodeException($"Something went wrong when adding block {entry.block.Height} to {chain.Name} chain");
+                    }
+
+                    _pendingBlocks.Remove(nextKey);
+                }
+                else
+                {
+                    return;
+                }
+            } while (true);
+        }
+
+        private bool HandleBlock(Chain chain, Block block, IList<Transaction> transactions)
+        {
+            if (block.Height != chain.Height + 1)
+            {
+                throw new NodeException("unexpected block height");
+            }
+
             try
             {
                 var oracle = new BlockOracleReader(Nexus, block);
-		        Transaction inflationTx;
+                Transaction inflationTx;
                 var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, out inflationTx, null); // null, because we don't want to modify the block
-    
+
                 chain.AddBlock(block, transactions, 1, changeSet);
             }
             catch (Exception e)
             {
                 Logger.Error(e.ToString());
-                throw new Exception("block add failed");
+                throw new NodeException("block add failed");
             }
-    
-            Logger.Message($"Added block #{block.Height} to {chain.Name}");
+
+            Logger.Message($"{this.Version}: Added block #{block.Height} to {chain.Name}");
             return true;
 
         }
@@ -468,11 +524,13 @@ namespace Phantasma.Network.P2P
                 if (!_peers.ContainsKey(peerKey))
                 {
                     Logger.Message("Added peer: " + peerKey);
+                    peer.UpdateEndpoint(endpoint);
                     _peers[peerKey] = peer;
                 }
             }
 
-            switch (msg.Opcode) {
+            switch (msg.Opcode)
+            {
                 case Opcode.EVENT:
                     {
                         var evtMessage = (EventMessage)msg;
@@ -541,7 +599,7 @@ namespace Phantasma.Network.P2P
                         if (listMsg.Kind.HasFlag(RequestKind.Peers))
                         {
                             IEnumerable<string> newPeers;
-                            
+
                             lock (_peers)
                             {
                                 newPeers = listMsg.Peers.Where(x => !_peers.ContainsKey(x));
@@ -599,9 +657,7 @@ namespace Phantasma.Network.P2P
 
                         if (listMsg.Kind.HasFlag(RequestKind.Blocks))
                         {
-                            bool addedBlocks = false;
-
-                            Chain chain = null; 
+                            Chain chain = null;
                             foreach (var entry in listMsg.Blocks)
                             {
                                 chain = Nexus.GetChainByName(entry.Key);
@@ -620,33 +676,16 @@ namespace Phantasma.Network.P2P
                                         transactions.Add(tx);
                                     }
 
-                                    if (chain.Height + 1 < block.Height)
+                                    if (block.Height > chain.Height)
                                     {
-                                        _blockCache.Add(block.Height, Tuple.Create(block, transactions));
-                                    }
-                                    else 
-                                    {
-                                        addedBlocks = HandleBlock(chain, block, transactions);
+                                        var key = $"{chain.Name}.{block.Height}";
+                                        lock (_pendingBlocks)
+                                        {
+                                            _pendingBlocks[key] = new PendingBlock(chain.Name, block, transactions);
+                                        }
                                     }
                                 }
                                 //Thread.Sleep(10000);
-                            }
-                            // check if we have any cached blocks TODO: needs to be revisited when we have multiple chains
-
-                            if (_blockCache.ContainsKey(chain.Height + 1))
-                            {
-                                foreach (var entry in _blockCache.OrderBy(x => x.Key))
-                                {
-                                    if (entry.Key == chain.Height + 1)
-                                    {
-                                        addedBlocks = HandleBlock(chain, entry.Value.Item1/*Block*/, entry.Value.Item2 /*Transactions*/);
-                                    }
-                                }
-                            }
-
-                            if (addedBlocks)
-                            {
-                                outKind |= RequestKind.Chains;
                             }
                         }
 
@@ -762,7 +801,7 @@ namespace Phantasma.Network.P2P
 
             if (expectedMessageIndex > msg.index)
             {
-                throw new RelayException("unexpected message index, should be at least "+expectedMessageIndex+" but it's "+msg.index);
+                throw new RelayException("unexpected message index, should be at least " + expectedMessageIndex + " but it's " + msg.index);
             }
 
             list.Add(receipt);
