@@ -133,7 +133,6 @@ namespace Phantasma.Blockchain
         {
             if (TryGetOracleCache<T>(url, out T cachedEntry))
             {
-                Console.WriteLine("return cache ");
                 return cachedEntry as T;
             }
 
