@@ -475,6 +475,7 @@ namespace Phantasma.Network.P2P
         {
             var start = chain.Height + 1;
             var last = start;
+            int count = 0;
 
             do
             {
@@ -490,6 +491,7 @@ namespace Phantasma.Network.P2P
 
                     _pendingBlocks.Remove(nextKey);
                     last = nextHeight;
+                    count++;
                 }
                 else
                 {
@@ -498,13 +500,17 @@ namespace Phantasma.Network.P2P
 
             } while (true);
 
-            if (start == last)
+            if (count > 0)
             {
-                Logger.Message($"{this.Version}: Added block #{start} in {chain.Name}");
-            }
-            else
-            {
-                Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name}");
+
+                if (start == last)
+                {
+                    Logger.Message($"{this.Version}: Added block #{start} in {chain.Name}");
+                }
+                else
+                {
+                    Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name}");
+                }
             }
         }
 
