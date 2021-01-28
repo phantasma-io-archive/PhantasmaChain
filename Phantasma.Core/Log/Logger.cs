@@ -4,28 +4,13 @@ namespace Phantasma.Core.Log
 {
     public abstract class Logger
     {
-        public LogEntryKind Level = LogEntryKind.Debug;
+        public readonly LogLevel Level;
 
-        public abstract void Write(LogEntryKind kind, string msg);
+        private static object _lock = new object();
 
-        public void Message(string msg)
+        public Logger(LogLevel level)
         {
-            if (this.Level < LogEntryKind.Message)
-            {
-                return;
-            }
-
-            Write(LogEntryKind.Message, msg);
-        }
-
-        public void Debug(string msg)
-        {
-            if (this.Level < LogEntryKind.Debug)
-            {
-                return;
-            }
-
-            Write(LogEntryKind.Debug, msg);
+            this.Level = level;
         }
 
         public static Logger Init(Logger log)
@@ -38,35 +23,45 @@ namespace Phantasma.Core.Log
             return log;
         }
 
-        public void Warning(string msg)
+        protected abstract void Write(LogLevel kind, string msg);
+
+        public void RouteMessage(LogLevel kind, string msg)
         {
-            if (this.Level < LogEntryKind.Warning)
+            if (this.Level < kind)
             {
                 return;
             }
 
-            Write(LogEntryKind.Warning, msg);
+            lock (_lock)
+            {
+                this.Write(kind, msg);
+            }
+        }
+
+        public void Message(string msg)
+        {
+            RouteMessage(LogLevel.Message, msg);
+        }
+
+        public void Debug(string msg)
+        {
+            RouteMessage(LogLevel.Debug, msg);
+        }
+
+        public void Warning(string msg)
+        {
+            RouteMessage(LogLevel.Warning, msg);
         }
 
         public void Error(string msg)
         {
-            if (this.Level < LogEntryKind.Error)
-            {
-                return;
-            }
-
-            Write(LogEntryKind.Error, msg);
+            RouteMessage(LogLevel.Error, msg);
         }
 
 
         public void Success(string msg)
         {
-            if (this.Level < LogEntryKind.Success)
-            {
-                return;
-            }
-
-            Write(LogEntryKind.Success, msg);
+            RouteMessage(LogLevel.Success, msg);
         }
 
         public void Exception(Exception ex)

@@ -5,10 +5,9 @@ namespace Phantasma.Core.Log
 {
     public class FileLogger : Logger
     {
-        private static object _lock = new object();
         private static StreamWriter sw;
 
-        public FileLogger(string file)
+        public FileLogger(string file, LogLevel level) : base(level)
         {
             if (sw != null)
             {
@@ -23,13 +22,13 @@ namespace Phantasma.Core.Log
             sw.Close();
         }
 
-        public override void Write(LogEntryKind kind, string msg)
+        protected override void Write(LogLevel kind, string msg)
         {
-            lock (_lock)
-            {
-                sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + msg);
-                sw.Flush();
-            }
+            var date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            var output = $"{date} {kind} {msg}";
+
+            sw.WriteLine(output);
+            sw.Flush();
         }
     }
 }
