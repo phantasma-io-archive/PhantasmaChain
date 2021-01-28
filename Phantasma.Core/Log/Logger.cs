@@ -27,7 +27,7 @@ namespace Phantasma.Core.Log
 
         public void RouteMessage(LogLevel kind, string msg)
         {
-            if (this.Level < kind)
+            if (kind > this.Level)
             {
                 return;
             }
