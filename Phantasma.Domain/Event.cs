@@ -65,7 +65,8 @@ namespace Phantasma.Domain
         TaskStop = 55,
         CrownRewards = 56,
         Infusion = 57,
-        Custom = 64,
+        OrderBid = 58,
+        Custom = 64
     }
 
     public struct OrganizationEventData
@@ -110,6 +111,22 @@ namespace Phantasma.Domain
             InfusedValue = infusedValue;
             ChainName = chainName;
         }
+    }
+    public enum TypeAuction
+    {
+        Fixed,
+        Reserve,
+        Schedule,
+        Dutch,
+    }       
+
+    public struct MarketEventData
+    {
+        public string BaseSymbol;
+        public string QuoteSymbol;
+        public BigInteger ID;
+        public BigInteger Price;
+        public TypeAuction Type;
     }
 
     public struct ChainValueEventData

@@ -477,6 +477,7 @@ namespace Phantasma.API
                 endDate = auction.EndDate.Value,
                 ram = Base16.Encode(nft.RAM),
                 rom = Base16.Encode(nft.ROM),
+                type = auction.Type.ToString()
             };
         }
 
