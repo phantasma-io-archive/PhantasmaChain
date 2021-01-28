@@ -26,6 +26,36 @@ namespace Phantasma.Network.P2P
             this.Port = port;
         }
 
+        public static Endpoint FromString(string str)
+        {
+            var temp = str.Split(':');
+
+            if (temp.Length != 3)
+            {
+                throw new NodeException("Invalid endpoint format: " + str);
+            }
+
+            PeerProtocol protocol;
+            if (!Enum.TryParse<PeerProtocol>(temp[0], true, out protocol))
+            {
+                throw new NodeException("Invalid endpoint protocol: " + str);
+            }
+
+            uint port;
+            if (!uint.TryParse(temp[2], out port))
+            {
+                throw new NodeException("Invalid endpoint port: " + str);
+            }
+
+            var host = temp[1];
+            if (string.IsNullOrEmpty(host))
+            {
+                throw new NodeException("Invalid endpoint host: " + str);
+            }
+
+            return new Endpoint(protocol, host, (int)port);
+        }
+
         public override bool Equals(object obj)
         {
             if (!(obj is Endpoint))
@@ -39,7 +69,7 @@ namespace Phantasma.Network.P2P
 
         public override string ToString()
         {
-            return $"{Protocol}://{Host}:{Port}";
+            return $"{Protocol}:{Host}:{Port}";
         }
 
         // TODO use all fields for hashcode

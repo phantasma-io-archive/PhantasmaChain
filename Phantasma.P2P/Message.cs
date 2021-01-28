@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Network.P2P.Messages;
 using Phantasma.Cryptography.EdDSA;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Network.P2P
 {
@@ -15,14 +16,16 @@ namespace Phantasma.Network.P2P
     public abstract class Message
     {
         public Opcode Opcode { get; private set; }
+        public string Host { get; private set; }
         public Address Address { get; private set; }
         public Signature Signature { get; private set; }
 
         public bool IsSigned => !Address.IsNull && Signature != null;
 
-        public Message(Opcode opcode, Address address) {
+        public Message(Opcode opcode, Address address, string host) {
             this.Opcode = opcode;
             this.Address = address;
+            this.Host = host;
         }
 
         public void Sign(PhantasmaKeys keyPair)
@@ -38,6 +41,7 @@ namespace Phantasma.Network.P2P
         {
             var opcode = (Opcode)reader.ReadByte();
             var address = reader.ReadAddress();
+            var host = reader.ReadVarString();
 
             Message msg;
 
@@ -45,25 +49,25 @@ namespace Phantasma.Network.P2P
             {
                 case Opcode.REQUEST:
                     {
-                        msg = RequestMessage.FromReader(address, reader);
+                        msg = RequestMessage.FromReader(address, host, reader);
                         break;
                     }
 
                 case Opcode.EVENT:
                     {
-                        msg = EventMessage.FromReader(address, reader);
+                        msg = EventMessage.FromReader(address, host, reader);
                         break;
                     }
 
                 case Opcode.LIST:
                     {
-                        msg = ListMessage.FromReader(address, reader);
+                        msg = ListMessage.FromReader(address, host, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        msg = MempoolAddMessage.FromReader(address, reader);
+                        msg = MempoolAddMessage.FromReader(address, host, reader);
                         break;
                     }
 
@@ -82,7 +86,7 @@ namespace Phantasma.Network.P2P
 
                 case Opcode.ERROR:
                     {
-                        msg = ErrorMessage.FromReader(address, reader);
+                        msg = ErrorMessage.FromReader(address, host, reader);
                         break;
                     }
 
@@ -114,6 +118,7 @@ namespace Phantasma.Network.P2P
         {
             writer.Write((byte)Opcode);
             writer.WriteAddress(Address);
+            writer.WriteVarString(Host);
 
             OnSerialize(writer);
 

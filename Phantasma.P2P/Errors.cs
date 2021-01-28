@@ -7,5 +7,6 @@
         InvalidAddress,
         InvalidRequest,
         InvalidNexus,
+        InvalidEndpoint,
     }
 }
