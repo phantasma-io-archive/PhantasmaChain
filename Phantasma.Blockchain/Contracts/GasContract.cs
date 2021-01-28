@@ -7,6 +7,7 @@ using Phantasma.Core.Performance;
 using Phantasma.VM;
 using System.Collections.Generic;
 using Phantasma.Storage;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -76,7 +77,16 @@ namespace Phantasma.Blockchain.Contracts
 
             BigInteger balance;
             using (var m = new ProfileMarker("Runtime.GetBalance"))
+            {
                 balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            }
+
+            if (maxAmount > balance)
+            {
+                var diff = maxAmount - balance;
+                throw new BalanceException("KCAL", from, diff);
+            }
+
             Runtime.Expect(balance >= maxAmount, $"not enough {DomainSettings.FuelTokenSymbol} {balance} in address {from} {maxAmount}");
 
             using (var m = new ProfileMarker("Runtime.TransferTokens"))
@@ -88,8 +98,6 @@ namespace Phantasma.Blockchain.Contracts
         public void ApplyInflation(Address from)
         {
             Runtime.Expect(_inflationReady, "inflation not ready");
-
-            Runtime.Expect(Runtime.TransactionIndex == -1, "invalid transaction index");
 
             Runtime.Expect(Runtime.IsRootChain(), "only on root chain");
 
@@ -166,12 +174,22 @@ namespace Phantasma.Blockchain.Contracts
                 var phantomFunding = inflationAmount / 3;
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, phantomOrg.Address, phantomFunding);
                 inflationAmount -= phantomFunding;
+
+                if (phantomOrg.Size == 1)
+                {
+                    Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Stake), phantomOrg.Address, phantomFunding);
+                }
             }
 
             var bpOrg = Runtime.GetOrganization(DomainSettings.ValidatorsOrganizationName);
             if (bpOrg != null)
             {
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, bpOrg.Address, inflationAmount);
+
+                if (bpOrg.Size == 1)
+                {
+                    Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Stake), bpOrg.Address, inflationAmount);
+                }
             }
 
             Runtime.Notify(EventKind.Inflation, from, new TokenEventData(DomainSettings.StakingTokenSymbol, mintedAmount, Runtime.Chain.Name));

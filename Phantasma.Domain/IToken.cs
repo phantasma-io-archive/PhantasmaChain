@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
@@ -85,7 +86,7 @@ namespace Phantasma.Domain
         public static readonly int MaxROMSize = 1024;
         public static readonly int MaxRAMSize = 1024;
 
-        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address creator, Address currentOwner, byte[] ROM, byte[] RAM,  IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
+        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address creator, Address currentOwner, byte[] ROM, byte[] RAM, Timestamp timestamp, IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
         {
             this.SeriesID = seriesID;
             this.MintID = mintID;
@@ -94,6 +95,7 @@ namespace Phantasma.Domain
             CurrentOwner = currentOwner;
             this.ROM = ROM;
             this.RAM = RAM;
+            this.Timestamp = timestamp;
             this.Infusion = infusion != null ? infusion.ToArray(): new TokenInfusion[0];
 
             UpdateTokenID(mode);
@@ -112,6 +114,8 @@ namespace Phantasma.Domain
 
         public TokenInfusion[] Infusion { get; private set; }
 
+        public Timestamp Timestamp { get; private set; }
+
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteBigInteger(SeriesID);
@@ -121,6 +125,7 @@ namespace Phantasma.Domain
             writer.WriteAddress(CurrentOwner);
             writer.WriteByteArray(ROM);
             writer.WriteByteArray(RAM);
+            writer.Write(Timestamp.Value);
             writer.WriteVarInt(Infusion.Length);
             foreach (var entry in Infusion)
             {
@@ -144,6 +149,8 @@ namespace Phantasma.Domain
 
             RAM = reader.ReadByteArray();
             RAM = RAM ?? new byte[0];
+
+            Timestamp = new Timestamp(reader.ReadUInt32());
 
             var infusionCount = (int)reader.ReadVarInt();
             this.Infusion = new TokenInfusion[infusionCount];

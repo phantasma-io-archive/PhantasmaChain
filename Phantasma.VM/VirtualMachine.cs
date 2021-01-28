@@ -112,7 +112,7 @@ namespace Phantasma.VM
 
         public readonly ExecutionContext entryContext;
         public ExecutionContext CurrentContext { get; private set; }
-        public ExecutionContext PreviousContext { get; private set; }
+        public ExecutionContext PreviousContext { get; protected set; }
 
         protected Stack<Address> _activeAddresses = new Stack<Address>();
         public IEnumerable<Address> ActiveAddresses => _activeAddresses;

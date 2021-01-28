@@ -194,27 +194,28 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public Transaction Transfer(NeoKeys from_key, string to_address, decimal value, byte[] nonce = null)
+        public Transaction Transfer(NeoKeys from_key, string to_address, decimal value, byte[] nonce = null, Action<string> usedRpc = null)
         {
-            return Transfer(from_key, to_address.GetScriptHashFromAddress(), value, nonce);
+            return Transfer(from_key, to_address.GetScriptHashFromAddress(), value, nonce, usedRpc);
         }
 
-        public Transaction Transfer(NeoKeys from_key, UInt160 to_address_hash, decimal value, byte[] nonce = null)
+        public Transaction Transfer(NeoKeys from_key, UInt160 to_address_hash, decimal value, byte[] nonce = null, Action<string> usedRpc = null)
         {
-            return Transfer(from_key, to_address_hash.ToArray(), value, nonce);
+            return Transfer(from_key, to_address_hash.ToArray(), value, nonce, usedRpc);
         }
 
-        public Transaction Transfer(NeoKeys from_key, byte[] to_address_hash, decimal value, byte[] nonce = null)
+        public Transaction Transfer(NeoKeys from_key, byte[] to_address_hash, decimal value, byte[] nonce = null, Action<string> usedRpc = null)
         {
             BigInteger amount = ConvertToBigInt(value);
 
             var sender_address_hash = from_key.Address.GetScriptHashFromAddress();
-            var response = api.CallContract(from_key, ScriptHash, "transfer", new object[] { sender_address_hash, to_address_hash, amount }, null, null, nonce);
+            var response = api.CallContract(from_key, ScriptHash, "transfer", new object[] { sender_address_hash
+                    , to_address_hash, amount }, null, null, nonce, usedRpc);
             return response;
         }
 
         // transfer to multiple addresses
-        public Transaction Transfer(NeoKeys from_key, Dictionary<string, decimal> transfers)
+        public Transaction Transfer(NeoKeys from_key, Dictionary<string, decimal> transfers, Action<string> usedRpc = null)
         {
             var temp = new Dictionary<byte[], decimal>(new ByteArrayComparer());
             foreach (var entry in transfers)
@@ -228,13 +229,13 @@ namespace Phantasma.Neo.Core
                 temp[hash] = entry.Value;
             }
 
-            return Transfer(from_key, temp);
+            return Transfer(from_key, temp, usedRpc);
         }
 
         public const int max_transfer_count = 3;
 
         // transfer to multiple addresses
-        public Transaction Transfer(NeoKeys from_key, Dictionary<byte[], decimal> transfers)
+        public Transaction Transfer(NeoKeys from_key, Dictionary<byte[], decimal> transfers, Action<string> usedRpc = null)
         {
             if (transfers.Count > max_transfer_count)
             {
@@ -275,7 +276,7 @@ namespace Phantasma.Neo.Core
                 }
             }
             
-            var response = api.CallContract(from_key, ScriptHash, final_script);
+            var response = api.CallContract(from_key, ScriptHash, final_script, null, null, usedRpc);
             return response;
         }
 

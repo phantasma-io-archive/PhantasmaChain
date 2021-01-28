@@ -137,6 +137,19 @@ namespace Phantasma.Core.Utils
             return defaultVal;
         }
 
+        public T GetEnum<T>(string key, T defaultVal) where T : struct, IConvertible
+        {
+            if (!typeof(T).IsEnum)
+            {
+                throw new ArgumentException("T must be an enumerated type");
+            }
+
+            var temp = GetString(key, defaultVal.ToString());
+            T result;
+            if (Enum.TryParse<T>(temp, out result)) { return result; }
+            return defaultVal;
+        }
+
         public bool HasValue(string key)
         {
             return entries.ContainsKey(key);

@@ -116,7 +116,7 @@ namespace Phantasma.Blockchain
             var list = GetMemberList();
             list.Add<Address>(target);
 
-            Runtime.Notify(EventKind.OrganizationAdd, from, target);
+            Runtime.Notify(EventKind.OrganizationAdd, from, new OrganizationEventData(this.ID, target));
             return true;
         }
 
@@ -137,7 +137,7 @@ namespace Phantasma.Blockchain
 
             if (index >= 0)
             {
-                list.RemoveAt<Address>(index);
+                list.RemoveAt(index);
             }
         }
 
@@ -153,7 +153,7 @@ namespace Phantasma.Blockchain
             set.Remove<Address>(target);
             RemoveMemberFromList(target);
 
-            Runtime.Notify(EventKind.OrganizationRemove, from, target);
+            Runtime.Notify(EventKind.OrganizationRemove, from, new OrganizationEventData(this.ID, target));
             return true;
         }
 

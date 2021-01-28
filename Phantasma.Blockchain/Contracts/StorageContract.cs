@@ -122,7 +122,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(targetIndex >= 0, "archive not found");
 
             Runtime.Expect(Runtime.RemoveOwnerFromArchive(targetHash, from), "owner removal failed");
-            list.RemoveAt<Hash>(targetIndex);
+            list.RemoveAt(targetIndex);
         }
 
         // Checks if external address has permission to add files to target address
@@ -184,6 +184,42 @@ namespace Phantasma.Blockchain.Contracts
                 permissions.Add<Address>(newAddr);
                 Runtime.Notify(EventKind.AddressLink, target, newAddr);
             }
+        }
+
+        public void Migrate(Address from, Address target)
+        {
+            Runtime.Expect(Runtime.PreviousContext.Name == "account", "invalid context");
+
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            Runtime.Expect(!_dataQuotas.ContainsKey<Address>(target), "target address already in use");
+
+            var usedQuota = _dataQuotas.Get<Address, BigInteger>(from);
+            _dataQuotas.Remove<Address>(from);
+            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+            var oldPermissions = _permissionMap.Get<Address, StorageList>(from);
+            var newPermissions = _permissionMap.Get<Address, StorageList>(target);
+
+            var count = oldPermissions.Count();
+            for (int i=0; i<count; i++)
+            {
+                var permission = oldPermissions.Get<Address>(i);
+                newPermissions.Add(permission);
+            }
+            oldPermissions.Clear();
+
+            var oldList = _storageMap.Get<Address, StorageList>(from);
+            var newList = _storageMap.Get<Address, StorageList>(target);
+            Runtime.Expect(newList.Count() == 0, "target address already has archives");
+
+            count = oldList.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var hash = oldList.Get<Hash>(i);
+                newList.Add(hash);
+            }
+            oldList.Clear();
         }
 
         public BigInteger GetUsedSpace(Address from)
@@ -250,16 +286,44 @@ namespace Phantasma.Blockchain.Contracts
         {
             ValidateKey(key);
 
-            var writeSize = value.Length;
-
-            var availableSize = GetAvailableSpace(target);
-            Runtime.Expect(availableSize >= writeSize, $"not enough storage space available: requires " + writeSize + ", only have: " + availableSize);
-
-            Runtime.Storage.Put(key, value);
-
             var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
-            usedQuota += writeSize;
-            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+            BigInteger deleteSize = 0;
+            if (Runtime.Storage.Has(key))
+            {
+                var oldData = Runtime.Storage.Get(key);
+                deleteSize = oldData.Length;
+            }
+
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                var writeSize = value.Length;
+                if (writeSize > deleteSize)
+                {
+                    var diff = writeSize - deleteSize;
+                    var availableSize = GetAvailableSpace(target);
+                    Runtime.Expect(availableSize >= diff, $"not enough storage space available: requires " + diff + ", only have: " + availableSize);
+                }
+
+                Runtime.Storage.Put(key, value);
+
+                usedQuota -= deleteSize;
+                usedQuota += writeSize;
+
+                if (usedQuota <= 0)
+                {
+                    usedQuota = writeSize; // fix for data written in previous protocol
+                }
+
+                _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+                _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+            }
+            else
+            {
+                Runtime.Storage.Put(key, value);
+            }
+
 
             var temp = Runtime.Storage.Get(key);
             Runtime.Expect(temp.Length == value.Length, "storage write corruption");
@@ -276,11 +340,18 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Storage.Delete(key);
 
-            var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
-            usedQuota -= deleteSize;
-            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
+                usedQuota -= deleteSize;
 
-            Runtime.Expect(usedQuota >= 0, "storage delete corruption");
+                if (usedQuota < 0)
+                {
+                    usedQuota = 0;
+                }
+
+                _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+            }
         }
 
         public static BigInteger CalculateRequiredSize(string fileName, BigInteger contentSize) => contentSize + Hash.Length + fileName.Length;

@@ -77,10 +77,15 @@ namespace Phantasma.Blockchain
             this.PreviousHash = previousHash;
 
             _transactionHashes = new List<Hash>();
+            var txHashmap = new HashSet<Hash>();
             foreach (var hash in hashes)
             {
                 _transactionHashes.Add(hash);
+                txHashmap.Add(hash);
             }
+            
+            var diff = hashes.Count() - txHashmap.Count;
+            Throw.If(diff > 0, $"{diff} duplicated tx hashes included when creating block");
 
             this.Payload = payload;
             this.Validator = validator;
@@ -95,6 +100,12 @@ namespace Phantasma.Blockchain
                 }
             }
 
+            this._dirty = true;
+        }
+
+        public void AddTransactionHash(Hash hash)
+        {
+            _transactionHashes.Add(hash);
             this._dirty = true;
         }
 
@@ -204,23 +215,26 @@ namespace Phantasma.Blockchain
                 writer.WriteByteArray(entry.Content);
             }
 
-            if (Payload != null)
+            if (Payload == null)
             {
-                writer.WriteVarInt(_events.Count);
-                foreach (var evt in _events)
-                {
-                    evt.Serialize(writer);
-                }
-
-                writer.WriteAddress(this.Validator);
-                writer.WriteByteArray(this.Payload);
-                writer.Write((byte)0); // indicates the end of the block
-
-                if (withSignatures)
-                {
-                    writer.WriteSignature(this.Signature);
-                }
+                Payload = new byte[0];
             }
+
+            writer.WriteVarInt(_events.Count);
+            foreach (var evt in _events)
+            {
+                evt.Serialize(writer);
+            }
+
+            writer.WriteAddress(this.Validator);
+            writer.WriteByteArray(this.Payload);
+
+            if (withSignatures)
+            {
+                writer.WriteSignature(this.Signature);
+            }
+
+            writer.Write((byte)0); // indicates the end of the block
         }
 
         public static Block Unserialize(byte[] bytes)
@@ -252,6 +266,8 @@ namespace Phantasma.Blockchain
         {
             Serialize(writer, true);
         }
+
+        public static bool OldMode = false;
 
         public void UnserializeData(BinaryReader reader)
         {
@@ -317,7 +333,10 @@ namespace Phantasma.Blockchain
                 Validator = reader.ReadAddress();
                 Payload = reader.ReadByteArray();
 
-                var blockEnd = reader.ReadByte();
+                if (OldMode)
+                {
+                    var blockEnd = reader.ReadByte();
+                }
 
                 Signature = reader.ReadSignature();
             }
@@ -326,6 +345,11 @@ namespace Phantasma.Blockchain
                 Payload = null;
                 Validator = Address.Null;
                 Signature = null;
+            }
+
+            if (!OldMode)
+            {
+                var blockEnd = reader.ReadByte();
             }
 
             _transactionHashes = new List<Hash>();
@@ -365,6 +389,7 @@ namespace Phantasma.Blockchain
                 _oracleData = oracle.Entries.ToList();
                 _dirty = true;
             }
+            oracle.Clear();
         }
         #endregion
     }

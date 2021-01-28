@@ -189,6 +189,9 @@ namespace Phantasma.Blockchain
 
         public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)
         {
+            var tempContext = this.PreviousContext;
+            this.PreviousContext = this.CurrentContext;
+
             var context = LoadContext(contextName);
             Expect(context != null, "could not call context: " + contextName);
 
@@ -217,6 +220,8 @@ namespace Phantasma.Blockchain
                 throw new VMException(this, "runtimeVM implementation bug detected: address stack");
             }
 
+            this.PreviousContext = tempContext;
+
             if (this.Stack.Count > 0)
             {
                 var result = this.Stack.Pop();
@@ -230,8 +235,11 @@ namespace Phantasma.Blockchain
 
         public void Notify(EventKind kind, Address address, byte[] bytes)
         {
-            var contract = CurrentContext.Name;
+            Notify(kind, address, bytes, CurrentContext.Name);
+        }
 
+        public void Notify(EventKind kind, Address address, byte[] bytes, string contract)
+        {
             switch (kind)
             {
                 case EventKind.GasEscrow:
@@ -590,7 +598,7 @@ namespace Phantasma.Blockchain
                 // propagate events to the other runtime
                 foreach (var evt in runtime.Events)
                 {
-                    this.Notify(evt.Kind, evt.Address, evt.Data);
+                    this.Notify(evt.Kind, evt.Address, evt.Data, evt.Contract);
                 }
 
                 return TriggerResult.Success;
@@ -704,8 +712,7 @@ namespace Phantasma.Blockchain
             }
 
             // workaround for supporting txs done in older nodes
-            if (!accountResult && this.IsRootChain() && this.ProtocolVersion == 1
-                    && this.NexusName == DomainSettings.NexusMainnet)
+            if (!accountResult && this.IsRootChain() && this.ProtocolVersion < 5 && this.NexusName == DomainSettings.NexusMainnet)
             {
                 accountResult = this.Transaction.IsSignedBy(this.GenesisAddress);
             }
@@ -867,7 +874,7 @@ namespace Phantasma.Blockchain
 
         public Address LookUpName(string name)
         {
-            return Nexus.LookUpName(this.RootStorage, name);
+            return this.Chain.LookUpName(this.RootStorage, name);
         }
 
         public bool HasAddressScript(Address from)
@@ -882,7 +889,7 @@ namespace Phantasma.Blockchain
 
         public string GetAddressName(Address from)
         {
-            return Chain.LookUpAddressName(this.RootStorage, from);
+            return Chain.GetNameFromAddress(this.RootStorage, from);
         }
 
         public Event[] GetTransactionEvents(Hash transactionHash)
@@ -1481,7 +1488,7 @@ namespace Phantasma.Blockchain
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
             var nft = ReadToken(tokenSymbol, tokenID);
-            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Infusion, true);
+            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Timestamp, nft.Infusion, true);
         }
 
         public TokenContent ReadToken(string tokenSymbol, BigInteger tokenID)
@@ -1679,7 +1686,7 @@ namespace Phantasma.Blockchain
             return this.Chain.GetContractOwner(this.Storage, address);
         }
 
-        public ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode, BigInteger gasLimit)
+        public ITask StartTask(Address from, string contractName, ContractMethod method, uint frequency, uint delay, TaskFrequencyMode mode, BigInteger gasLimit)
         {
             var vm = this;
 
@@ -1707,7 +1714,7 @@ namespace Phantasma.Blockchain
 
             vm.Expect(IsWitness(from), "invalid witness");
 
-            var result = this.Chain.StartTask(this.Storage, from, contractName, method, frequency, mode, gasLimit);
+            var result = this.Chain.StartTask(this.Storage, from, contractName, method, frequency, delay, mode, gasLimit);
             vm.Expect(result != null, "could not start task");
 
             this.Notify(EventKind.TaskStart, from, result.ID);

@@ -68,6 +68,29 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestGetBlockAndTransaction()
+        {
+            var test = CreateAPI();
+
+            var genesisHash = test.nexus.GetGenesisHash(test.nexus.RootStorage);
+
+            var genesisBlockHash = genesisHash.ToString();
+
+            var temp = test.api.GetBlockByHash(genesisBlockHash);
+            var block = (BlockResult)temp;
+            Assert.IsTrue(block.hash == genesisBlockHash);
+            Assert.IsTrue(block.height == 1);
+
+            var genesisTxHash = block.txs.FirstOrDefault().hash;
+
+            temp = test.api.GetTransaction(genesisTxHash);
+            var tx = (TransactionResult)temp;
+            Assert.IsTrue(tx.hash == genesisTxHash);
+            Assert.IsTrue(tx.blockHeight == 1);
+            Assert.IsTrue(tx.blockHash == genesisBlockHash);
+        }
+
+        [TestMethod]
         public void TestMultipleCallsOneRequest()
         {
             var test = CreateAPI();
@@ -86,7 +109,7 @@ namespace Phantasma.Tests
             var names = scriptResult.results.Select(x => Base16.Decode(x)).Select(bytes => Serialization.Unserialize<VMObject>(bytes)).Select(obj => obj.AsString()).ToArray();
             Assert.IsTrue(names.Length == 2);
             Assert.IsTrue(names[0] == "genesis");
-            Assert.IsTrue(names[1] == ValidationUtils.ANONYMOUS);
+            Assert.IsTrue(names[1] == ValidationUtils.ANONYMOUS_NAME);
         }
 
         [TestMethod]
@@ -177,7 +200,7 @@ namespace Phantasma.Tests
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);
             Assert.IsTrue(account.address == testUser.Address.Text);
-            Assert.IsTrue(account.name == ValidationUtils.ANONYMOUS);
+            Assert.IsTrue(account.name == ValidationUtils.ANONYMOUS_NAME);
             Assert.IsTrue(account.balances.Length == 1);
 
             var balance = account.balances[0];

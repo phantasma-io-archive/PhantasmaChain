@@ -51,7 +51,8 @@ namespace Phantasma.Neo.Core
                 LogData(child, ident + 1);
         }
 
-        public DataNode QueryRPC(string method, object[] _params, int id = 1, bool numeric = false)
+        public DataNode QueryRPC(string method, object[] _params, int id = 1, bool numeric = false, string node = null
+                , Action<string> chosenRpc = null)
         {
             var paramData = DataNode.CreateArray("params");
             foreach (var entry in _params)
@@ -85,16 +86,29 @@ namespace Phantasma.Neo.Core
 
             int retryCount = 0;
             do
-            {
-                string currentRpcEndpoint; // Using local var to avoid it being nullified by another thread right before RequestUtils.Request() call.
-                lock (rpcEndpointUpdateLocker)
+            { 
+                // Using local var to avoid it being nullified by another thread right before RequestUtils.Request() call.
+                string currentRpcEndpoint;
+                if (!string.IsNullOrEmpty(node))
                 {
-                    if (rpcEndpoint == null)
+                    currentRpcEndpoint = node;
+                }
+                else
+                {
+                    lock (rpcEndpointUpdateLocker)
                     {
-                        rpcEndpoint = GetRPCEndpoint();
-                        Logger("Update RPC Endpoint: " + rpcEndpoint);
+                        if (rpcEndpoint == null)
+                        {
+                            rpcEndpoint = GetRPCEndpoint();
+                            Logger("Update RPC Endpoint: " + rpcEndpoint);
+                        }
+                        currentRpcEndpoint = rpcEndpoint;
                     }
-                    currentRpcEndpoint = rpcEndpoint;
+                }
+
+                if (chosenRpc != null)
+                {
+                    chosenRpc.Invoke(currentRpcEndpoint);
                 }
 
                 //Logger($"NeoRPC: QueryRPC({currentRpcEndpoint}): data: " + jsonRpcData != null ? JSONWriter.WriteToString(jsonRpcData) : "{}");
@@ -152,6 +166,57 @@ namespace Phantasma.Neo.Core
                 }
             }
             return false;
+        }
+
+        public override bool CheckMempool(string node, string txHash)
+        {
+            var mempool = GetMempool(node, true);
+
+            if (!txHash.StartsWith("0x"))
+            {
+                txHash = "0x"+ txHash;
+            }
+
+            if (mempool.Contains(txHash))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override List<string> GetMempool(string node, bool _unverified)
+        {
+            var response = QueryRPC("getrawmempool", new object[] { _unverified }, 1, false, node);
+            var result = new List<string>();
+
+            var resultNode = response.GetNode("result");
+
+            if (_unverified)
+            {
+                var verified = resultNode.GetNode("verified");
+                var unverified = resultNode.GetNode("unverified");
+
+                foreach (var entry in verified.Children)
+                {
+                    result.Add(entry.AsString());
+                }
+
+                foreach (var entry in unverified.Children)
+                {
+                    result.Add(entry.AsString());
+                }
+            }
+            else
+            {
+                foreach (var entry in resultNode.Children)
+                {
+                    result.Add(entry.AsString());
+                }
+            }
+
+            return result;
+
         }
 
         public override string GetNep5Transfers(UInt160 scriptHash, DateTime timestamp)
@@ -271,9 +336,11 @@ namespace Phantasma.Neo.Core
             return result;
         }
 
-        public bool SendRawTransaction(string hexTx)
+        public bool SendRawTransaction(string hexTx, out string usedRpc)
         {
-            var response = QueryRPC("sendrawtransaction", new object[] { hexTx });
+            string chosenRpc = null;
+            var response = QueryRPC("sendrawtransaction", new object[] { hexTx }, 1, false, null, x => chosenRpc = x);
+            usedRpc = chosenRpc;
             if (response == null)
             {
                 throw new Exception($"SendRawTransaction({hexTx}): Connection failure");
@@ -294,6 +361,7 @@ namespace Phantasma.Neo.Core
                     result = temp.AsBool();
                 }
 
+
                 return result;
             }
             catch
@@ -302,12 +370,12 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        protected override bool SendTransaction(Transaction tx)
+        protected override bool SendTransaction(Transaction tx, out string usedRpc)
         {
             var rawTx = tx.Serialize(true);
             var hexTx = rawTx.ByteToHex();
 
-            return SendRawTransaction(hexTx);
+            return SendRawTransaction(hexTx, out usedRpc);
         }
 
         public override InvokeResult InvokeScript(byte[] script)
@@ -349,7 +417,10 @@ namespace Phantasma.Neo.Core
 
         public override string GetTransactionHeight(UInt256 hash)
         {
-            var response = QueryRPC("gettransactionheight", new object[] { hash.ToString() });
+            string chosenRpc = null;
+            var response = QueryRPC("gettransactionheight", new object[] { hash.ToString() }, 1, false
+                    , null, x => chosenRpc = x);
+
             if (response != null && response.HasNode("result"))
             {
                 return response.GetString("result");

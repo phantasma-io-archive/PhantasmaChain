@@ -10,6 +10,7 @@ using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
 using System.Text;
 using Phantasma.Storage.Context;
 using Phantasma.Numerics;
+using Phantasma.Core.Log;
 
 namespace Phantasma.Tests
 {
@@ -24,7 +25,7 @@ namespace Phantasma.Tests
         [TestInitialize()]
         public void TestInitialize()
         {
-            _adapterFactory = _adapterFactory = (name) => { return new DBPartition(new ConsoleLogger(), path + name); };
+            _adapterFactory = _adapterFactory = (name) => { return new DBPartition(new DebugLogger(), path + name); };
             _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
         }
 
@@ -116,11 +117,13 @@ namespace Phantasma.Tests
             testMap.Set("test2", "Value2");
             testMap.Set("test3", "Value3");
             testMap.Set("test4", "Value4");
+            Assert.IsTrue(testMap.Count() == 4);
 
             testMap2.Set<BigInteger, string>(new BigInteger(1), "Value21");
             testMap2.Set<BigInteger, string>(new BigInteger(2), "Value22");
             testMap2.Set<BigInteger, string>(new BigInteger(3), "Value23");
             testMap2.Set<BigInteger, string>(new BigInteger(4), "Value24");
+            Assert.IsTrue(testMap2.Count() == 4);
 
             var count = 0;
             testMap.Visit<string, string>((key, value) => {
