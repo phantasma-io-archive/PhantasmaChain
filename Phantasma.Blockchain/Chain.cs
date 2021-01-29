@@ -295,7 +295,14 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash));
+            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash).Distinct());
+
+            var diff = transactions.Count() - inputHashes.Count;
+            if (diff > 0)
+            {
+                throw new BlockGenerationException($"{diff} duplicated hashes found in block");
+            }
+
             foreach (var hash in block.TransactionHashes)
             {
                 if (!inputHashes.Contains(hash))
