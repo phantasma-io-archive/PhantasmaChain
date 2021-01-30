@@ -709,7 +709,10 @@ namespace Phantasma.API
                     var avatarArchive = Nexus.GetArchive(Nexus.RootStorage, avatarHash);
 
                     var avatarData = Nexus.ReadArchiveBlock(avatarArchive, 0);
-                    storage.avatar = Encoding.ASCII.GetString(avatarData);
+                    if (avatarData != null && avatarData.Length > 0)
+                    {
+                        storage.avatar = Encoding.ASCII.GetString(avatarData);
+                    }
                 }
             }
             else
