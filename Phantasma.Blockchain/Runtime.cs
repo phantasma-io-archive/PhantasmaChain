@@ -323,6 +323,11 @@ namespace Phantasma.Blockchain
 
         public bool IsMintingAddress(Address address, string symbol)
         {
+            if (ProtocolVersion < 3 && address == GenesisAddress)
+            {
+                return true;
+            }
+
             if (TokenExists(symbol))
             {
                 var info = GetToken(symbol);
