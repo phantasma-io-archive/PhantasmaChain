@@ -129,7 +129,7 @@ namespace Phantasma.Blockchain
 
                     foreach (var evt in events)
                     {
-                        if (evt.Address.IsSystem)
+                        if (evt.Address.IsSystem && evt.Contract == "gas")
                         {
                             continue;
                         }
