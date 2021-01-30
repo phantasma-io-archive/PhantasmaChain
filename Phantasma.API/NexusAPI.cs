@@ -419,6 +419,7 @@ namespace Phantasma.API
         {
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
+            var burnedSupply = Nexus.GetBurnedTokenSupply(Nexus.RootStorage, tokenSymbol);
 
             var seriesList = new List<TokenSeriesResult>();
 
@@ -436,6 +437,7 @@ namespace Phantasma.API
                             seriesID = (uint)ID,
                             currentSupply = series.MintCount.ToString(),
                             maxSupply = series.MaxSupply.ToString(),
+                            burnedSupply = "0", // TODO
                             mode = series.Mode,
                             script = Base16.Encode(series.Script),
                             methods = extended ?  FillMethods(series.ABI.Methods): new ABIMethodResult[0]
@@ -450,6 +452,7 @@ namespace Phantasma.API
                 name = tokenInfo.Name,
                 currentSupply = currentSupply.ToString(),
                 maxSupply = tokenInfo.MaxSupply.ToString(),
+                burnedSupply = burnedSupply.ToString(),
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 address = SmartContract.GetAddressForName(tokenInfo.Symbol).Text,

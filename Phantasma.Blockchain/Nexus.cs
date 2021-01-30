@@ -746,6 +746,26 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private string GetBurnKey(string symbol)
+        {
+            return $".burned.{symbol}";
+        }
+
+        private void UpdateBurnedSupply(StorageContext storage, string symbol, BigInteger burnAmount)
+        {
+            var burnKey = GetBurnKey(symbol);
+            var burnedSupply = storage.Get<BigInteger>(burnKey);
+            burnedSupply += burnAmount;
+            storage.Put<BigInteger>(burnKey, burnedSupply);
+        }
+
+        public BigInteger GetBurnedTokenSupply(StorageContext storage, string symbol)
+        {
+            var burnKey = GetBurnKey(symbol);
+            var burnedSupply = storage.Get<BigInteger>(burnKey);
+            return burnedSupply;
+        }
+
         internal void BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, string targetChain, BigInteger amount)
         {
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
@@ -772,6 +792,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                UpdateBurnedSupply(Runtime.Storage, token.Symbol, amount);
                 Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
         }
@@ -820,6 +841,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                UpdateBurnedSupply(Runtime.Storage, token.Symbol, 1);
                 Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
         }

@@ -288,6 +288,9 @@ namespace Phantasma.API
         [APIDescription("Max amount of tokens that can be minted")]
         public string maxSupply;
 
+        [APIDescription("Total amount of burned tokens")]
+        public string burnedSupply;
+
         [APIDescription("Address of token contract")]
         public string address;
 
@@ -307,9 +310,15 @@ namespace Phantasma.API
     {
         public uint seriesID;
 
+        [APIDescription("Current amount of tokens in circulation")]
         public string currentSupply;
 
+        [APIDescription("Maximum possible amount of tokens")]
         public string maxSupply;
+
+        [APIDescription("Total amount of burned tokens")]
+        public string burnedSupply;
+
         public TokenSeriesMode mode;
 
         public string script;
