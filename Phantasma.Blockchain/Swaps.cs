@@ -58,5 +58,7 @@ namespace Phantasma.Blockchain
     {
         Hash SettleSwap(string sourcePlatform, string destPlatform, Hash sourceHash);
         IEnumerable<ChainSwap> GetPendingSwaps(Address address);
+
+        bool SupportsSwap(string sourcePlatform, string destPlatform);
     }
 }

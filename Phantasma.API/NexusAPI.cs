@@ -1974,6 +1974,11 @@ namespace Phantasma.API
                 return new ErrorResult { error = "token swapper not available" };
             }
 
+            if (!TokenSwapper.SupportsSwap(sourcePlatform, destPlatform))
+            {
+                return new ErrorResult { error = $"swaps between {sourcePlatform} and {destPlatform} not available" };
+            }
+
             if (!Nexus.PlatformExists(Nexus.RootStorage, sourcePlatform))
             {
                 return new ErrorResult { error = "Invalid source platform" };
