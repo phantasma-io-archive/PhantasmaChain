@@ -1,5 +1,6 @@
 ﻿using Phantasma.Blockchain;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using System;
 

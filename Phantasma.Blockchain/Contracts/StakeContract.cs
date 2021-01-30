@@ -54,8 +54,6 @@ namespace Phantasma.Blockchain.Contracts
 
         private StorageMap _voteHistory; // <Address, List<StakeLog>>
 
-        private Timestamp genesisTimestamp = 0;
-
         public static readonly BigInteger DefaultMasterThreshold = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, DomainSettings.StakingTokenDecimals);
         public static BigInteger MinimumValidStake => UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
