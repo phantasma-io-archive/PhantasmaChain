@@ -754,7 +754,7 @@ namespace Phantasma.Blockchain
         private void UpdateBurnedSupply(StorageContext storage, string symbol, BigInteger burnAmount)
         {
             var burnKey = GetBurnKey(symbol);
-            var burnedSupply = storage.Get<BigInteger>(burnKey);
+            var burnedSupply = storage.Has(burnKey) ? storage.Get<BigInteger>(burnKey) : 0;
             burnedSupply += burnAmount;
             storage.Put<BigInteger>(burnKey, burnedSupply);
         }
@@ -762,7 +762,7 @@ namespace Phantasma.Blockchain
         public BigInteger GetBurnedTokenSupply(StorageContext storage, string symbol)
         {
             var burnKey = GetBurnKey(symbol);
-            var burnedSupply = storage.Get<BigInteger>(burnKey);
+            var burnedSupply = storage.Has(burnKey) ? storage.Get<BigInteger>(burnKey) : 0;
             return burnedSupply;
         }
 
