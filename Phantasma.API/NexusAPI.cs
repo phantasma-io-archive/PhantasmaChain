@@ -360,7 +360,6 @@ namespace Phantasma.API
         public ITokenSwapper TokenSwapper;
         public Mempool Mempool;
         public Node Node;
-        public bool acceptTransactions;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>(StringComparer.InvariantCultureIgnoreCase);
@@ -378,7 +377,6 @@ namespace Phantasma.API
             Nexus = nexus;
             UseCache = useCache;
             this.logger = logger;
-            this.acceptTransactions = true;
 
             var methodInfo = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
@@ -1084,11 +1082,6 @@ namespace Phantasma.API
         public IAPIResult SendRawTransaction([APIParameter("Serialized transaction bytes, in hexadecimal format", "0000000000")] string txData)
         {
             if (Mempool == null)
-            {
-                return new ErrorResult { error = "No mempool" };
-            }
-
-            if (!acceptTransactions)
             {
                 return new ErrorResult { error = "Node not accepting transactions" };
             }
