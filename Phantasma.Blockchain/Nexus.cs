@@ -1459,7 +1459,7 @@ namespace Phantasma.Blockchain
 
                      {
                          StakeContract.StakeMaxBonusPercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             200, new ChainConstraint[]
+                             100, new ChainConstraint[]
                          {
                              new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 50},
                              new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 500 },
