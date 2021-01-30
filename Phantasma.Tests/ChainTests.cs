@@ -1250,6 +1250,70 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void NftMassMint()
+        {
+            var owner = PhantasmaKeys.Generate();
+
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var chain = nexus.RootChain;
+
+            var symbol = "COOL";
+            
+            var testUser = PhantasmaKeys.Generate();
+
+            // Create the token CoolToken as an NFT
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Transferable);
+            simulator.EndBlock();
+
+            var tokenAddress = TokenUtils.GetContractAddress(symbol);
+            var storageStakeAmount = UnitConversion.ToBigInteger(100000, DomainSettings.StakingTokenDecimals);
+
+            // Add some storage to the NFT contract
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, tokenAddress, chain, DomainSettings.StakingTokenSymbol, storageStakeAmount);
+
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().
+                    AllowGas(owner.Address, Address.Null, 1, 9999).
+                    CallContract(Nexus.StakeContractName, nameof(StakeContract.Stake), tokenAddress, storageStakeAmount).
+                    SpendGas(owner.Address).
+                    EndScript());
+            simulator.EndBlock();
+
+
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
+
+            // verify nft presence on the user pre-mint
+            var ownerships = new OwnershipSheet(symbol);
+            var ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have nfts?");
+
+            var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
+
+            var nftCount = 3;
+
+            // Mint several nfts to test limit per tx
+            simulator.BeginBlock();
+            for (int i=1; i<=nftCount; i++)
+            {
+                var tokenROM = BitConverter.GetBytes(i);
+                simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
+            }
+            var block = simulator.EndBlock().First();
+
+            Assert.IsTrue(block.TransactionCount == nftCount);
+
+            // obtain tokenID
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            var ownedTotal = ownedTokenList.Count();
+            Assert.IsTrue(ownedTotal == nftCount);
+        }
+
+        [TestMethod]
         [Ignore] //TODO side chain transfers of NFTs do currently not work, because Storage contract is not deployed on the side chain.
         public void SidechainNftTransfer()
         {
@@ -2034,6 +2098,7 @@ namespace Phantasma.Tests
             Assert.AreEqual(true, inflation);
         }
 
+
         [TestMethod]
         public void PriceOracle()
         {
@@ -2052,7 +2117,7 @@ namespace Phantasma.Tests
             simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
                 () => ScriptUtils.BeginScript()
                     .CallInterop("Oracle.Price", "SOUL")
-                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .AllowGas(owner.Address, Address.Null, 1, 9997)
                     .SpendGas(owner.Address)
                     .EndScript());
             var block = simulator.EndBlock().First();
@@ -2127,7 +2192,10 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
-            simulator.EndBlock();
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.EndBlock();
+            });
         }
     }
 

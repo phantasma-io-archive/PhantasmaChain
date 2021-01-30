@@ -440,6 +440,7 @@ namespace Phantasma.Tests
         //}
 
         [TestMethod]
+        [Ignore]
         public void AccountTriggersEventPropagation()
         {
             string[] scriptString;
