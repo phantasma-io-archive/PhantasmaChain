@@ -416,6 +416,9 @@ namespace Phantasma.Blockchain
 
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
             var bytes = Oracle.Read<byte[]>(this.Time, "price://" + symbol);
+
+            Expect(bytes != null && bytes.Length > 0, $"Could not read price of {symbol} from oracle");
+
             var value = BigInteger.FromUnsignedArray(bytes, true);
 
             Expect(value > 0, "token price not available for " + symbol);
