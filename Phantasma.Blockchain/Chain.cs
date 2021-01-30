@@ -109,6 +109,11 @@ namespace Phantasma.Blockchain
                 var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
                 foreach (Transaction tx in transactions)
                 {
+                    if (txBlockMap.ContainsKey<Hash>(tx.Hash))
+                    {
+                        var previousBlockHash = txBlockMap.Get<Hash, Hash>(tx.Hash);
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} already added to previous block {previousBlockHash}");
+                    }
                     var txBytes = tx.ToByteArray(true);
                     txBytes = CompressionUtils.Compress(txBytes);
                     txMap.Set<Hash, byte[]>(tx.Hash, txBytes);
@@ -235,7 +240,6 @@ namespace Phantasma.Blockchain
 
 		            inflationTx = transaction;
                     block.AddTransactionHash(transaction.Hash);
-		            transactions = transactions.Concat(new [] { transaction });
                 }
             }
 
@@ -300,7 +304,18 @@ namespace Phantasma.Blockchain
             var diff = transactions.Count() - inputHashes.Count;
             if (diff > 0)
             {
-                throw new BlockGenerationException($"{diff} duplicated hashes found in block");
+                var temp = new HashSet<Hash>();
+                foreach (var tx in transactions)
+                {
+                    if (temp.Contains(tx.Hash))
+                    {
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} appears more than once in the block");
+                    }
+                    else
+                    {
+                        temp.Add(tx.Hash);
+                    }
+                }                
             }
 
             foreach (var hash in block.TransactionHashes)
@@ -384,7 +399,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var cost = runtime.UsedGas;
+            //var cost = runtime.UsedGas;
 
             using (var m = new ProfileMarker("runtime.Events"))
             {

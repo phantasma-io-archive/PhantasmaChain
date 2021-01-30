@@ -77,15 +77,10 @@ namespace Phantasma.Blockchain
             this.PreviousHash = previousHash;
 
             _transactionHashes = new List<Hash>();
-            var txHashmap = new HashSet<Hash>();
             foreach (var hash in hashes)
             {
                 _transactionHashes.Add(hash);
-                txHashmap.Add(hash);
-            }
-            
-            var diff = hashes.Count() - txHashmap.Count;
-            Throw.If(diff > 0, $"{diff} duplicated tx hashes included when creating block");
+            }          
 
             this.Payload = payload;
             this.Validator = validator;

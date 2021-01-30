@@ -1,3 +1,4 @@
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
@@ -129,6 +130,13 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "quote token must be fungible");
 
                 var balance = Runtime.GetBalance(quoteToken.Symbol, from);
+
+                if (auction.Price > balance)
+                {
+                    var diff = auction.Price - balance;
+                    throw new BalanceException(quoteToken.Symbol, from, diff);
+                }
+
                 Runtime.Expect(balance >= auction.Price, $"not enough {quoteToken.Symbol} balance at {from.Text}");
 
                 var finalAmount = auction.Price;

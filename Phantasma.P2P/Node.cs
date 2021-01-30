@@ -40,14 +40,6 @@ namespace Phantasma.Network.P2P
         }
     }
 
-    public class NodeException : Exception
-    {
-        public NodeException(string msg) : base(msg)
-        {
-
-        }
-    }
-
     public struct PendingBlock
     {
         public string chain;

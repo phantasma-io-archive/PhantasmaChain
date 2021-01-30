@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 

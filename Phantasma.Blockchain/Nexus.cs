@@ -1185,7 +1185,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                Runtime.Expect(!mustExist, "nft does not exist");
+                Runtime.Expect(!mustExist, $"nft {symbol} {tokenID} does not exist");
                 var genID = GenerateNFT(Runtime, symbol, chainName, owner, rom, ram, seriesID);
                 Runtime.Expect(genID == tokenID, "failed to regenerate NFT");
             }
@@ -1216,7 +1216,7 @@ namespace Phantasma.Blockchain
         {
             var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            Throw.If(!storage.Has(tokenKey), "nft does not exists");
+            Throw.If(!storage.Has(tokenKey), $"nft {symbol} {tokenID} does not exist");
 
             var content = ReadNFTRaw(storage, tokenKey, ProtocolVersion);
 
