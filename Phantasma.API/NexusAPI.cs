@@ -2031,7 +2031,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 0)]
-        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account)
+        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account, bool extended = false)
         {
             if (TokenSwapper == null)
             {
@@ -2085,6 +2085,25 @@ namespace Phantasma.API
                     symbol = x.Value.Transfers[0].Symbol,
                     value = x.Value.Transfers[0].Value.ToString(),
                 });
+
+            if (extended)
+            {
+                var oldSwaps = (InteropHistory[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "interop", nameof(InteropContract.GetSwapsForAddress), address).ToObject();
+
+                swaps = swaps.Concat(oldSwaps.Select(x => new SwapResult()
+                {
+                    sourcePlatform = x.sourcePlatform,
+                    sourceChain = x.sourceChain,
+                    sourceHash = x.sourceHash.ToString(),
+                    destinationPlatform = x.destPlatform,
+                    destinationChain = x.destChain,
+                    destinationHash = x.destHash.ToString(),
+                    sourceAddress = x.sourceAddress.Text,
+                    destinationAddress = x.destAddress.Text,
+                    symbol = x.symbol,
+                    value = x.value.ToString(),
+                }));
+            }
 
             return new ArrayResult() { values = swaps.Select(x => (object)x).ToArray() };
         }
