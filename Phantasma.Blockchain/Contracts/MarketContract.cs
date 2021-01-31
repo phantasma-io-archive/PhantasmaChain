@@ -89,6 +89,12 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
             var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
 
+            if (auction.Creator == from)
+            {
+                CancelSale(symbol, tokenID);
+                return;
+            }
+
             EndSaleInternal(from, symbol, tokenID, auction);
 
             Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price });
