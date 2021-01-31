@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Storage.Context;
+using System;
 
 namespace Phantasma.Tests
 {
@@ -135,7 +136,7 @@ namespace Phantasma.Tests
             }
 
             System.Console.WriteLine("COUNT: " + all.Count());
-            Assert.IsTrue(all.Count() == 2);
+            Assert.IsTrue(all.Count() == 3);
         }
 
         [TestMethod]

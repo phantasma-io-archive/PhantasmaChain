@@ -107,13 +107,13 @@ namespace Phantasma.Storage.Context
             foreach(var entry in _entries)
             {
                 var bytePrefix = entry.Key.keyData.Take(prefix.Length);
-                if (count < searchCount && bytePrefix.SequenceEqual(prefix))
+                if (count <= searchCount && bytePrefix.SequenceEqual(prefix))
                 {
                     visitor(entry.Key.keyData, entry.Value);
                     count++;
                 }
 
-                if (count == searchCount)
+                if (count > searchCount)
                 {
                     break;
                 }
