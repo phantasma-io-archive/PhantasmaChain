@@ -91,7 +91,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (auction.Creator == from)
             {
-                Runtime.Expect(Runtime.ProtocolVersion < 5, "use BuyToken instead");
+                Runtime.Expect(Runtime.ProtocolVersion < 5, "seller and buyer are the same, use CancelSale instead");
                 CancelSale(symbol, tokenID);
                 return;
             }
