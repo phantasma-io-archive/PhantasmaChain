@@ -109,11 +109,6 @@ namespace Phantasma.Blockchain
                 var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
                 foreach (Transaction tx in transactions)
                 {
-                    if (txBlockMap.ContainsKey<Hash>(tx.Hash))
-                    {
-                        var previousBlockHash = txBlockMap.Get<Hash, Hash>(tx.Hash);
-                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} already added to previous block {previousBlockHash}");
-                    }
                     var txBytes = tx.ToByteArray(true);
                     txBytes = CompressionUtils.Compress(txBytes);
                     txMap.Set<Hash, byte[]>(tx.Hash, txBytes);
@@ -301,6 +296,8 @@ namespace Phantasma.Blockchain
 
             var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash).Distinct());
 
+            var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
+
             var diff = transactions.Count() - inputHashes.Count;
             if (diff > 0)
             {
@@ -309,10 +306,17 @@ namespace Phantasma.Blockchain
                 {
                     if (temp.Contains(tx.Hash))
                     {
-                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} appears more than once in the block");
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} appears more than once in the block being minted");
+                    }
+                    else
+                    if (txBlockMap.ContainsKey<Hash>(tx.Hash))
+                    {
+                        var previousBlockHash = txBlockMap.Get<Hash, Hash>(tx.Hash);
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} already added to previous block {previousBlockHash}");
                     }
                     else
                     {
+
                         temp.Add(tx.Hash);
                     }
                 }                
