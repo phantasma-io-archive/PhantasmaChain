@@ -9,8 +9,12 @@ namespace Phantasma.Blockchain
 {
     public class BlockOracleReader : OracleReader
     {
+        public readonly Block OriginalBlock;
+
         public BlockOracleReader(Nexus nexus, Block block) : base(nexus)
         {
+            this.OriginalBlock = block;
+
             foreach (var entry in block.OracleData)
             {
                 var oEntry = (OracleEntry)entry;
