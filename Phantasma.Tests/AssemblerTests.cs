@@ -184,7 +184,7 @@ namespace Phantasma.Tests
 
                 $"@receiveHandler: ret",
 
-                $"@burnHandler: load r7 \"some exception\"",
+                $"@burnHandler: load r7 \"test burn handler exception\"",
                 $"throw r7",
 
                 $"@OnMint: ret",
@@ -260,13 +260,13 @@ namespace Phantasma.Tests
 
                 $"jmp @return",
 
-                $"@sendHandler: load r7 \"some exception\"",
+                $"@sendHandler: load r7 \"test send handler exception\"",
                 $"throw r7",
 
-                $"@receiveHandler: load r7 \"some exception\"",
+                $"@receiveHandler: load r7 \"test received handler exception\"",
                 $"throw r7",
 
-                $"@burnHandler: load r7 \"some exception\"",
+                $"@burnHandler: load r7 \"test burn handler exception\"",
                 $"throw r7",
 
                 $"@OnMint: load r11 0x{addressStr}",
@@ -379,7 +379,7 @@ namespace Phantasma.Tests
         //        $"pop $sourceAddress",
         //        $"equal $sourceAddress, $currentAddress, $comparisonResult",
         //        "jmpif $comparisonResult, @endWitness",
-        //        $"load r1 \"some exception\"",
+        //        $"load r1 \"test witnesshandler exception\"",
         //        $"throw r1",
         //        
         //        "jmp @end",
@@ -501,7 +501,7 @@ namespace Phantasma.Tests
                 $"pop $sourceAddress",
                 $"equal $sourceAddress, $currentAddress, $comparisonResult",
                 "jmpif $comparisonResult, @endWitness",
-                $"load r1 \"some exception\"",
+                $"load r1 \"test witness handler xception\"",
                 $"throw r1",
                 
                 "jmp @end",
@@ -940,7 +940,7 @@ namespace Phantasma.Tests
                 {
                     $"load r1, {r1}",
                     $"push r1",
-                    $"load r1 \"some exception\"",
+                    $"load r1 \"test throw exception\"",
                     $"throw r1",
                     $"not r1, r1",
                     $"pop r2",

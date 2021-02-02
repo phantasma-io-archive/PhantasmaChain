@@ -1294,7 +1294,7 @@ namespace Phantasma.Tests
 
             var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
 
-            var nftCount = 3;
+            var nftCount = 50000;
 
             // Mint several nfts to test limit per tx
             simulator.BeginBlock();
