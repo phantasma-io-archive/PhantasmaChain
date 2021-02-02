@@ -212,25 +212,16 @@ namespace Phantasma.Blockchain.Contracts
             var unclaimed = GetUnclaimed(from);
             Runtime.Expect(unclaimed == 0, "claim before migrating");
 
-            //migrate stake
-            var sourceStake = _stakeMap.Get<Address, EnergyStake>(from);
-            _stakeMap.Set(to, sourceStake);
-            _stakeMap.Remove(from);
-
-            //migrate master claim
-            var claimDate = _masterClaims.Get<Address, Timestamp>(from);
-            _masterClaims.Remove<Address>(from);
-            _masterClaims.Set<Address, Timestamp>(to, claimDate);
-
+            _stakeMap.Migrate<Address, EnergyStake>(from, to);
+            _masterClaims.Migrate<Address, Timestamp>(from, to);
+            _masterAgeMap.Migrate<Address, Timestamp>(from, to);
+            _voteHistory.Migrate<Address, StorageList>(from, to);
+            _proxyStakersMap.Migrate<Address, StorageList>(from, to);
+            
             if (Runtime.IsStakeMaster(from))
             {
                 Runtime.MigrateMember(DomainSettings.MastersOrganizationName, this.Address, from, to);
             }
-
-            //migrate voting power
-            var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
-            votingLogbook.Add(to);
-            votingLogbook.Remove(from);
 
             Runtime.Notify(EventKind.AddressMigration, to, from);
         }

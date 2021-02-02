@@ -63,7 +63,46 @@ namespace Phantasma.Storage.Context
 
         public static bool ContainsKey<K>(this StorageMap map, K key)
         {
-            return map.Context.Has(ElementKey(map.BaseKey, key));
+            return ContainsKeyRaw(map, ElementKey(map.BaseKey, key));
+        }
+
+        public static bool ContainsKeyRaw(this StorageMap map, byte[] key)
+        {
+            return map.Context.Has(key);
+        }
+
+        public static void Migrate<K, V>(this StorageMap map, K sourceKey, K destKey)
+        {
+            Throw.If(sourceKey.Equals(destKey), "map migrate: source and dest keys must be different");
+
+            if (typeof(V) == typeof(StorageList))
+            {
+                var oldList = map.Get<K, StorageList>(sourceKey);
+                var newList = map.Get<K, StorageList>(destKey);
+
+                Throw.If(newList.Count() != 0, "target list already exists");
+
+                var count = oldList.Count();
+                for (int i = 0; i < count; i++)
+                {
+                    var bytes = oldList.GetRaw(i);
+                    newList.AddRaw(bytes);
+                }
+                oldList.Clear();
+            }
+            else
+            {
+                var rawSourceKey = ElementKey(map.BaseKey, sourceKey);
+
+                if (!map.ContainsKeyRaw(rawSourceKey))
+                {
+                    return; // if they key does not exist, migration does nothing
+                }
+
+                var bytes = map.GetRaw(rawSourceKey);
+                map.Context.Put(ElementKey(map.BaseKey, destKey), bytes);
+                map.Context.Delete(rawSourceKey);
+            }
         }
 
         public static void Set<K, V>(this StorageMap map, K key, V value)
