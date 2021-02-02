@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Phantasma.Blockchain.Contracts;
+﻿using System.Collections.Generic;
+using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
@@ -102,7 +101,7 @@ namespace Phantasma.Blockchain
             return set.Contains<Address>(address);
         }
 
-        public bool AddMember(RuntimeVM Runtime, Address from, Address target)
+        public bool AddMember(Address from, Address target)
         {
             var set = GetMemberSet();
 
@@ -141,7 +140,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public bool RemoveMember(RuntimeVM Runtime, Address from, Address target)
+        public bool RemoveMember(Address from, Address target)
         {
             var set = GetMemberSet();
 
@@ -155,15 +154,6 @@ namespace Phantasma.Blockchain
 
             Runtime.Notify(EventKind.OrganizationRemove, from, new OrganizationEventData(this.ID, target));
             return true;
-        }
-
-        public void Migrate(RuntimeVM Runtime, Address admin, Address from, Address to)
-        {
-            Runtime.Expect(IsMember(from), "from is not a member");
-            Runtime.Expect(!IsMember(to), "to is already a member");
-
-            Runtime.Expect(RemoveMember(Runtime, admin, from), "remove failed");
-            Runtime.Expect(AddMember(Runtime, admin, to), "add failed");
         }
 
         public bool IsWitness(Transaction transaction)
@@ -210,6 +200,34 @@ namespace Phantasma.Blockchain
             }
 
             return witnessCount >= majorityCount;
+        }
+
+        public bool MigrateMember(Address admin, Address from, Address to)
+        {
+            Runtime.Expect(from != to, "migration address must be different");
+
+            var set = GetMemberSet();
+
+            if (set.Contains<Address>(from))
+            {
+                return false;
+            }
+
+            Runtime.Expect(!set.Contains<Address>(to), "target address is already a member of organization");
+
+            set.Remove<Address>(from);
+            RemoveMemberFromList(to);
+
+            set.Add<Address>(to);
+
+            var list = GetMemberList();
+            list.Add<Address>(to);
+            
+
+            Runtime.Notify(EventKind.OrganizationRemove, admin, new OrganizationEventData(this.ID, from));
+            Runtime.Notify(EventKind.OrganizationAdd, admin, new OrganizationEventData(this.ID, to));
+
+            return true;
         }
     }
 }

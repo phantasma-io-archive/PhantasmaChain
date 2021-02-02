@@ -10,7 +10,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -1653,19 +1652,19 @@ namespace Phantasma.Blockchain
         public bool AddMember(string organization, Address admin, Address target)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            return org.AddMember(this, admin, target);
+            return org.AddMember(admin, target);
         }
 
         public bool RemoveMember(string organization, Address admin, Address target)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            return org.RemoveMember(this, admin, target);
+            return org.RemoveMember(admin, target);
         }
 
         public void MigrateMember(string organization, Address admin, Address source, Address destination)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            org.Migrate(this, admin, source, destination);
+            org.MigrateMember(admin, source, destination);
         }
 
         public Address GetValidator(Timestamp time)

@@ -217,11 +217,6 @@ namespace Phantasma.Blockchain.Contracts
             _masterAgeMap.Migrate<Address, Timestamp>(from, to);
             _voteHistory.Migrate<Address, StorageList>(from, to);
             _proxyStakersMap.Migrate<Address, StorageList>(from, to);
-            
-            if (Runtime.IsStakeMaster(from))
-            {
-                Runtime.MigrateMember(DomainSettings.MastersOrganizationName, this.Address, from, to);
-            }
 
             Runtime.Notify(EventKind.AddressMigration, to, from);
         }

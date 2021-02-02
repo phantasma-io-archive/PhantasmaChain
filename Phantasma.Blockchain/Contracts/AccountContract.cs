@@ -1,4 +1,4 @@
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
@@ -242,6 +242,14 @@ namespace Phantasma.Blockchain.Contracts
             {
                 Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.Migrate), from, target);
             }
+
+            var orgs = Runtime.GetOrganizations();
+            foreach (var orgID in orgs)
+            {
+                Runtime.MigrateMember(orgID, from, from, target);
+            }
+
+            // TODO support custom contract migrations
         }
 
 
