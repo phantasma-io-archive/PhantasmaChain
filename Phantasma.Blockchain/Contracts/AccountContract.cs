@@ -183,6 +183,8 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(target != from, "addresses must be different");
             Runtime.Expect(target.IsUser, "must be user address");
 
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
             if (!Runtime.IsWitness(Runtime.GenesisAddress))
             {
                 Runtime.Expect(Runtime.IsWitness(from), "invalid witness");

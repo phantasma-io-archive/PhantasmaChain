@@ -1170,7 +1170,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(!Nexus.OrganizationExists(RootStorage, ID), "organization already exists");
 
-            Nexus.CreateOrganization(RootStorage, ID, name, script);
+            Nexus.CreateOrganization(this.RootStorage, ID, name, script);
 
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
@@ -1652,19 +1652,19 @@ namespace Phantasma.Blockchain
         public bool AddMember(string organization, Address admin, Address target)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            return org.AddMember(admin, target);
+            return org.AddMember(this, admin, target);
         }
 
         public bool RemoveMember(string organization, Address admin, Address target)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            return org.RemoveMember(admin, target);
+            return org.RemoveMember(this, admin, target);
         }
 
         public void MigrateMember(string organization, Address admin, Address source, Address destination)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            org.MigrateMember(admin, source, destination);
+            org.MigrateMember(this, admin, source, destination);
         }
 
         public Address GetValidator(Timestamp time)

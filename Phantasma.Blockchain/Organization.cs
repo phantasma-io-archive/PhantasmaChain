@@ -26,8 +26,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public RuntimeVM Runtime { get; private set; }
-
         public byte[] Script { get; private set; }
 
         public BigInteger Size => GetMemberList().Count();
@@ -37,7 +35,7 @@ namespace Phantasma.Blockchain
         public Organization(string name, StorageContext storage)
         {
             this.Storage = storage;
-
+ 
             this.ID = name;
 
             var key = GetKey("script");
@@ -101,8 +99,15 @@ namespace Phantasma.Blockchain
             return set.Contains<Address>(address);
         }
 
-        public bool AddMember(Address from, Address target)
+        public bool AddMember(RuntimeVM Runtime, Address from, Address target)
         {
+            if (from.IsSystem)
+            {
+                Runtime.Expect(from != this.Address, "can't add organization as member of itself");
+            }
+
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
             var set = GetMemberSet();
 
             if (set.Contains<Address>(target))
@@ -140,8 +145,10 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public bool RemoveMember(Address from, Address target)
+        public bool RemoveMember(RuntimeVM Runtime, Address from, Address target)
         {
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
             var set = GetMemberSet();
 
             if (!set.Contains<Address>(target))
@@ -202,9 +209,14 @@ namespace Phantasma.Blockchain
             return witnessCount >= majorityCount;
         }
 
-        public bool MigrateMember(Address admin, Address from, Address to)
+        public bool MigrateMember(RuntimeVM Runtime, Address admin, Address from, Address to)
         {
-            Runtime.Expect(from != to, "migration address must be different");
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            if (to.IsSystem)
+            {
+                Runtime.Expect(to!= this.Address, "can't add organization as member of itself");
+            }
 
             var set = GetMemberSet();
 
