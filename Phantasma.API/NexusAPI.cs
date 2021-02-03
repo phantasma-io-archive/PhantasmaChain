@@ -477,7 +477,8 @@ namespace Phantasma.API
                 endDate = auction.EndDate.Value,
                 ram = Base16.Encode(nft.RAM),
                 rom = Base16.Encode(nft.ROM),
-                type = auction.Type.ToString()
+                type = auction.Type.ToString(),
+                listingFee = auction.ListingFee.ToString()
             };
         }
 
@@ -1651,7 +1652,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+            var nft = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
 
             var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
             if (!forSale)
@@ -1665,11 +1666,16 @@ namespace Phantasma.API
             {
                 baseSymbol = auction.BaseSymbol,
                 quoteSymbol = auction.QuoteSymbol,
-                creatorAddress = auction.Creator.Text,
                 tokenId = auction.TokenID.ToString(),
+                creatorAddress = auction.Creator.Text,
+                chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
                 startDate = auction.StartDate.Value,
-                endDate = auction.EndDate.Value
+                endDate = auction.EndDate.Value,
+                ram = Base16.Encode(nft.RAM),
+                rom = Base16.Encode(nft.ROM),
+                type = auction.Type.ToString(),
+                listingFee = auction.ListingFee.ToString()
             };
         }
 
