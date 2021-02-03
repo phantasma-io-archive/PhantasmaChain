@@ -90,7 +90,41 @@ namespace Phantasma.Simulator
 
         protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height)
         {
-            throw new OracleException($"unknown block for {platformName}.{chainName} : {hash}");
+            InteropBlock interopBlock = null;
+            switch (platformName)
+            {
+                case "neo":
+                    {
+                        switch (chainName)
+                        {
+                            // we abuse chainName here to simulate different results
+                            case "neoEmpty":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.Null, new Hash[0]);
+                                break;
+                            case "neo":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.FromString("neohash"), new Hash[0]);
+                                break;
+                        }
+                    }
+                    break;
+                case "ethereum":
+                    {
+                        switch (chainName)
+                        {
+                            // we abuse chainName here to simulate different results
+                            case "ethereumEmpty":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.Null, new Hash[0]);
+                                break;
+                            case "ethereum":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.FromString("neohash"), new Hash[0]);
+                                break;
+                        }
+                    }
+                    break;
+            }
+
+            return interopBlock;
+
         }
 
         protected override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)

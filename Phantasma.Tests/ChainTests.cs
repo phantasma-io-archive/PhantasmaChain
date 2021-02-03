@@ -12,12 +12,12 @@ using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Domain;
 using Phantasma.Core.Types;
 using Phantasma.VM;
 using System.Collections.Generic;
 using Phantasma.Storage;
 using Phantasma.Pay.Chains;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {
@@ -1294,7 +1294,7 @@ namespace Phantasma.Tests
 
             var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
 
-            var nftCount = 50000;
+            var nftCount = 1000;
 
             // Mint several nfts to test limit per tx
             simulator.BeginBlock();
