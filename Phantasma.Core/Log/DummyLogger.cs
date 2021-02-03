@@ -4,7 +4,12 @@
     {
         public static readonly DummyLogger Instance = new DummyLogger();
 
-        public override void Write(LogEntryKind kind, string msg)
+        public DummyLogger() : base(LogLevel.None)
+        {
+
+        }
+
+        protected override void Write(LogLevel kind, string msg)
         {
         }
     }

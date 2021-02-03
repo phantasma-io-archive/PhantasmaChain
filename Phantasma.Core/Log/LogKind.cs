@@ -3,13 +3,15 @@
     /// <summary>
     /// Represents the kind of the log message.
     /// </summary>
-    public enum LogEntryKind
+    public enum LogLevel
     {
-        None,
-        Message,
-        Success,
-        Warning,
-        Error,
-        Debug,
+        None = 0,
+        Success = 1,
+        Error = 2,
+        Warning = 3,
+        Message = 4,
+        Debug = 5,
+        Maximum = 6
     }
+    // Don't change the order here, its important, must be ordered by importance
 }
