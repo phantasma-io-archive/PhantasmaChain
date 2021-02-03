@@ -425,8 +425,8 @@ namespace Phantasma.Tests
             currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, testUser.Address);
             Assert.IsFalse(currentName == targetName);
 
-            currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, migratedUser.Address);
-            Assert.IsTrue(currentName == targetName);
+            var newName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, migratedUser.Address);
+            Assert.IsTrue(newName == targetName);
         }
 
         [TestMethod]

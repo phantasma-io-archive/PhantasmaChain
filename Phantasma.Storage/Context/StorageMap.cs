@@ -92,16 +92,16 @@ namespace Phantasma.Storage.Context
             }
             else
             {
-                var rawSourceKey = ElementKey(map.BaseKey, sourceKey);
+                // TODO this branch could be optimized with the Raw versions of Contains/Get/Set
 
-                if (!map.ContainsKeyRaw(rawSourceKey))
+                if (!map.ContainsKey<K>(sourceKey))
                 {
                     return; // if they key does not exist, migration does nothing
                 }
 
-                var bytes = map.GetRaw(rawSourceKey);
-                map.Context.Put(ElementKey(map.BaseKey, destKey), bytes);
-                map.Context.Delete(rawSourceKey);
+                V bytes = map.Get<K,V>(sourceKey);
+                map.Set<K,V>(destKey, bytes);
+                map.Remove<K>(sourceKey);
             }
         }
 

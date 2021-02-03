@@ -217,6 +217,9 @@ namespace Phantasma.Blockchain.Contracts
                 var currentName = _addressMap.Get<Address, string>(from);
                 _addressMap.Migrate<Address, string>(from, target);
                 _nameMap.Set(currentName, target);
+
+                var tmp = LookUpAddress(target);
+                Runtime.Expect(tmp == currentName, "migration of name failed");
             }
 
             _scriptMap.Migrate<Address, byte[]>(from, target);
