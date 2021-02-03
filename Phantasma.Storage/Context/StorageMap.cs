@@ -271,17 +271,33 @@ namespace Phantasma.Storage.Context
         // TODO optimize this
         public static void Clear(this StorageMap map)
         {
-            var keys = new List<byte[]>();
             var count = (uint)map.Count();
-
             if (count == 0)
             {
                 return;
             }
 
+            var keys = new List<byte[]>();
+            var countKey = CountKey(map.BaseKey);
+            var found = false;
+            var countKeyRun = false;
+
             map.Context.Visit((key, value) =>
             {
-                keys.Add(key);
+                if (!found && key.SequenceEqual(countKey))
+                {
+                    countKeyRun = true;
+                    found = true;
+                }
+                if (!countKeyRun)
+                {
+                    keys.Add(key);
+                }
+                else
+                {
+                    countKeyRun = false;
+                }
+
             }, count, map.BaseKey);
 
             Throw.If(keys.Count != count, $"map.clear failed to fetch all existing keys keys: {keys.Count} count: {count}");
