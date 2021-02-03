@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
@@ -220,7 +220,7 @@ namespace Phantasma.Blockchain
 
             var set = GetMemberSet();
 
-            if (set.Contains<Address>(from))
+            if (!set.Contains<Address>(from))
             {
                 return false;
             }
