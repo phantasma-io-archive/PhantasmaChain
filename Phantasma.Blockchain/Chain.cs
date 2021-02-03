@@ -72,6 +72,35 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
+        private bool VerifyBlockBeforeAdd(Block block)
+        {
+            if (block.TransactionCount > DomainSettings.MaxTxPerBlock)
+            {
+                return false;
+            }
+
+            if (block.OracleData.Count() > DomainSettings.MaxOracleEntriesPerBlock)
+            {
+                return false;
+            }
+
+            if (block.Events.Count() > DomainSettings.MaxEventsPerBlock)
+            {
+                return false;
+            }
+
+            foreach (var txHash in block.TransactionHashes)
+            {
+                var evts = block.GetEventsForTransaction(txHash);
+                if (evts.Count() > DomainSettings.MaxEventsPerTx)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, StorageChangeSetContext changeSet)
         {
             if (!block.IsSigned)
@@ -83,6 +112,11 @@ namespace Phantasma.Blockchain
             if (!block.Signature.Verify(unsignedBytes, block.Validator))
             {
                 throw new BlockGenerationException($"block signature does not match validator {block.Validator.Text}");
+            }
+
+            if (!VerifyBlockBeforeAdd(block))
+            {
+                throw new BlockGenerationException($"block verification failed, would have overflown, hash:{block.Hash}");
             }
 
             var hashList = new StorageList(BlockHeightListTag, this.Storage);
@@ -142,16 +176,6 @@ namespace Phantasma.Blockchain
 
             using (var m = new ProfileMarker("Nexus.PluginTriggerBlock"))
                 Nexus.PluginTriggerBlock(this, block);
-
-            // safeguard for data corruption
-            var temp = GetBlockByHash(block.Hash);
-            Throw.If(temp == null || temp.Hash != block.Hash, "block corruption safeguard triggered");
-
-            foreach (var txHash in block.TransactionHashes)
-            {
-                var tx = GetTransactionByHash(txHash);
-                Throw.If(tx == null || tx.Hash != txHash, "block transaction corruption safeguard triggered");
-            }
         }
 
         // signingKeys should be null if the block should not be modified
