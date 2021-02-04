@@ -176,6 +176,8 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public static bool OldMode = false;
+
         internal void Serialize(BinaryWriter writer, bool withSignatures)
         {
             writer.WriteBigInteger(Height);
@@ -184,12 +186,31 @@ namespace Phantasma.Blockchain
             writer.WriteAddress(ChainAddress);
             writer.WriteVarInt(Protocol);
 
-            writer.WriteVarInt(_transactionHashes.Count);
+            // only a temporary solution
+            if (OldMode)
+            {
+                writer.Write((ushort)_transactionHashes.Count());
+            }
+            else
+            {
+                writer.WriteVarInt(_transactionHashes.Count);
+            }
+
             foreach (var hash in _transactionHashes)
             {
                 writer.WriteHash(hash);
                 var evts = GetEventsForTransaction(hash).ToArray();
-                writer.WriteVarInt(evts.Length);
+
+                // only a temporary solution
+                if (OldMode)
+                {
+                    writer.Write((ushort)evts.Length);
+                }
+                else
+                {
+                    writer.WriteVarInt(evts.Length);
+                }
+
                 foreach (var evt in evts)
                 {
                     evt.Serialize(writer);
@@ -203,7 +224,16 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            writer.WriteVarInt(_oracleData.Count);
+            // only a temporary solution
+            if (OldMode)
+            {
+                writer.Write((ushort)_oracleData.Count);
+            }
+            else
+            {
+                writer.WriteVarInt(_oracleData.Count);
+            }
+
             foreach (var entry in _oracleData)
             {
                 writer.WriteVarString(entry.URL);
@@ -262,8 +292,6 @@ namespace Phantasma.Blockchain
             Serialize(writer, true);
         }
 
-        public static bool OldMode = false;
-
         public void UnserializeData(BinaryReader reader)
         {
             this.Height = reader.ReadBigInteger();
@@ -272,7 +300,8 @@ namespace Phantasma.Blockchain
             this.ChainAddress = reader.ReadAddress();
             this.Protocol = (uint)reader.ReadVarInt();
         
-            var hashCount = (int)reader.ReadVarInt();
+            // just a temporary solution to read old blocks, remove ternary operator when done
+            var hashCount = (OldMode) ? reader.ReadUInt16() : (int)reader.ReadVarInt();
             var hashes = new List<Hash>();
 
             _eventMap.Clear();
@@ -306,7 +335,8 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var oracleCount = reader.ReadVarInt();
+            // just a temporary solution to read old blocks, remove ternary operator when done
+            var oracleCount = (OldMode) ? reader.ReadUInt16() : reader.ReadVarInt();
             _oracleData.Clear();
             while (oracleCount > 0)
             {
@@ -319,7 +349,8 @@ namespace Phantasma.Blockchain
 
             try
             {
-                var blockEvtCount = (int)reader.ReadVarInt();
+                // just a temporary solution to read old blocks, remove ternary operator when done
+                var blockEvtCount = (OldMode)? reader.ReadUInt16() : (int)reader.ReadVarInt();
                 _events = new List<Event>(blockEvtCount);
                 for (int i = 0; i < blockEvtCount; i++)
                 {
