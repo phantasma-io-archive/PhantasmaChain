@@ -72,6 +72,35 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
+        private bool VerifyBlockBeforeAdd(Block block)
+        {
+            if (block.TransactionCount > DomainSettings.MaxTxPerBlock)
+            {
+                return false;
+            }
+
+            if (block.OracleData.Count() > DomainSettings.MaxOracleEntriesPerBlock)
+            {
+                return false;
+            }
+
+            if (block.Events.Count() > DomainSettings.MaxEventsPerBlock)
+            {
+                return false;
+            }
+
+            foreach (var txHash in block.TransactionHashes)
+            {
+                var evts = block.GetEventsForTransaction(txHash);
+                if (evts.Count() > DomainSettings.MaxEventsPerTx)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, StorageChangeSetContext changeSet)
         {
             if (!block.IsSigned)
@@ -83,6 +112,11 @@ namespace Phantasma.Blockchain
             if (!block.Signature.Verify(unsignedBytes, block.Validator))
             {
                 throw new BlockGenerationException($"block signature does not match validator {block.Validator.Text}");
+            }
+
+            if (!VerifyBlockBeforeAdd(block))
+            {
+                throw new BlockGenerationException($"block verification failed, would have overflown, hash:{block.Hash}");
             }
 
             var hashList = new StorageList(BlockHeightListTag, this.Storage);
@@ -124,7 +158,7 @@ namespace Phantasma.Blockchain
 
                     foreach (var evt in events)
                     {
-                        if (evt.Address.IsSystem)
+                        if (evt.Address.IsSystem && evt.Contract == "gas")
                         {
                             continue;
                         }
@@ -142,16 +176,6 @@ namespace Phantasma.Blockchain
 
             using (var m = new ProfileMarker("Nexus.PluginTriggerBlock"))
                 Nexus.PluginTriggerBlock(this, block);
-
-            // safeguard for data corruption
-            var temp = GetBlockByHash(block.Hash);
-            Throw.If(temp == null || temp.Hash != block.Hash, "block corruption safeguard triggered");
-
-            foreach (var txHash in block.TransactionHashes)
-            {
-                var tx = GetTransactionByHash(txHash);
-                Throw.If(tx == null || tx.Hash != txHash, "block transaction corruption safeguard triggered");
-            }
         }
 
         // signingKeys should be null if the block should not be modified
@@ -179,8 +203,6 @@ namespace Phantasma.Blockchain
                     {
                         if (ExecuteTransaction(txIndex, tx, tx.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
                         {
-                            // merge transaction oracle data 
-                            oracle.MergeTxData();
                             if (vmResult != null)
                             {
                                 if (allowModify)
@@ -237,7 +259,6 @@ namespace Phantasma.Blockchain
 
 		            inflationTx = transaction;
                     block.AddTransactionHash(transaction.Hash);
-		            transactions = transactions.Concat(new [] { transaction });
                 }
             }
 
@@ -297,7 +318,34 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash));
+            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash).Distinct());
+
+            var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
+
+            var diff = transactions.Count() - inputHashes.Count;
+            if (diff > 0)
+            {
+                var temp = new HashSet<Hash>();
+                foreach (var tx in transactions)
+                {
+                    if (temp.Contains(tx.Hash))
+                    {
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} appears more than once in the block being minted");
+                    }
+                    else
+                    if (txBlockMap.ContainsKey<Hash>(tx.Hash))
+                    {
+                        var previousBlockHash = txBlockMap.Get<Hash, Hash>(tx.Hash);
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} already added to previous block {previousBlockHash}");
+                    }
+                    else
+                    {
+
+                        temp.Add(tx.Hash);
+                    }
+                }                
+            }
+
             foreach (var hash in block.TransactionHashes)
             {
                 if (!inputHashes.Contains(hash))
@@ -379,7 +427,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var cost = runtime.UsedGas;
+            //var cost = runtime.UsedGas;
 
             using (var m = new ProfileMarker("runtime.Events"))
             {
@@ -397,6 +445,9 @@ namespace Phantasma.Blockchain
             {
                 result = runtime.Stack.Pop();
             }
+
+            // merge transaction oracle data 
+            oracle.MergeTxData();
 
             return true;
         }
@@ -1131,9 +1182,6 @@ namespace Phantasma.Blockchain
 
                 if (ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, task, minimumFee, out vmResult, allowModify))
                 {
-                    // merge transaction oracle data 
-                    oracle.MergeTxData();
-
                     var resultBytes = Serialization.Serialize(vmResult);
                     block.SetResultForHash(transaction.Hash, resultBytes);
 

@@ -19,40 +19,53 @@ namespace Phantasma.Network.P2P.Messages
         Transactions = 0x16,
     }
 
+    public struct RequestRange
+    {
+        public readonly BigInteger Start;
+        public readonly BigInteger End;
+
+        public RequestRange(BigInteger start, BigInteger end)
+        {
+            Start = start;
+            End = end;
+        }
+    }
+
     public sealed class RequestMessage : Message
     {
         public readonly RequestKind Kind;
         public readonly string NexusName;
 
-        private Dictionary<string, BigInteger> _blockFetches;
-        public IEnumerable<KeyValuePair<string, BigInteger>> Blocks => _blockFetches;
+        private Dictionary<string, RequestRange> _blockFetches;
+        public IEnumerable<KeyValuePair<string, RequestRange>> Blocks => _blockFetches;
 
-        public RequestMessage(RequestKind kind, string nexusName, Address address) :base(Opcode.REQUEST, address)
+        public RequestMessage(Address address, string host, RequestKind kind, string nexusName) :base(Opcode.REQUEST, address, host)
         {
             Kind = kind;
             NexusName = nexusName;
         }
 
-        public void SetBlocks(Dictionary<string, BigInteger> blockFetches)
+        public void SetBlocks(Dictionary<string, RequestRange> blockFetches)
         {
             this._blockFetches = blockFetches;
         }
 
-        internal static RequestMessage FromReader(Address address, BinaryReader reader)
+        internal static RequestMessage FromReader(Address address, string host, BinaryReader reader)
         {
             var kind = (RequestKind)reader.ReadByte();
             var nexusName = reader.ReadVarString();
-            var msg = new RequestMessage(kind, nexusName, address);
+            var msg = new RequestMessage(address, host, kind, nexusName);
 
             if (kind.HasFlag(RequestKind.Blocks))
             {
                 var count = reader.ReadVarInt();
-                var fetches = new Dictionary<string, BigInteger>();
+                var fetches = new Dictionary<string, RequestRange>();
                 while (count > 0)
                 {
                     var key = reader.ReadVarString();
-                    var height = reader.ReadBigInteger();
-                    fetches[key] = height;
+                    var start = reader.ReadBigInteger();
+                    var end = reader.ReadBigInteger();
+                    fetches[key] = new RequestRange(start, end);
                     count--;
                 }
 
@@ -75,7 +88,8 @@ namespace Phantasma.Network.P2P.Messages
                 foreach (var entry in _blockFetches)
                 {
                     writer.WriteVarString(entry.Key);
-                    writer.WriteBigInteger(entry.Value);
+                    writer.WriteBigInteger(entry.Value.Start);
+                    writer.WriteBigInteger(entry.Value.End);
                 }
             }
         }

@@ -1,3 +1,4 @@
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
@@ -88,6 +89,13 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
             var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
 
+            if (auction.Creator == from)
+            {
+                Runtime.Expect(Runtime.ProtocolVersion < 5, "seller and buyer are the same, use CancelSale instead");
+                CancelSale(symbol, tokenID);
+                return;
+            }
+
             EndSaleInternal(from, symbol, tokenID, auction);
 
             Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price });
@@ -129,6 +137,13 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "quote token must be fungible");
 
                 var balance = Runtime.GetBalance(quoteToken.Symbol, from);
+
+                if (auction.Price > balance)
+                {
+                    var diff = auction.Price - balance;
+                    throw new BalanceException(quoteToken.Symbol, from, diff);
+                }
+
                 Runtime.Expect(balance >= auction.Price, $"not enough {quoteToken.Symbol} balance at {from.Text}");
 
                 var finalAmount = auction.Price;

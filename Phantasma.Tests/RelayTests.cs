@@ -32,7 +32,7 @@ namespace Phantasma.Tests
 
             var mempool = useMempool ? new Mempool(sim.Nexus, 2, 1, System.Text.Encoding.UTF8.GetBytes("TEST")) : null;
             mempool.SetKeys(owner);
-            var node = useMempool ? new Node("relay node", sim.Nexus, mempool, owner, 7073, PeerCaps.Relay , new List<string>() { "192.168.0.1:7073" }, null) : null;
+            var node = useMempool ? new Node("relay node", sim.Nexus, mempool, owner, "localhost", 7073, PeerCaps.Relay , new List<string>() { "tcp:localhost:7073" }, null) : null;
             var api = useMempool ? new NexusAPI(sim.Nexus) : null;
 
             if (api != null)
@@ -49,7 +49,7 @@ namespace Phantasma.Tests
                 api = api
             };
 
-            mempool?.Start();
+            mempool?.StartInThread();
 
             return data;
         }

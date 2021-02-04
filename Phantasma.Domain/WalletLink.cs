@@ -395,7 +395,7 @@ namespace Phantasma.Domain
                         switch (connection.Version)
                         {
                             case 1:
-                                expectedLength = 3;
+                                expectedLength = 4;
                                 break;
 
                             default:
@@ -405,8 +405,22 @@ namespace Phantasma.Domain
 
                         if (args.Length == expectedLength)
                         {
-                            var chain = args[0];
-                            var script = Base16.Decode(args[1], false);
+                            int index = 0;
+
+                            if (connection.Version == 1)
+                            {
+                                var txNexus = args[index]; index++;
+                                if (txNexus != this.Nexus)
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Expected nexus {this.Nexus}, instead got {txNexus}" });
+                                    callback(id, answer, false);
+                                    _isPendingRequest = false;
+                                    return;
+                                }
+                            }
+
+                            var chain = args[index]; index++;
+                            var script = Base16.Decode(args[index], false); index++;
 
                             if (script == null)
                             {
@@ -414,21 +428,24 @@ namespace Phantasma.Domain
                             }
                             else
                             {
-                                byte[] payload = args[2].Length > 0 ? Base16.Decode(args[2], false) : null;
+                                byte[] payload = args[index].Length > 0 ? Base16.Decode(args[index], false) : null;
+                                index++;
 
                                 string platform;
                                 SignatureKind signatureKind;
 
                                 if (connection.Version >= 2) {
-                                    if (!Enum.TryParse<SignatureKind>(args[3], out signatureKind))
+                                    if (!Enum.TryParse<SignatureKind>(args[index], out signatureKind))
                                     {
-                                        answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid signature: " + args[3] });
+                                        answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid signature: " + args[index] });
                                         callback(id, answer, false);
                                         _isPendingRequest = false;
                                         return;
                                     }
+                                    index++;
 
-                                    platform = args[4].ToLower();
+                                    platform = args[index].ToLower();
+                                    index++;
                                 }
                                 else {
                                     platform = "phantasma";

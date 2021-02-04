@@ -52,12 +52,30 @@ namespace Phantasma.Domain
         }
     }
 
+    public class NodeException : Exception
+    {
+        public NodeException(string msg) : base(msg)
+        {
+
+        }
+    }
+
 
     public class BlockGenerationException : Exception
     {
         public BlockGenerationException(string msg) : base(msg)
         {
 
+        }
+    }
+
+    public class DuplicatedTransactionException : Exception
+    {
+        public readonly Hash Hash;
+
+        public DuplicatedTransactionException(Hash hash, string msg) : base(msg)
+        {
+            this.Hash = hash;
         }
     }
 

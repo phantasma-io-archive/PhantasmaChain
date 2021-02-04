@@ -66,13 +66,13 @@ namespace Phantasma.Storage
             foreach(var entry in _entries)
             {
                 var entryPrefix = entry.Key.Take(prefix.Length);
-                if (count < searchCount && entryPrefix.SequenceEqual(prefix))
+                if (count <= searchCount && entryPrefix.SequenceEqual(prefix))
                 {
                     visitor(entry.Key, entry.Value);
                     count++;
                 }
 
-                if (count == searchCount)
+                if (count > searchCount)
                     break;
             }
         }

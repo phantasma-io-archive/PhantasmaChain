@@ -746,6 +746,26 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private string GetBurnKey(string symbol)
+        {
+            return $".burned.{symbol}";
+        }
+
+        private void UpdateBurnedSupply(StorageContext storage, string symbol, BigInteger burnAmount)
+        {
+            var burnKey = GetBurnKey(symbol);
+            var burnedSupply = storage.Has(burnKey) ? storage.Get<BigInteger>(burnKey) : 0;
+            burnedSupply += burnAmount;
+            storage.Put<BigInteger>(burnKey, burnedSupply);
+        }
+
+        public BigInteger GetBurnedTokenSupply(StorageContext storage, string symbol)
+        {
+            var burnKey = GetBurnKey(symbol);
+            var burnedSupply = storage.Has(burnKey) ? storage.Get<BigInteger>(burnKey) : 0;
+            return burnedSupply;
+        }
+
         internal void BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, string targetChain, BigInteger amount)
         {
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
@@ -772,6 +792,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                UpdateBurnedSupply(Runtime.Storage, token.Symbol, amount);
                 Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
         }
@@ -820,6 +841,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                UpdateBurnedSupply(Runtime.Storage, token.Symbol, 1);
                 Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
         }
@@ -1185,7 +1207,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                Runtime.Expect(!mustExist, "nft does not exist");
+                Runtime.Expect(!mustExist, $"nft {symbol} {tokenID} does not exist");
                 var genID = GenerateNFT(Runtime, symbol, chainName, owner, rom, ram, seriesID);
                 Runtime.Expect(genID == tokenID, "failed to regenerate NFT");
             }
@@ -1216,7 +1238,7 @@ namespace Phantasma.Blockchain
         {
             var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            Throw.If(!storage.Has(tokenKey), "nft does not exists");
+            Throw.If(!storage.Has(tokenKey), $"nft {symbol} {tokenID} does not exist");
 
             var content = ReadNFTRaw(storage, tokenKey, ProtocolVersion);
 
@@ -1459,7 +1481,7 @@ namespace Phantasma.Blockchain
 
                      {
                          StakeContract.StakeMaxBonusPercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             200, new ChainConstraint[]
+                             100, new ChainConstraint[]
                          {
                              new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 50},
                              new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 500 },
