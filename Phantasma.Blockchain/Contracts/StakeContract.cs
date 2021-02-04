@@ -272,7 +272,7 @@ namespace Phantasma.Blockchain.Contracts
             if (stakeAmount > balance) 
             {
                 var diff = stakeAmount - balance;
-                BalanceException.Trigger("SOUL", from, diff);
+                throw new BalanceException("SOUL", from, diff);
                 balance = stakeAmount; // debug mode only, otherwise a exception will prevent it from reaching here
             }
 
