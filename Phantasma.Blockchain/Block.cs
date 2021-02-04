@@ -80,7 +80,7 @@ namespace Phantasma.Blockchain
             foreach (var hash in hashes)
             {
                 _transactionHashes.Add(hash);
-            }          
+            }
 
             this.Payload = payload;
             this.Validator = validator;
@@ -176,8 +176,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public static bool OldMode = false;
-
         internal void Serialize(BinaryWriter writer, bool withSignatures)
         {
             writer.WriteBigInteger(Height);
@@ -186,10 +184,9 @@ namespace Phantasma.Blockchain
             writer.WriteAddress(ChainAddress);
             writer.WriteVarInt(Protocol);
 
-            // only a temporary solution
             if (OldMode)
             {
-                writer.Write((ushort)_transactionHashes.Count());
+                writer.Write((ushort)_transactionHashes.Count);
             }
             else
             {
@@ -201,7 +198,6 @@ namespace Phantasma.Blockchain
                 writer.WriteHash(hash);
                 var evts = GetEventsForTransaction(hash).ToArray();
 
-                // only a temporary solution
                 if (OldMode)
                 {
                     writer.Write((ushort)evts.Length);
@@ -224,7 +220,6 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            // only a temporary solution
             if (OldMode)
             {
                 writer.Write((ushort)_oracleData.Count);
@@ -292,6 +287,8 @@ namespace Phantasma.Blockchain
             Serialize(writer, true);
         }
 
+        public static bool OldMode = false;
+
         public void UnserializeData(BinaryReader reader)
         {
             this.Height = reader.ReadBigInteger();
@@ -299,9 +296,8 @@ namespace Phantasma.Blockchain
             this.PreviousHash = reader.ReadHash();
             this.ChainAddress = reader.ReadAddress();
             this.Protocol = (uint)reader.ReadVarInt();
-        
-            // just a temporary solution to read old blocks, remove ternary operator when done
-            var hashCount = (OldMode) ? reader.ReadUInt16() : (int)reader.ReadVarInt();
+
+            var hashCount = OldMode ? reader.ReadUInt16() : (uint)reader.ReadVarInt();
             var hashes = new List<Hash>();
 
             _eventMap.Clear();
@@ -311,8 +307,7 @@ namespace Phantasma.Blockchain
                 var hash = reader.ReadHash();
                 hashes.Add(hash);
 
-                // tx events
-                var evtCount = (int)reader.ReadVarInt();
+                var evtCount = (int)(OldMode ? reader.ReadUInt16() : (uint)reader.ReadVarInt());
                 var evts = new List<Event>(evtCount);
                 for (int i = 0; i < evtCount; i++)
                 {
@@ -335,35 +330,28 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            // just a temporary solution to read old blocks, remove ternary operator when done
-            var oracleCount = (OldMode) ? reader.ReadUInt16() : reader.ReadVarInt();
+            var oracleCount = OldMode ? reader.ReadUInt16() : (uint)reader.ReadVarInt();
             _oracleData.Clear();
             while (oracleCount > 0)
             {
                 var key = reader.ReadVarString();
                 var val = reader.ReadByteArray();
-                _oracleData.Add(new OracleEntry( key, val));
+                _oracleData.Add(new OracleEntry(key, val));
                 oracleCount--;
             }
 
 
             try
             {
-                // just a temporary solution to read old blocks, remove ternary operator when done
-                var blockEvtCount = (OldMode)? reader.ReadUInt16() : (int)reader.ReadVarInt();
-                _events = new List<Event>(blockEvtCount);
-                for (int i = 0; i < blockEvtCount; i++)
+                var evtCount = (int)reader.ReadVarInt();
+                _events = new List<Event>(evtCount);
+                for (int i = 0; i < evtCount; i++)
                 {
                     _events.Add(Event.Unserialize(reader));
                 }
 
                 Validator = reader.ReadAddress();
                 Payload = reader.ReadByteArray();
-
-                if (OldMode)
-                {
-                    var blockEnd = reader.ReadByte();
-                }
 
                 Signature = reader.ReadSignature();
             }
@@ -374,10 +362,7 @@ namespace Phantasma.Blockchain
                 Signature = null;
             }
 
-            if (!OldMode)
-            {
-                var blockEnd = reader.ReadByte();
-            }
+            var blockEnd = reader.ReadByte();
 
             _transactionHashes = new List<Hash>();
             foreach (var hash in hashes)
