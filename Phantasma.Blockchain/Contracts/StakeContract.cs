@@ -28,12 +28,6 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger amount;
     }
 
-    public struct EnergyProxy
-    {
-        public Address address;
-        public BigInteger percentage;
-    }
-
     public sealed class StakeContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Stake;
@@ -43,9 +37,6 @@ namespace Phantasma.Blockchain.Contracts
         private StorageMap _leftoverMap; // <Address, BigInteger>
 
         private StorageMap _masterAgeMap; // <Address, Timestamp>
-
-        private StorageMap _proxyStakersMap; // <Address, List<EnergyProxy>>
-        private StorageMap _proxyReceiversMap; // <Address, List<Address>>
 
         private StorageMap _masterClaims; // <Address, Timestamp>
         private Timestamp _lastMasterClaim;
@@ -216,7 +207,6 @@ namespace Phantasma.Blockchain.Contracts
             _masterClaims.Migrate<Address, Timestamp>(from, to);
             _masterAgeMap.Migrate<Address, Timestamp>(from, to);
             _voteHistory.Migrate<Address, StorageList>(from, to);
-            _proxyStakersMap.Migrate<Address, StorageList>(from, to);
 
             Runtime.Notify(EventKind.AddressMigration, to, from);
         }
@@ -282,7 +272,8 @@ namespace Phantasma.Blockchain.Contracts
             if (stakeAmount > balance) 
             {
                 var diff = stakeAmount - balance;
-                throw new BalanceException("SOUL", from, diff);
+                BalanceException.Trigger("SOUL", from, diff);
+                balance = stakeAmount; // debug mode only, otherwise a exception will prevent it from reaching here
             }
 
             Runtime.Expect(balance >= stakeAmount, $"balance: {balance} stake: {stakeAmount} not enough balance to stake at " + from);
@@ -638,48 +629,16 @@ namespace Phantasma.Blockchain.Contracts
 
             var fuelAmount = unclaimedAmount;
 
-            // distribute to proxy list
-            var proxyList = _proxyStakersMap.Get<Address, StorageList>(stakeAddress);
-            var count = proxyList.Count();
-
-            // if the transaction comes from someone other than the stake owner, must be registred in proxy list
+            // if the transaction comes from someone other than the stake owner, must be a contract / organizataion
             if (from != stakeAddress)
             {
-                bool found = false;
-                for (int i = 0; i < count; i++)
-                {
-                    var proxy = proxyList.Get<EnergyProxy>(i);
-                    if (proxy.address == from)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                Runtime.Expect(found, "invalid permissions");
+                Runtime.Expect(stakeAddress.IsSystem, "must claim from a system address");
             }
 
-            BigInteger sum = 0;
-            BigInteger availableAmount = fuelAmount;
-
-            for (int i = 0; i < count; i++)
-            {
-                var proxy = proxyList.Get<EnergyProxy>(i);
-                sum += proxy.percentage;
-
-                var proxyAmount = (fuelAmount * proxy.percentage) / 100;
-                if (proxyAmount > 0)
-                {
-                    Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, proxy.address, proxyAmount);
-                    availableAmount -= proxyAmount;
-                }
-            }
-
-            Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount);
+            Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, fuelAmount);
 
             var claimList = _claimMap.Get<Address, StorageList>(stakeAddress);
-            count = claimList.Count();
+            var count = claimList.Count();
 
             // update the date of everything that was claimed
             for (int i = 0; i < count; i++)
@@ -741,115 +700,6 @@ namespace Phantasma.Blockchain.Contracts
             usedStake = usedStake / (kilobytesPerStake * 1024);
 
             return usedStake;
-        }
-
-        public EnergyProxy[] GetProxies(Address address)
-        {
-            var list = _proxyStakersMap.Get<Address, StorageList>(address);
-            return list.All<EnergyProxy>();
-        }
-
-        //returns the list of staking addresses that give a share of their rewards to the specified address
-        public Address[] GetProxyStakers(Address address)
-        {
-            var receiversList = _proxyReceiversMap.Get<Address, StorageList>(address);
-            return receiversList.All<Address>();
-        }
-
-        public void ClearProxies(Address from)
-        {
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
-            var stakersList = _proxyStakersMap.Get<Address, StorageList>(from);
-            var count = stakersList.Count();
-            if (count > 0)
-            {
-                for (int i = 0; i < count; i++)
-                {
-                    var proxy = stakersList.Get<EnergyProxy>(i);
-                    Runtime.Notify(EventKind.AddressUnlink, from, proxy.address);
-
-                    var receiversList = _proxyReceiversMap.Get<Address, StorageList>(proxy.address);
-                    receiversList.Remove(from);
-                }
-                stakersList.Clear();
-            }
-        }
-
-        public void AddProxy(Address from, Address to, BigInteger percentage)
-        {
-            Runtime.Expect(percentage > 0, "invalid percentage");
-            Runtime.Expect(percentage <= 100, "invalid percentage");
-            Runtime.Expect(from != to, "invalid proxy address");
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
-            Runtime.Expect(!to.IsNull, "destination cannot be null address");
-            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
-
-            var stakersList = _proxyStakersMap.Get<Address, StorageList>(from);
-            var receiversList = _proxyReceiversMap.Get<Address, StorageList>(to);
-
-            BigInteger sum = percentage;
-            int index = -1;
-            var count = stakersList.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var proxy = stakersList.Get<EnergyProxy>(i);
-
-                Runtime.Expect(proxy.address != to, "repeated proxy address");
-
-                /*if (proxy.address == to)
-                {
-                    sum += percentage;
-                    index = i;
-                }
-                else
-                {*/
-                sum += proxy.percentage;
-                //}
-            }
-
-            Runtime.Expect(sum <= 100, "invalid sum");
-
-            var entry = new EnergyProxy() { percentage = (byte)percentage, address = to };
-            //if (index < 0)
-            //{
-            stakersList.Add<EnergyProxy>(entry);
-            receiversList.Add<Address>(from);
-            /*}
-            else
-            {
-                stakersList.Replace<EnergyProxy>(index, entry);
-            }*/
-
-            Runtime.Notify(EventKind.AddressLink, from, to);
-        }
-
-        public void RemoveProxy(Address from, Address to)
-        {
-            Runtime.Expect(from != to, "invalid proxy address");
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
-            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
-
-            var stakersList = _proxyStakersMap.Get<Address, StorageList>(from);
-            var receiversList = _proxyReceiversMap.Get<Address, StorageList>(to);
-
-            int index = -1;
-            var count = stakersList.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var proxy = stakersList.Get<EnergyProxy>(i);
-                if (proxy.address == to)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            stakersList.RemoveAt(index);
-            receiversList.Remove<Address>(from);
-            Runtime.Notify(EventKind.AddressUnlink, from, to);
         }
 
         public BigInteger FuelToStake(BigInteger fuelAmount)
