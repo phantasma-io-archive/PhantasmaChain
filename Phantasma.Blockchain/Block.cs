@@ -80,7 +80,6 @@ namespace Phantasma.Blockchain
             foreach (var hash in hashes)
             {
                 _transactionHashes.Add(hash);
-                txHashmap.Add(hash);
             }
 
             this.Payload = payload;
