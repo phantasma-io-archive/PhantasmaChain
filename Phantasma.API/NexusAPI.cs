@@ -473,12 +473,15 @@ namespace Phantasma.API
                 creatorAddress = auction.Creator.Text,
                 chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
+                endPrice = auction.EndPrice.ToString(),
+                extensionPeriod = auction.ExtensionPeriod.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value,
                 ram = Base16.Encode(nft.RAM),
                 rom = Base16.Encode(nft.ROM),
                 type = auction.Type.ToString(),
-                listingFee = auction.ListingFee.ToString()
+                listingFee = auction.ListingFee.ToString(),
+                currentWinner = auction.CurrentBidWinner.Text
             };
         }
 
@@ -1670,12 +1673,15 @@ namespace Phantasma.API
                 creatorAddress = auction.Creator.Text,
                 chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
+                endPrice = auction.EndPrice.ToString(),
+                extensionPeriod = auction.ExtensionPeriod.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value,
                 ram = Base16.Encode(nft.RAM),
                 rom = Base16.Encode(nft.ROM),
                 type = auction.Type.ToString(),
-                listingFee = auction.ListingFee.ToString()
+                listingFee = auction.ListingFee.ToString(),
+                currentWinner = auction.CurrentBidWinner.Text
             };
         }
 
