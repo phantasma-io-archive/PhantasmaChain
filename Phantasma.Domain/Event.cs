@@ -65,6 +65,7 @@ namespace Phantasma.Domain
         TaskStop = 55,
         CrownRewards = 56,
         Infusion = 57,
+        SaleMilestone = 58,
         Custom = 64,
     }
 
