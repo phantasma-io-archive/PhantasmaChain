@@ -293,12 +293,14 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (auction.Type == TypeAuction.Reserve)
                 {
+                    Timestamp startDateNew;
                     Timestamp endDateNew;
 
                     if (auction.StartDate == 0) // if reserve auction not started
                     {
                         Runtime.Expect(price >= auction.Price, "bid has to be higher than reserve price");
 
+                        startDateNew = Runtime.Time;
                         endDateNew = Runtime.Time + TimeSpan.FromDays(1);
                     }
                     else // if reserve auction already started
@@ -316,6 +318,7 @@ namespace Phantasma.Blockchain.Contracts
                         {
                             endDateNew = auction.EndDate;
                         }
+                        startDateNew = auction.StartDate;
                     }
 
                     // calculate listing & buying fees then transfer them to contract
@@ -340,7 +343,7 @@ namespace Phantasma.Blockchain.Contracts
                         Runtime.TransferTokens(auction.QuoteSymbol, this.Address, auction.CurrentBidWinner, auction.EndPrice);
                     }
 
-                    auctionNew = new MarketAuction(auction.Creator, auction.StartDate, endDateNew, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, price, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
+                    auctionNew = new MarketAuction(auction.Creator, startDateNew, endDateNew, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, price, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
                     Runtime.Notify(EventKind.OrderBid, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = price, Type = auctionNew.Type });
 
@@ -352,9 +355,10 @@ namespace Phantasma.Blockchain.Contracts
 
                     var priceDiff = auction.Price - auction.EndPrice;
                     var timeDiff = auction.EndDate - auction.StartDate;
-                    var minutesSinceStart = timeDiff / minutesPerDay; // unsure
-                    var priceDiffPerMinute = priceDiff / timeDiff / minutesPerDay; // unsure
-                    var currentPrice = auction.Price - (minutesSinceStart * priceDiffPerMinute); // unsure
+                    var timeSinceStart = Runtime.Time - auction.StartDate;
+                    var priceDiffSinceStart = new BigInteger(timeSinceStart * priceDiff / timeDiff);
+                    var currentPrice = auction.Price - priceDiffSinceStart;
+
                     if (currentPrice < auction.EndPrice)
                     {
                         currentPrice = auction.EndPrice;
@@ -384,6 +388,8 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (auction.Type == TypeAuction.Fixed)
                 {
+                    Runtime.Expect(price == auction.Price, "bid has to be lower than initial price");
+
                     // calculate listing & buying fees then transfer them to contract
                     BigInteger combinedFees = 0;
                     if (auction.ListingFee != 0)
