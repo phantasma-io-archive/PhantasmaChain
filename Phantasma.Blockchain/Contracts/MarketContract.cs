@@ -219,7 +219,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(buyingFee <= 5, "buyingFee has to be <= 5%");
 
-            Runtime.Expect(auction.StartDate > Runtime.Time, "you can not bid on an auction which has not started");
+            Runtime.Expect(auction.StartDate < Runtime.Time, "you can not bid on an auction which has not started");
 
             MarketAuction auctionNew;
 
