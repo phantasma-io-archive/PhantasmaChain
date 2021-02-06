@@ -64,9 +64,9 @@ namespace Phantasma.Blockchain.Contracts
     {
         public override NativeContractKind Kind => NativeContractKind.Market;
 
-        private const int minutesPerDay = 86400 / 24 / 60;
         private const int fiveMinutes = 86400 / 24 / 12;
         private const int oneDay = 86400;
+        private const int oneHour = 3600;
 
         internal StorageMap _auctionMap; //<string, MarketAuction>
         internal StorageMap _auctionIds; //<string, MarketAuction>
@@ -239,13 +239,20 @@ namespace Phantasma.Blockchain.Contracts
             {
                 if (auction.Type == TypeAuction.Schedule)
                 {
-                    Runtime.Expect(price > auction.Price, "bid has to be higher than last bid");
+                    if (auction.EndPrice == 0)
+                    {
+                        Runtime.Expect(price >= auction.Price, "bid has to be higher or equal to starting price");
+                    }
+                    else
+                    {
+                        var minBid = (auction.Price / 10) + auction.Price;
+                        Runtime.Expect(price >= minBid, "bid has to be minimum 10% higher than last bid");
+                    }
                     Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
-                    var timeLeft = Runtime.Time + TimeSpan.FromHours(1);
                     Timestamp endDateNew;
                     
-                    if ((auction.EndDate - Runtime.Time) < timeLeft) // extend timer if < 1 hour left
+                    if ((auction.EndDate - Runtime.Time) < oneHour) // extend timer if < 1 hour left
                     {
                         endDateNew = Runtime.Time + TimeSpan.FromSeconds((double) auction.ExtensionPeriod);
                     }
@@ -298,19 +305,18 @@ namespace Phantasma.Blockchain.Contracts
 
                     if (auction.StartDate == 0) // if reserve auction not started
                     {
-                        Runtime.Expect(price >= auction.Price, "bid has to be higher than reserve price");
+                        Runtime.Expect(price >= auction.Price, "bid has to be higher or equal to reserve price");
 
                         startDateNew = Runtime.Time;
                         endDateNew = Runtime.Time + TimeSpan.FromDays(1);
                     }
                     else // if reserve auction already started
                     {
-                        Runtime.Expect(price >= auction.Price, "bid has to be higher than last bid");
+                        var minBid = (auction.Price / 10) + auction.Price;
+                        Runtime.Expect(price >= minBid, "bid has to be minimum 10% higher than last bid");
                         Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
-                        var timeLeft = Runtime.Time + TimeSpan.FromHours(1);
-
-                        if (auction.ExtensionPeriod != 0 && auction.EndDate < timeLeft) // extend timer if < 1 hour left
+                        if ((auction.EndDate - Runtime.Time) < oneHour) // extend timer if < 1 hour left
                         {
                             endDateNew = Runtime.Time + TimeSpan.FromSeconds((double) auction.ExtensionPeriod);
                         }
@@ -388,23 +394,7 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (auction.Type == TypeAuction.Fixed)
                 {
-                    Runtime.Expect(price == auction.Price, "bid has to be lower than initial price");
-
-                    // calculate listing & buying fees then transfer them to contract
-                    BigInteger combinedFees = 0;
-                    if (auction.ListingFee != 0)
-                    {
-                        var listFee = auction.Price * auction.ListingFee / 100;
-                        combinedFees += listFee;
-                    }
-                    if (buyingFee != 0)
-                    {
-                        var buyFee = auction.Price * buyingFee / 100;
-                        combinedFees += buyFee;
-                    }
-                    combinedFees += auction.Price;
-                    
-                    Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
+                    Runtime.Expect(price == auction.Price, "bid has to be equal to current price");
 
                     auctionNew = new MarketAuction(auction.Creator, auction.StartDate, auction.EndDate, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, 0, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
@@ -544,6 +534,25 @@ namespace Phantasma.Blockchain.Contracts
                         Runtime.TransferTokens(quoteToken.Symbol, from, nftData.Creator, royaltyFee);
                         finalAmount -= royaltyFee;
                     }
+                }
+
+                if (auction.Type == TypeAuction.Fixed) // if fixed type auction, transfer to contract done in EndSaleInternal to account for original BuyToken and new BidToken
+                {
+                    // calculate listing & buying fees then transfer them to contract
+                    BigInteger combinedFees = 0;
+                    if (auction.ListingFee != 0)
+                    {
+                        var listFee = auction.Price * auction.ListingFee / 100;
+                        combinedFees += listFee;
+                    }
+                    if (buyingFee != 0)
+                    {
+                        var buyFee = auction.Price * buyingFee / 100;
+                        combinedFees += buyFee;
+                    }
+                    combinedFees += auction.Price;
+                    
+                    Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
                 }
 
                 // transfer sale amount

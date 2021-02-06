@@ -272,6 +272,8 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, 1000000);
+            simulator.GenerateTransfer(owner, testUser2.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
+            simulator.GenerateTransfer(owner, testUser2.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, 1000000);
             simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Domain.TokenFlags.Transferable);
             simulator.EndBlock();
 
@@ -307,7 +309,7 @@ namespace Phantasma.Tests
             var price = 1500;
             var endPrice = 0;
             var bidPrice = 2500;
-            var extensionPeriod = 300;
+            var extensionPeriod = 3600;
             var listingFee = 0;
             var buyingFee = 0;
             var auctionType = 1; 
@@ -409,18 +411,53 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            // move time post end date
-            simulator.TimeSkipDays(2);
+            // move time 30 minutes before end of auction
+            simulator.TimeSkipHours(23);
+            simulator.TimeSkipMinutes(30);
 
-            // claim nft
+            // make one bid which will trigger extend time
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser2, ProofOfWork.None, () =>
+            ScriptUtils.
+                BeginScript().
+                AllowGas(testUser2.Address, Address.Null, 1, 9999).
+                CallContract("market", "BidToken", testUser2.Address, token.Symbol, tokenID, bidPrice + 100, buyingFee, Address.Null).
+                SpendGas(testUser2.Address).
+                EndScript()
+            );
+            simulator.EndBlock();
+
+            // move time 45 minutes to check if time was properly extended
+            simulator.TimeSkipMinutes(45);
+
+            // make one more outbid, which would have claimed without extension
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
             ScriptUtils.
-                  BeginScript().
-                  AllowGas(owner.Address, Address.Null, 1, 9999).
-                  CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, 0, buyingFee, Address.Null).
-                  SpendGas(owner.Address).
-                  EndScript()
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, 1, 9999).
+                CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, bidPrice + 200, buyingFee, Address.Null).
+                SpendGas(owner.Address).
+                EndScript()
+            );
+            simulator.EndBlock();
+
+            // check if auction is still there post extension
+            auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
+            Assert.IsTrue(auctions.Length == previousAuctionCount + 1, "auction ids should not be empty at this point");
+
+            // move time post end date
+            simulator.TimeSkipDays(2);
+
+            // make one bid to claim nft
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+            ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, 1, 9999).
+                CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, 0, buyingFee, Address.Null).
+                SpendGas(owner.Address).
+                EndScript()
             );
             simulator.EndBlock();
 
@@ -437,7 +474,7 @@ namespace Phantasma.Tests
 
             // verify balance after
             var balanceOwnerAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
-            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - bidPrice, " balanceOwnerBefore: " + balanceOwnerBefore + " bidPrice: " + bidPrice + " balanceOwnerAfter: " + balanceOwnerAfter);
+            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - (bidPrice + 200), " balanceOwnerBefore: " + balanceOwnerBefore + " bidPrice + 200: " + bidPrice + 200 + " balanceOwnerAfter: " + balanceOwnerAfter);
         }
 
         [TestMethod]
@@ -453,11 +490,14 @@ namespace Phantasma.Tests
             var symbol = "COOL";
 
             var testUser = PhantasmaKeys.Generate();
+            var testUser2 = PhantasmaKeys.Generate();
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, 1000000);
+            simulator.GenerateTransfer(owner, testUser2.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
+            simulator.GenerateTransfer(owner, testUser2.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, 1000000);
             simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Domain.TokenFlags.Transferable);
             simulator.EndBlock();
 
@@ -493,6 +533,8 @@ namespace Phantasma.Tests
             var price = 1500;
             var endPrice = 0;
             var bidPrice = 2500;
+            var bidPrice2 = 3500;
+            var bidPrice3 = 4500;
             var extensionPeriod = 300;
             var listingFee = 0;
             var buyingFee = 0;
@@ -503,6 +545,8 @@ namespace Phantasma.Tests
             // verify balance before
             var tokenToSell = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
             var balanceOwnerBefore = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
+            var balanceTestUserBefore = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, testUser.Address);
+            var balanceTestUser2Before = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, testUser2.Address);
 
             // list token as reserve auction
             simulator.BeginBlock();
@@ -577,6 +621,33 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
+            // make one other address outbids previous one
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser2, ProofOfWork.None, () =>
+            ScriptUtils.
+                BeginScript().
+                AllowGas(testUser2.Address, Address.Null, 1, 9999).
+                CallContract("market", "BidToken", testUser2.Address, token.Symbol, tokenID, bidPrice2, buyingFee, Address.Null).
+                SpendGas(testUser2.Address).
+                EndScript()
+            );
+            simulator.EndBlock();
+
+            // move time between bids
+            simulator.TimeSkipHours(2);
+
+            // make original address outbids previous one
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+            ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, 1, 9999).
+                CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, bidPrice3, buyingFee, Address.Null).
+                SpendGas(owner.Address).
+                EndScript()
+            );
+            simulator.EndBlock();
+
             // move time post end date
             simulator.TimeSkipDays(2);
 
@@ -605,7 +676,11 @@ namespace Phantasma.Tests
 
             // verify balance after
             var balanceOwnerAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
-            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - bidPrice, " balanceOwnerBefore: " + balanceOwnerBefore + " bidPrice: " + bidPrice + " balanceOwnerAfter: " + balanceOwnerAfter);
+            var balanceTestUserAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, testUser.Address);
+            var balanceTestUser2After = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, testUser2.Address);
+            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - bidPrice3, " balanceOwnerBefore: " + balanceOwnerBefore + " bidPrice: " + bidPrice3 + " balanceOwnerAfter: " + balanceOwnerAfter);
+            Assert.IsTrue(balanceTestUserAfter == balanceTestUserBefore + bidPrice3, " balanceOwnerBefore: " + balanceTestUserBefore + " bidPrice: " + bidPrice3 + " balanceOwnerAfter: " + balanceTestUserAfter);
+            Assert.IsTrue(balanceTestUser2After == balanceTestUser2Before, " balanceTestUser2After: " + balanceTestUser2After + " balanceTestUser2Before: " + balanceTestUser2Before);
         }
 
         [TestMethod]
