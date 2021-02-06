@@ -955,7 +955,7 @@ namespace Phantasma.Tests
                 ScriptUtils.
                     BeginScript().
                     AllowGas(testUser.Address, Address.Null, 1, 9999).
-                    CallContract("market", "EditAuction", testUser.Address, token.Symbol, DomainSettings.StakingTokenSymbol, tokenID, 2500, 0, startDate, endDate, 0).
+                    CallContract("market", "EditAuction", testUser.Address, token.Symbol, DomainSettings.StakingTokenSymbol, tokenID, 2500, 0, Timestamp.Null, Timestamp.Null, 0).
                     SpendGas(testUser.Address).
                     EndScript()
                 );
@@ -1005,6 +1005,149 @@ namespace Phantasma.Tests
             // verify balance after
             var balanceOwnerAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
             Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - 2500, " balanceOwnerBefore: " + balanceOwnerBefore + " price: " + 2500 + " balanceOwnerAfter: " + balanceOwnerAfter);
+        }
+
+        [TestMethod]
+        public void TestMarketContractAuctionCancel()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var chain = nexus.RootChain;
+
+            var symbol = "COOL";
+
+            var testUser = PhantasmaKeys.Generate();
+
+            // Create the token CoolToken as an NFT
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, 1000000);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Domain.TokenFlags.Transferable);
+            simulator.EndBlock();
+
+            var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
+
+            // verify nft presence on the user pre-mint
+            var ownerships = new OwnershipSheet(symbol);
+            var ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
+
+            var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
+            var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
+
+            // Mint a new CoolToken 
+            simulator.BeginBlock();
+            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
+            simulator.EndBlock();
+
+            // obtain tokenID
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
+            var tokenID = ownedTokenList.First();
+
+            var auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
+            var previousAuctionCount = auctions.Length;
+
+            // verify nft presence on the user post-mint
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
+            tokenID = ownedTokenList.First();
+
+            var price = 1500;
+            var endPrice = 0;
+            var extensionPeriod = 300;
+            var listingFee = 0;
+            var auctionType = 1; 
+            Timestamp startDate = simulator.CurrentTime + TimeSpan.FromDays(1);
+            Timestamp endDate = simulator.CurrentTime + TimeSpan.FromDays(3);
+
+            // verify balance before
+            var tokenToSell = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
+            var balanceOwnerBefore = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
+
+            // list token as scheduled auction
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+            ScriptUtils.
+                  BeginScript().
+                  AllowGas(testUser.Address, Address.Null, 1, 9999).
+                  CallContract("market", "ListToken", testUser.Address, token.Symbol, DomainSettings.StakingTokenSymbol, tokenID, price, endPrice, startDate, endDate, extensionPeriod, auctionType, listingFee, Address.Null).
+                  SpendGas(testUser.Address).
+                  EndScript()
+            );
+            simulator.EndBlock();
+
+            // verify auction is here
+            auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
+            Assert.IsTrue(auctions.Length == 1 + previousAuctionCount, "auction ids missing");
+
+            // move half way through sale
+            simulator.TimeSkipDays(1);
+
+            // cancel auction from wrong owner (should fail)
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                    simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                    ScriptUtils.
+                        BeginScript().
+                        AllowGas(owner.Address, Address.Null, 1, 9999).
+                        CallContract("market", "CancelSale", token.Symbol, tokenID).
+                        SpendGas(owner.Address).
+                        EndScript()
+                    );
+                simulator.EndBlock();
+            });
+
+            // cancel auction after it started (should fail)
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                    simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                    ScriptUtils.
+                        BeginScript().
+                        AllowGas(testUser.Address, Address.Null, 1, 9999).
+                        CallContract("market", "CancelSale", token.Symbol, tokenID).
+                        SpendGas(testUser.Address).
+                        EndScript()
+                    );
+                simulator.EndBlock();
+            });
+
+            // move past end date
+            simulator.TimeSkipDays(2);
+
+            // cancel auction price from current owner
+            simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.
+                    BeginScript().
+                    AllowGas(testUser.Address, Address.Null, 1, 9999).
+                    CallContract("market", "CancelSale", token.Symbol, tokenID).
+                    SpendGas(testUser.Address).
+                    EndScript()
+                );
+            simulator.EndBlock();
+
+            // verify auctions empty
+            auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
+            Assert.IsTrue(auctions.Length == previousAuctionCount, "auction ids should be empty at this point");
+
+            // verify that the nft was not moved
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            Assert.IsTrue(ownedTokenList.Count() == 1, "How does the seller still have zero?");
+
+            ownedTokenList = ownerships.Get(chain.Storage, owner.Address);
+            Assert.IsTrue(ownedTokenList.Count() == 0, "How does the buyer has it while it was cancelled?");
+
+            // verify balance after
+            var balanceOwnerAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
+            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore, " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter);
+
         }
     }
 }

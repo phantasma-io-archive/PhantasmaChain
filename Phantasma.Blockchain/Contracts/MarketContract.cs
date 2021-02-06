@@ -109,12 +109,12 @@ namespace Phantasma.Blockchain.Contracts
                 endPrice = auction.EndPrice;
             }
 
-            if (startDate == 0) 
+            if (startDate == 0 || startDate == null) 
             {
                 startDate = auction.StartDate;
             }
 
-            if (endDate == 0) 
+            if (endDate == 0 || endDate == null) 
             {
                 endDate = auction.EndDate;
             }
@@ -477,9 +477,9 @@ namespace Phantasma.Blockchain.Contracts
             {
                 Runtime.Expect(auction.EndDate == 0, "reserve auction can not be cancelled once it started");
             }
-            else
+            else if (auction.Type != TypeAuction.Fixed)
             {
-                Runtime.Expect(auction.Type != TypeAuction.Fixed && Runtime.Time > auction.StartDate && Runtime.Time < auction.EndDate, "auction can not be cancelled once it started");
+                Runtime.Expect(Runtime.Time < auction.StartDate || Runtime.Time > auction.EndDate, "auction can not be cancelled once it started");
             }
 
             EndSaleInternal(from, symbol, tokenID, auction, 0, Address.Null, 0, Address.Null); // differ from original
