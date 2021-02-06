@@ -245,7 +245,7 @@ namespace Phantasma.Blockchain.Contracts
                     }
                     else
                     {
-                        var minBid = (auction.Price / 10) + auction.Price;
+                        var minBid = (auction.EndPrice / 10) + auction.EndPrice;
                         Runtime.Expect(price >= minBid, "bid has to be minimum 10% higher than last bid");
                     }
                     Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
@@ -312,7 +312,7 @@ namespace Phantasma.Blockchain.Contracts
                     }
                     else // if reserve auction already started
                     {
-                        var minBid = (auction.Price / 10) + auction.Price;
+                        var minBid = (auction.EndPrice / 10) + auction.EndPrice;
                         Runtime.Expect(price >= minBid, "bid has to be minimum 10% higher than last bid");
                         Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
