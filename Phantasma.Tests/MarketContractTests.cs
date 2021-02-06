@@ -415,6 +415,21 @@ namespace Phantasma.Tests
             simulator.TimeSkipHours(23);
             simulator.TimeSkipMinutes(30);
 
+            // make one bid < 1% more (should fail)
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser2, ProofOfWork.None, () =>
+                ScriptUtils.
+                    BeginScript().
+                    AllowGas(testUser2.Address, Address.Null, 1, 9999).
+                    CallContract("market", "BidToken", testUser2.Address, token.Symbol, tokenID, bidPrice + 1, buyingFee, Address.Null).
+                    SpendGas(testUser2.Address).
+                    EndScript()
+                );
+                simulator.EndBlock();
+            });
+
             // make one bid which will trigger extend time
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser2, ProofOfWork.None, () =>
