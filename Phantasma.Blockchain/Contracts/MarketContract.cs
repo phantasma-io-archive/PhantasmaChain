@@ -22,6 +22,7 @@ namespace Phantasma.Blockchain.Contracts
         public string QuoteSymbol;
         public BigInteger ID;
         public BigInteger Price;
+        public BigInteger EndPrice;
         public TypeAuction Type;
     }
     public struct MarketAuction
@@ -135,8 +136,8 @@ namespace Phantasma.Blockchain.Contracts
             var auctionNew = new MarketAuction(from, startDate, endDate, baseSymbol, quoteSymbol, tokenID, price, endPrice, extensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, auction.BuyingFee, auction.BuyingFeeAddress, auction.CurrentBidWinner);
             _auctionMap.Set(auctionID, auctionNew);
 
-            Runtime.Notify(EventKind.OrderCancelled, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = 0, Type = auctionNew.Type });
-            Runtime.Notify(EventKind.OrderCreated, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = price, Type = auctionNew.Type });
+            Runtime.Notify(EventKind.OrderCancelled, auctionNew.Creator, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, EndPrice = auction.EndPrice, Type = auction.Type });
+            Runtime.Notify(EventKind.OrderCreated, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
         }
 
         public void ListToken(Address from, string baseSymbol, string quoteSymbol, BigInteger tokenID, BigInteger price, BigInteger endPrice, Timestamp startDate, Timestamp endDate, BigInteger extensionPeriod, BigInteger typeAuction, BigInteger listingFee, Address listingFeeAddress) // new method
@@ -207,7 +208,7 @@ namespace Phantasma.Blockchain.Contracts
             _auctionMap.Set(auctionID, auction);
             _auctionIds.Set(auctionID, auctionID);
 
-            Runtime.Notify(EventKind.OrderCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price, Type = type });
+            Runtime.Notify(EventKind.OrderCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price, EndPrice = endPrice, Type = type });
         }
         public void BidToken(Address from, string symbol, BigInteger tokenID, BigInteger price, BigInteger buyingFee, Address buyingFeeAddress) // new method
         {
@@ -227,14 +228,7 @@ namespace Phantasma.Blockchain.Contracts
             if (Runtime.Time >= auction.EndDate && auction.EndDate != 0 && auction.Type != TypeAuction.Dutch) // if auction ended trigger sale end
             {
                 EndSaleInternal(auction.CurrentBidWinner, auction.BaseSymbol, auction.TokenID, auction, auction.ListingFee, auction.ListingFeeAddress, auction.BuyingFee, auction.BuyingFeeAddress);
-                if (auction.Type == TypeAuction.Fixed)
-                {
-                    Runtime.Notify(EventKind.OrderFilled, auction.Creator, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, Type = auction.Type });
-                }
-                else
-                {
-                    Runtime.Notify(EventKind.OrderFilled, auction.Creator, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.EndPrice, Type = auction.Type });
-                }
+                Runtime.Notify(EventKind.OrderFilled, auction.Creator, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, EndPrice = auction.EndPrice, Type = auction.Type });
             }
             else
             {
@@ -323,7 +317,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     auctionNew = new MarketAuction(auction.Creator, auction.StartDate, endDateNew, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, price, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
-                    Runtime.Notify(EventKind.OrderBid, auction.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = price, Type = auctionNew.Type });
+                    Runtime.Notify(EventKind.OrderBid, auction.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
                 }
 
                 if (auction.Type == TypeAuction.Reserve)
@@ -397,7 +391,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     auctionNew = new MarketAuction(auction.Creator, startDateNew, endDateNew, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, price, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
-                    Runtime.Notify(EventKind.OrderBid, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = price, Type = auctionNew.Type });
+                    Runtime.Notify(EventKind.OrderBid, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
 
                 }
 
@@ -445,7 +439,7 @@ namespace Phantasma.Blockchain.Contracts
                     auctionNew = new MarketAuction(auction.Creator, auction.StartDate, auction.EndDate, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, currentPrice, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
                     EndSaleInternal(from, auction.BaseSymbol, auction.TokenID, auctionNew, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress);
-                    Runtime.Notify(EventKind.OrderFilled, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = currentPrice, Type = auctionNew.Type });
+                    Runtime.Notify(EventKind.OrderFilled, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
                 }
 
                 if (auction.Type == TypeAuction.Fixed)
@@ -455,7 +449,7 @@ namespace Phantasma.Blockchain.Contracts
                     auctionNew = new MarketAuction(auction.Creator, auction.StartDate, auction.EndDate, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, 0, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
                     EndSaleInternal(from, auction.BaseSymbol, auction.TokenID, auctionNew, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress);
-                    Runtime.Notify(EventKind.OrderFilled, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, Type = auctionNew.Type });
+                    Runtime.Notify(EventKind.OrderFilled, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
                 }
             }
 
@@ -489,7 +483,7 @@ namespace Phantasma.Blockchain.Contracts
             _auctionMap.Set(auctionID, auction);
             _auctionIds.Set(auctionID, auctionID);
 
-            Runtime.Notify(EventKind.OrderCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price, Type = TypeAuction.Fixed }); // differ from original
+            Runtime.Notify(EventKind.OrderCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price, EndPrice = 0, Type = TypeAuction.Fixed }); // differ from original
         }
 
         public void BuyToken(Address from, string symbol, BigInteger tokenID) // original method
@@ -512,7 +506,7 @@ namespace Phantasma.Blockchain.Contracts
 
             EndSaleInternal(from, symbol, tokenID, auction, 0, Address.Null, 0, Address.Null); // differ from original
 
-            Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, Type = auction.Type }); // differ from original
+            Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, EndPrice = 0, Type = auction.Type }); // differ from original
         }
 
         public void CancelSale(string symbol, BigInteger tokenID) // original method
@@ -539,7 +533,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             EndSaleInternal(from, symbol, tokenID, auction, 0, Address.Null, 0, Address.Null); // differ from original
-            Runtime.Notify(EventKind.OrderCancelled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = 0, Type = auction.Type }); // differ from original
+            Runtime.Notify(EventKind.OrderCancelled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, EndPrice = 0, Type = auction.Type }); // differ from original
         }
 
         private void EndSaleInternal(Address from, string symbol, BigInteger tokenID, MarketAuction auction, BigInteger listingFee, Address listingFeeAddress, BigInteger buyingFee, Address buyingFeeAddress) // original method
@@ -561,14 +555,6 @@ namespace Phantasma.Blockchain.Contracts
 
                 var balance = Runtime.GetBalance(quoteToken.Symbol, from);
 
-                if (auction.Price > balance)
-                {
-                    var diff = auction.Price - balance;
-                    throw new BalanceException(quoteToken.Symbol, from, diff);
-                }
-
-                Runtime.Expect(balance >= auction.Price, $"not enough {quoteToken.Symbol} balance at {from.Text}");
-
                 var finalAmount = auction.Price;
 
                 // if new auctions type, use EndPrice
@@ -576,6 +562,14 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     finalAmount = auction.EndPrice;
                 }
+
+                if (finalAmount > balance)
+                {
+                    var diff = finalAmount - balance;
+                    throw new BalanceException(quoteToken.Symbol, from, diff);
+                }
+
+                Runtime.Expect(balance >= finalAmount, $"not enough {quoteToken.Symbol} balance at {from.Text}")
 
                 // handle royalties
                 if (Runtime.ProtocolVersion >= 4)
