@@ -825,7 +825,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(unclaimedAmount == 0);
         }
 
-        [TestMethod]
+
+/*        [TestMethod]
         public void TestProxies()
         {
             var owner = PhantasmaKeys.Generate();
@@ -1319,7 +1320,7 @@ namespace Phantasma.Tests
 
             unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
-        }
+        }*/
 
         [TestMethod]
         public void TestVotingPower()

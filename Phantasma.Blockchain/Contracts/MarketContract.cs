@@ -1,3 +1,4 @@
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
@@ -14,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts
         Schedule = 1,
         Reserve = 2,
         Dutch = 3,
-    }           
+    }
     public struct MarketEventData
     {
         public string BaseSymbol;
@@ -99,28 +100,28 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(auction.StartDate > Runtime.Time, "EditAuction can only be used before listing start");
             }
 
-            if (price == 0) 
+            if (price == 0)
             {
                 price = auction.Price;
             }
 
-            if (endPrice == 0) 
+            if (endPrice == 0)
             {
                 endPrice = auction.EndPrice;
             }
 
-            if (startDate == 0 || startDate == null) 
+            if (startDate == 0 || startDate == null)
             {
                 startDate = auction.StartDate;
             }
 
-            if (endDate == 0 || endDate == null) 
+            if (endDate == 0 || endDate == null)
             {
                 endDate = auction.EndDate;
             }
             Runtime.Expect(endDate > startDate, "invalid end date");
 
-            if (extensionPeriod == 0 || auction.Type == TypeAuction.Fixed) 
+            if (extensionPeriod == 0 || auction.Type == TypeAuction.Fixed)
             {
                 extensionPeriod = auction.ExtensionPeriod;
             }
@@ -232,7 +233,7 @@ namespace Phantasma.Blockchain.Contracts
                 }
                 else
                 {
-                    Runtime.Notify(EventKind.OrderFilled, auction.Creator, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.EndPrice, Type = auction.Type }); 
+                    Runtime.Notify(EventKind.OrderFilled, auction.Creator, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.EndPrice, Type = auction.Type });
                 }
             }
             else
@@ -259,12 +260,12 @@ namespace Phantasma.Blockchain.Contracts
                     Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
                     Timestamp endDateNew;
-                    
+
                     if ((auction.EndDate - Runtime.Time) < oneHour) // extend timer if < 1 hour left
                     {
                         endDateNew = Runtime.Time + TimeSpan.FromSeconds((double) auction.ExtensionPeriod);
                     }
-                    else 
+                    else
                     {
                         endDateNew = auction.EndDate;
                     }
@@ -355,7 +356,7 @@ namespace Phantasma.Blockchain.Contracts
                         {
                             endDateNew = Runtime.Time + TimeSpan.FromSeconds((double) auction.ExtensionPeriod);
                         }
-                        else 
+                        else
                         {
                             endDateNew = auction.EndDate;
                         }
@@ -385,7 +386,7 @@ namespace Phantasma.Blockchain.Contracts
                         combinedFees += buyFee;
                     }
                     combinedFees += price;
-                    
+
                     Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
 
                     // refund old bid amount to previous current winner if any
@@ -438,7 +439,7 @@ namespace Phantasma.Blockchain.Contracts
                         combinedFees += buyFee;
                     }
                     combinedFees += currentPrice;
-                    
+
                     Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
 
                     auctionNew = new MarketAuction(auction.Creator, auction.StartDate, auction.EndDate, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, currentPrice, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
@@ -559,6 +560,13 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "quote token must be fungible");
 
                 var balance = Runtime.GetBalance(quoteToken.Symbol, from);
+
+                if (auction.Price > balance)
+                {
+                    var diff = auction.Price - balance;
+                    throw new BalanceException(quoteToken.Symbol, from, diff);
+                }
+
                 Runtime.Expect(balance >= auction.Price, $"not enough {quoteToken.Symbol} balance at {from.Text}");
 
                 var finalAmount = auction.Price;
@@ -614,7 +622,7 @@ namespace Phantasma.Blockchain.Contracts
                         combinedFees += buyFee;
                     }
                     combinedFees += auction.Price;
-                    
+
                     Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
                 }
 

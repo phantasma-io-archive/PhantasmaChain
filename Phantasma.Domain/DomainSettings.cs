@@ -55,6 +55,14 @@ namespace Phantasma.Domain
     {
         public const int LatestKnownProtocol = 5;
 
+        public const int MaxTxPerBlock = 1024;
+
+        public const int MaxOracleEntriesPerBlock = 5120;
+
+        public const int MaxEventsPerBlock = 2048;
+
+        public const int MaxEventsPerTx = 8096;
+
         public const int MAX_TOKEN_DECIMALS = 18;
 
         public const string FuelTokenSymbol = "KCAL";

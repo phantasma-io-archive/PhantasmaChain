@@ -183,6 +183,8 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(target != from, "addresses must be different");
             Runtime.Expect(target.IsUser, "must be user address");
 
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
             if (!Runtime.IsWitness(Runtime.GenesisAddress))
             {
                 Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
@@ -210,28 +212,18 @@ namespace Phantasma.Blockchain.Contracts
                 }
             }
 
-            if (_scriptMap.ContainsKey(target))
-            {
-                var script = _scriptMap.Get<Address, byte[]>(from);
-                _scriptMap.Remove(from);
-                _scriptMap.Set<Address, byte[]>(target, script);
-            }
-
             if (_addressMap.ContainsKey(from))
             {
-                var name = _addressMap.Get<Address, string>(from);
-                _addressMap.Remove(from);
+                var currentName = _addressMap.Get<Address, string>(from);
+                _addressMap.Migrate<Address, string>(from, target);
+                _nameMap.Set(currentName, target);
 
-                _addressMap.Set<Address, string>(target, name);
-                _nameMap.Set<string, Address>(name, target);
+                var tmp = LookUpAddress(target);
+                Runtime.Expect(tmp == currentName, "migration of name failed");
             }
 
-            if (_abiMap.ContainsKey(target))
-            {
-                var abi = _abiMap.Get<Address, byte[]>(from);
-                _abiMap.Remove(from);
-                _abiMap.Set<Address, byte[]>(target, abi);
-            }
+            _scriptMap.Migrate<Address, byte[]>(from, target);
+            _abiMap.Migrate<Address, byte[]>(from, target);
 
             var unclaimed = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), from).AsNumber();
             if (unclaimed > 0)
@@ -255,6 +247,14 @@ namespace Phantasma.Blockchain.Contracts
             {
                 Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.Migrate), from, target);
             }
+
+            var orgs = Runtime.GetOrganizations();
+            foreach (var orgID in orgs)
+            {
+                Runtime.MigrateMember(orgID, from, from, target);
+            }
+
+            // TODO support custom contract migrations
         }
 
 

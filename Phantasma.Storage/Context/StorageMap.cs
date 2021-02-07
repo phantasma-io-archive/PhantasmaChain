@@ -63,7 +63,46 @@ namespace Phantasma.Storage.Context
 
         public static bool ContainsKey<K>(this StorageMap map, K key)
         {
-            return map.Context.Has(ElementKey(map.BaseKey, key));
+            return ContainsKeyRaw(map, ElementKey(map.BaseKey, key));
+        }
+
+        public static bool ContainsKeyRaw(this StorageMap map, byte[] key)
+        {
+            return map.Context.Has(key);
+        }
+
+        public static void Migrate<K, V>(this StorageMap map, K sourceKey, K destKey)
+        {
+            Throw.If(sourceKey.Equals(destKey), "map migrate: source and dest keys must be different");
+
+            if (typeof(V) == typeof(StorageList))
+            {
+                var oldList = map.Get<K, StorageList>(sourceKey);
+                var newList = map.Get<K, StorageList>(destKey);
+
+                Throw.If(newList.Count() != 0, "target list already exists");
+
+                var count = oldList.Count();
+                for (int i = 0; i < count; i++)
+                {
+                    var bytes = oldList.GetRaw(i);
+                    newList.AddRaw(bytes);
+                }
+                oldList.Clear();
+            }
+            else
+            {
+                // TODO this branch could be optimized with the Raw versions of Contains/Get/Set
+
+                if (!map.ContainsKey<K>(sourceKey))
+                {
+                    return; // if they key does not exist, migration does nothing
+                }
+
+                V bytes = map.Get<K,V>(sourceKey);
+                map.Set<K,V>(destKey, bytes);
+                map.Remove<K>(sourceKey);
+            }
         }
 
         public static void Set<K, V>(this StorageMap map, K key, V value)
@@ -232,17 +271,33 @@ namespace Phantasma.Storage.Context
         // TODO optimize this
         public static void Clear(this StorageMap map)
         {
-            var keys = new List<byte[]>();
             var count = (uint)map.Count();
-
             if (count == 0)
             {
                 return;
             }
 
+            var keys = new List<byte[]>();
+            var countKey = CountKey(map.BaseKey);
+            var found = false;
+            var countKeyRun = false;
+
             map.Context.Visit((key, value) =>
             {
-                keys.Add(key);
+                if (!found && key.SequenceEqual(countKey))
+                {
+                    countKeyRun = true;
+                    found = true;
+                }
+                if (!countKeyRun)
+                {
+                    keys.Add(key);
+                }
+                else
+                {
+                    countKeyRun = false;
+                }
+
             }, count, map.BaseKey);
 
             Throw.If(keys.Count != count, $"map.clear failed to fetch all existing keys keys: {keys.Count} count: {count}");

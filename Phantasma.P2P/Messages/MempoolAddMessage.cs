@@ -10,12 +10,12 @@ namespace Phantasma.Network.P2P.Messages
     {
         public readonly Transaction[] Transactions;
 
-        public MempoolAddMessage(Address pubKey, IEnumerable<Transaction> txs) : base(Opcode.MEMPOOL_Add, pubKey)
+        public MempoolAddMessage(Address pubKey, string host, IEnumerable<Transaction> txs) : base(Opcode.MEMPOOL_Add, pubKey, host)
         {
             this.Transactions = txs.ToArray();
         }
 
-        internal static MempoolAddMessage FromReader(Address address, BinaryReader reader)
+        internal static MempoolAddMessage FromReader(Address address, string host, BinaryReader reader)
         {
             var count = reader.ReadUInt16();
             var transactions = new Transaction[count];
@@ -24,7 +24,7 @@ namespace Phantasma.Network.P2P.Messages
                 transactions[i] = Transaction.Unserialize(reader);
             }
 
-            return new MempoolAddMessage(address, transactions);
+            return new MempoolAddMessage(address, host, transactions);
         }
 
         protected override void OnSerialize(BinaryWriter writer)

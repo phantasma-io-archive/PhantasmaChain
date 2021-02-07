@@ -140,11 +140,11 @@ namespace Phantasma.Tests
             // mempool setup
             mempool = new Mempool(nexus, Mempool.MinimumBlockTime, 1, System.Text.Encoding.UTF8.GetBytes("TEST"));
             mempool.SetKeys(node_keys);
-            mempool.Start();
+            mempool.StartInThread();
 
             // node setup
-            node = new Node("test node", nexus, mempool, node_keys, port, PeerCaps.Mempool, Enumerable.Empty<String>(), new DebugLogger());
-            node.Start();
+            node = new Node("test node", nexus, mempool, node_keys, "localhost", port, PeerCaps.Mempool, Enumerable.Empty<String>(), new DebugLogger());
+            node.StartInThread();
         }
 
         private void CloseNode()

@@ -27,17 +27,31 @@ namespace Phantasma.Blockchain.Contracts
         public Timestamp timestamp;
     }
 
+    public struct InteropHistory
+    {
+        public Hash sourceHash;
+        public string sourcePlatform;
+        public string sourceChain;
+        public Address sourceAddress;
+
+        public Hash destHash;
+        public string destPlatform;
+        public string destChain;
+        public Address destAddress;
+
+        public string symbol;
+        public BigInteger value;
+    }
+
     public sealed class InteropContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Interop;
 
-        private StorageList _platforms;
-
-        private StorageMap _hashes;
+        private StorageMap _platformHashes;
         private StorageList _withdraws;
 
-        private StorageMap _links;
-        private StorageMap _reverseMap;
+        internal StorageMap _swapMap; //<Hash, Collection<InteropHistory>>
+        internal StorageMap _historyMap; //<Address, Collection<Hash>>
 
         public InteropContract() : base()
         {
@@ -75,7 +89,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "must be user address");
 
-            var chainHashes = _hashes.Get<string, StorageMap>(platform);
+            var chainHashes = _platformHashes.Get<string, StorageMap>(platform);
             Runtime.Expect(!chainHashes.ContainsKey<Hash>(hash), "hash already seen");
 
             var interopTx = Runtime.ReadTransactionFromOracle(platform, chain, hash);
@@ -136,6 +150,7 @@ namespace Phantasma.Blockchain.Contracts
                         Runtime.TransferTokens(withdraw.feeSymbol, this.Address, transfer.sourceAddress, withdraw.feeAmount);
                     }
 
+                    RegisterHistory(hash, withdraw.hash, DomainSettings.PlatformName, Runtime.Chain.Name, transfer.sourceAddress, hash, platform, chain, withdraw.destination, transfer.Symbol, transfer.Value);
                     swapCount++;
                 }
                 else
@@ -188,6 +203,9 @@ namespace Phantasma.Blockchain.Contracts
                                     var localNft = Runtime.ReadToken(transfer.Symbol, transfer.Value);
                                     Runtime.WriteToken(transfer.Symbol, transfer.Value, ram);
                                 }
+
+                                var settleHash = Runtime.Transaction.Hash;
+                                RegisterHistory(settleHash, hash, platform, chain, transfer.sourceAddress, settleHash, DomainSettings.PlatformName, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value);
 
                                 swapCount++;
                             }
@@ -303,7 +321,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public Hash GetSettlement(string platformName, Hash hash)
         {
-            var chainHashes = _hashes.Get<string, StorageMap>(platformName);
+            var chainHashes = _platformHashes.Get<string, StorageMap>(platformName);
             if (chainHashes.ContainsKey<Hash>(hash))
             {
                 return chainHashes.Get<Hash, Hash>(hash);
@@ -314,7 +332,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public InteropTransferStatus GetStatus(string platformName, Hash hash)
         {
-            var chainHashes = _hashes.Get<string, StorageMap>(platformName);
+            var chainHashes = _platformHashes.Get<string, StorageMap>(platformName);
             if (chainHashes.ContainsKey<Hash>(hash))
             {
                 return InteropTransferStatus.Confirmed;
@@ -333,5 +351,50 @@ namespace Phantasma.Blockchain.Contracts
 
             return InteropTransferStatus.Unknown;
         }
+
+        #region SWAP HISTORY
+        private void RegisterHistory(Hash swapHash, Hash sourceHash, string sourcePlatform, string sourceChain, Address sourceAddress,  Hash destHash,  string destPlatform, string destChain,  Address destAddress, string symbol, BigInteger value) 
+        {
+            var entry = new InteropHistory()
+            {
+                sourceAddress = sourceAddress,
+                sourceHash = sourceHash,
+                sourcePlatform = sourcePlatform,
+                sourceChain = sourceChain,
+                destAddress = destAddress,
+                destHash = destHash,
+                destPlatform = destPlatform,
+                destChain = destChain,
+                symbol = symbol,
+                value = value,
+            };
+
+            _swapMap.Set<Hash, InteropHistory>(swapHash, entry);
+
+            AppendToHistoryMap(swapHash, sourceAddress);
+            AppendToHistoryMap(swapHash, destAddress);
+        }
+
+        private void AppendToHistoryMap(Hash swapHash, Address target)
+        {
+            var list = _historyMap.Get<Address, StorageList>(target);
+            list.Add<Hash>(swapHash);
+        }
+
+        public InteropHistory[] GetSwapsForAddress(Address address)
+        {
+            var list = _historyMap.Get<Address, StorageList>(address);
+            var count = (int)list.Count();
+
+            var result = new InteropHistory[count];
+            for (int i=0; i<count; i++)
+            {
+                var hash = list.Get<Hash>(i);
+                result[i] = _swapMap.Get<Hash, InteropHistory>(hash);
+            }
+
+            return result;
+        }
+        #endregion
     }
 }

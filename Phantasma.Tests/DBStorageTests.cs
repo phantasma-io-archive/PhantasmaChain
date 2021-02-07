@@ -155,6 +155,59 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestDBStorageAllValues()
+        {
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+            var testMapKey2 = Encoding.UTF8.GetBytes($".test2._valueMap");
+            var testMapKey3 = Encoding.UTF8.GetBytes($".test3._valueMap");
+
+            var testMap = new StorageMap(testMapKey, storage);
+            var testMap2 = new StorageMap(testMapKey2, storage);
+            var testMap3 = new StorageMap(testMapKey3, storage);
+
+            testMap.Set("test1", "Value1");
+            testMap.Set("test2", "Value2");
+            testMap.Set("test3", "Value3");
+            testMap.Set("test4", "Value4");
+
+            var count = 0;
+            foreach (var a in testMap.AllValues<string>())
+            {
+                count++;
+                var key = "test" + count;
+                Assert.AreEqual(testMap.Get<string, string>(key), a);
+            }
+
+            testMap2.Set<BigInteger, string>(new BigInteger(1), "Value21");
+            testMap2.Set<BigInteger, string>(new BigInteger(2), "Value22");
+            testMap2.Set<BigInteger, string>(new BigInteger(3), "Value23");
+            testMap2.Set<BigInteger, string>(new BigInteger(4), "Value24");
+
+            count = 0;
+            foreach (var a in testMap2.AllValues<string>())
+            {
+                count++;
+                var key = new BigInteger(count);
+                Assert.AreEqual(testMap2.Get<BigInteger, string>(key), a);
+            }
+
+            testMap3.Set<BigInteger, BigInteger>(new BigInteger(1), new BigInteger(1));
+            testMap3.Set<BigInteger, BigInteger>(new BigInteger(2), new BigInteger(2));
+            testMap3.Set<BigInteger, BigInteger>(new BigInteger(3), new BigInteger(3));
+            testMap3.Set<BigInteger, BigInteger>(new BigInteger(4), new BigInteger(4));
+
+            count = 0;
+            foreach (var a in testMap3.AllValues<BigInteger>())
+            {
+                count++;
+                var key = new BigInteger(count);
+                Assert.AreEqual(testMap3.Get<BigInteger, BigInteger>(key), a);
+            }
+        }
+
+        [TestMethod]
         public void TestDBStorageVisitMap()
         {
             var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));

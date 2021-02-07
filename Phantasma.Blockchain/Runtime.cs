@@ -10,7 +10,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -323,6 +322,11 @@ namespace Phantasma.Blockchain
 
         public bool IsMintingAddress(Address address, string symbol)
         {
+            if (ProtocolVersion < 3 && address == GenesisAddress)
+            {
+                return true;
+            }
+
             if (TokenExists(symbol))
             {
                 var info = GetToken(symbol);
@@ -411,6 +415,9 @@ namespace Phantasma.Blockchain
 
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
             var bytes = Oracle.Read<byte[]>(this.Time, "price://" + symbol);
+
+            Expect(bytes != null && bytes.Length > 0, $"Could not read price of {symbol} from oracle");
+
             var value = BigInteger.FromUnsignedArray(bytes, true);
 
             Expect(value > 0, "token price not available for " + symbol);
@@ -1163,7 +1170,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(!Nexus.OrganizationExists(RootStorage, ID), "organization already exists");
 
-            Nexus.CreateOrganization(RootStorage, ID, name, script);
+            Nexus.CreateOrganization(this.RootStorage, ID, name, script);
 
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
@@ -1657,7 +1664,7 @@ namespace Phantasma.Blockchain
         public void MigrateMember(string organization, Address admin, Address source, Address destination)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            org.Migrate(this, admin, source, destination);
+            org.MigrateMember(this, admin, source, destination);
         }
 
         public Address GetValidator(Timestamp time)

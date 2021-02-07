@@ -127,33 +127,6 @@ namespace Phantasma.Tests
             Assert.IsTrue(block.Hash == block2.Hash);
         }
 
-        [TestMethod]
-        public void BlockDuplicatedHashes()
-        {
-            var keys = PhantasmaKeys.Generate();
-
-            var txs = new List<Transaction>();
-
-            var script = ScriptUtils.BeginScript().
-                AllowGas(keys.Address, Address.Null, 1, 9999).
-                SpendGas(keys.Address).
-                EndScript();
-
-            var tx = new Transaction("simnet", "main", script, Timestamp.Now - TimeSpan.FromMinutes(3));
-
-            txs.Add(tx); // dad first
-            txs.Add(tx); // add a duplicate
-
-            var hashes = txs.Select(x => x.Hash);
-            uint protocol = 42;
-
-            Block block;
-
-            Assert.ThrowsException<Exception>(() =>
-            {
-                block = new Block(1, keys.Address, Timestamp.Now, hashes, Hash.Null, protocol, keys.Address, System.Text.Encoding.UTF8.GetBytes("TEST"));
-            });
-        }
 
         [TestMethod]
         public void TransactionMining()
