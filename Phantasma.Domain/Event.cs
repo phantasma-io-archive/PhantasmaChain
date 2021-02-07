@@ -126,6 +126,7 @@ namespace Phantasma.Domain
         public string QuoteSymbol;
         public BigInteger ID;
         public BigInteger Price;
+        public BigInteger EndPrice;
         public TypeAuction Type;
     }
 
