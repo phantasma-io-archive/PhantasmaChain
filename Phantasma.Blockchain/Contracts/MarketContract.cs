@@ -569,7 +569,7 @@ namespace Phantasma.Blockchain.Contracts
                     throw new BalanceException(quoteToken.Symbol, from, diff);
                 }
 
-                Runtime.Expect(balance >= finalAmount, $"not enough {quoteToken.Symbol} balance at {from.Text}")
+                Runtime.Expect(balance >= finalAmount, $"not enough {quoteToken.Symbol} balance at {from.Text}");
 
                 // handle royalties
                 if (Runtime.ProtocolVersion >= 4)
