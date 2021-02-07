@@ -246,7 +246,15 @@ namespace Phantasma.Blockchain.Contracts
                     else
                     {
                         var minBid = (auction.EndPrice / 100) + auction.EndPrice;
-                        Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (quoteToken.Flags.HasFlag(TokenFlags.Divisible))
+                        {
+                            Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
+                        }
+                        else if (minBid == 0)
+                        {
+                            Runtime.Expect(false, "bid has to be minimum 1% higher than last bid");
+                        }
                     }
                     Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
@@ -270,12 +278,12 @@ namespace Phantasma.Blockchain.Contracts
                         combinedFees += listFee;
                         var listFeeRefund = auction.EndPrice * auction.ListingFee / 100;
                         combinedRefund += listFeeRefund;
-                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && combinedFees == 0)
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && combinedFees == 0)
                         {
                             combinedFees = 1;
                         }
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && combinedRefund == 0)
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && combinedRefund == 0)
                         {
                             combinedRefund = 1;
                         }
@@ -283,8 +291,8 @@ namespace Phantasma.Blockchain.Contracts
                     if (buyingFee != 0)
                     {
                         var buyFee = price * buyingFee / 100;
-                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
                         {
                             buyFee = 1;
                         }
@@ -293,8 +301,8 @@ namespace Phantasma.Blockchain.Contracts
                     if (auction.BuyingFee != 0)
                     {
                         var buyFeeRefund = auction.EndPrice * auction.BuyingFee / 100;
-                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFeeRefund == 0)
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFeeRefund == 0)
                         {
                             buyFeeRefund = 1;
                         }
@@ -332,7 +340,15 @@ namespace Phantasma.Blockchain.Contracts
                     else // if reserve auction already started
                     {
                         var minBid = (auction.EndPrice / 100) + auction.EndPrice;
-                        Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (quoteToken.Flags.HasFlag(TokenFlags.Divisible))
+                        {
+                            Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
+                        }
+                        else if (minBid == 0)
+                        {
+                            Runtime.Expect(price >= minBid + 1, "bid has to be minimum 1% higher than last bid");
+                        }
                         Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
                         if ((auction.EndDate - Runtime.Time) < oneHour) // extend timer if < 1 hour left
@@ -351,8 +367,8 @@ namespace Phantasma.Blockchain.Contracts
                     if (auction.ListingFee != 0)
                     {
                         var listFee = price * auction.ListingFee / 100;
-                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
                         {
                             listFee = 1;
                         }
@@ -361,8 +377,8 @@ namespace Phantasma.Blockchain.Contracts
                     if (buyingFee != 0)
                     {
                         var buyFee = price * buyingFee / 100;
-                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
                         {
                             buyFee = 1;
                         }
@@ -404,8 +420,8 @@ namespace Phantasma.Blockchain.Contracts
                     if (auction.ListingFee != 0)
                     {
                         var listFee = currentPrice * auction.ListingFee / 100;
-                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
                         {
                             listFee = 1;
                         }
@@ -414,8 +430,8 @@ namespace Phantasma.Blockchain.Contracts
                     if (buyingFee != 0)
                     {
                         var buyFee = currentPrice * buyingFee / 100;
-                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
                         {
                             buyFee = 1;
                         }
@@ -582,7 +598,7 @@ namespace Phantasma.Blockchain.Contracts
                     if (auction.ListingFee != 0)
                     {
                         var listFee = auction.Price * auction.ListingFee / 100;
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
                         {
                             listFee = 1;
                         }
@@ -591,7 +607,7 @@ namespace Phantasma.Blockchain.Contracts
                     if (buyingFee != 0)
                     {
                         var buyFee = auction.Price * buyingFee / 100;
-                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
                         {
                             buyFee = 1;
                         }
