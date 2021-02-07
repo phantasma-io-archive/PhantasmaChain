@@ -270,15 +270,34 @@ namespace Phantasma.Blockchain.Contracts
                         combinedFees += listFee;
                         var listFeeRefund = auction.EndPrice * auction.ListingFee / 100;
                         combinedRefund += listFeeRefund;
+                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && combinedFees == 0)
+                        {
+                            combinedFees = 1;
+                        }
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && combinedRefund == 0)
+                        {
+                            combinedRefund = 1;
+                        }
                     }
                     if (buyingFee != 0)
                     {
                         var buyFee = price * buyingFee / 100;
+                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        {
+                            buyFee = 1;
+                        }
                         combinedFees += buyFee;
                     }
                     if (auction.BuyingFee != 0)
                     {
                         var buyFeeRefund = auction.EndPrice * auction.BuyingFee / 100;
+                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFeeRefund == 0)
+                        {
+                            buyFeeRefund = 1;
+                        }
                         combinedRefund += buyFeeRefund;
                     }
                     combinedFees += price;
@@ -332,11 +351,21 @@ namespace Phantasma.Blockchain.Contracts
                     if (auction.ListingFee != 0)
                     {
                         var listFee = price * auction.ListingFee / 100;
+                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
+                        {
+                            listFee = 1;
+                        }
                         combinedFees += listFee;
                     }
                     if (buyingFee != 0)
                     {
                         var buyFee = price * buyingFee / 100;
+                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        {
+                            buyFee = 1;
+                        }
                         combinedFees += buyFee;
                     }
                     combinedFees += price;
@@ -375,11 +404,21 @@ namespace Phantasma.Blockchain.Contracts
                     if (auction.ListingFee != 0)
                     {
                         var listFee = currentPrice * auction.ListingFee / 100;
+                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
+                        {
+                            listFee = 1;
+                        }
                         combinedFees += listFee;
                     }
                     if (buyingFee != 0)
                     {
                         var buyFee = currentPrice * buyingFee / 100;
+                        var baseToken = Runtime.GetToken(auction.BaseSymbol);
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        {
+                            buyFee = 1;
+                        }
                         combinedFees += buyFee;
                     }
                     combinedFees += currentPrice;
@@ -543,11 +582,19 @@ namespace Phantasma.Blockchain.Contracts
                     if (auction.ListingFee != 0)
                     {
                         var listFee = auction.Price * auction.ListingFee / 100;
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
+                        {
+                            listFee = 1;
+                        }
                         combinedFees += listFee;
                     }
                     if (buyingFee != 0)
                     {
                         var buyFee = auction.Price * buyingFee / 100;
+                        if (!baseToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
+                        {
+                            buyFee = 1;
+                        }
                         combinedFees += buyFee;
                     }
                     combinedFees += auction.Price;
