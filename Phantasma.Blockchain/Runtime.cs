@@ -1003,7 +1003,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
 
-            Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
+            Nexus.SetPlatformTokenHash(symbol, platform, hash, this.RootStorage);
         }
 
         public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi)
