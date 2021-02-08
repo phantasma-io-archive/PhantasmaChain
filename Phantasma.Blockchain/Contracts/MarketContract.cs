@@ -67,8 +67,8 @@ namespace Phantasma.Blockchain.Contracts
         public override NativeContractKind Kind => NativeContractKind.Market;
 
         private const int fiveMinutes = 86400 / 24 / 12;
-        private const int oneDay = 86400;
         private const int tenMinutes = 600;
+        private const int oneHour = 3600;
 
         internal StorageMap _auctionMap; //<string, MarketAuction>
         internal StorageMap _auctionIds; //<string, MarketAuction>
@@ -129,7 +129,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (auction.Type == TypeAuction.Schedule || auction.Type == TypeAuction.Reserve)
             {
-                Runtime.Expect(extensionPeriod <= oneDay, "extensionPeriod must be <= 1 day");
+                Runtime.Expect(extensionPeriod <= oneHour, "extensionPeriod must be <= 1 hour");
                 Runtime.Expect(extensionPeriod >= fiveMinutes, "extensionPeriod must be >= 5 minutes");
             }
 
@@ -165,7 +165,7 @@ namespace Phantasma.Blockchain.Contracts
             if (typeAuction == 1) // Schedule
             {
                 Runtime.Expect(endDate > startDate, "end date must be later than start date");
-                Runtime.Expect(extensionPeriod <= oneDay, "extensionPeriod must be <= 1 day");
+                Runtime.Expect(extensionPeriod <= oneHour, "extensionPeriod must be <= 1 hour");
                 Runtime.Expect(extensionPeriod >= fiveMinutes, "extensionPeriod must be >= 5 minutes");
                 var maxAllowedDate = Runtime.Time + TimeSpan.FromDays(30);
                 Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant, max: " + maxAllowedDate + ", received: " + endDate);
@@ -174,7 +174,7 @@ namespace Phantasma.Blockchain.Contracts
             }
             else if (typeAuction == 2) // Reserve
             {
-                Runtime.Expect(extensionPeriod <= oneDay, "extensionPeriod must be <= 1 day");
+                Runtime.Expect(extensionPeriod <= oneHour, "extensionPeriod must be <= 1 hour");
                 Runtime.Expect(extensionPeriod >= fiveMinutes, "extensionPeriod must be >= 5 minutes");
                 endPrice = 0;
                 startDate = 0;
