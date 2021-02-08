@@ -65,6 +65,7 @@ namespace Phantasma.Domain
         TaskStop = 55,
         CrownRewards = 56,
         Infusion = 57,
+        
         OrderBid = 59,
         Custom = 64
     }
@@ -114,10 +115,10 @@ namespace Phantasma.Domain
     }
     public enum TypeAuction
     {
-        Fixed,
-        Reserve,
-        Schedule,
-        Dutch,
+        Fixed = 0,
+        Schedule = 1,
+        Reserve = 2,
+        Dutch = 3,
     }       
 
     public struct MarketEventData
