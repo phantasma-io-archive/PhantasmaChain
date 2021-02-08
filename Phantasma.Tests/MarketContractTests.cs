@@ -25,7 +25,7 @@ namespace Phantasma.Tests
     {
 
         [TestMethod]
-        public void TestMarketContract()
+        public void TestMarketContractBasic()
         {
             var owner = PhantasmaKeys.Generate();
             var nexus = new Nexus("simnet", null, null);
@@ -411,9 +411,9 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            // move time 30 minutes before end of auction
+            // move time 5 minutes before end of auction
             simulator.TimeSkipHours(23);
-            simulator.TimeSkipMinutes(30);
+            simulator.TimeSkipMinutes(55);
 
             // make one bid < 1% more (should fail)
             Assert.ThrowsException<ChainException>(() =>
