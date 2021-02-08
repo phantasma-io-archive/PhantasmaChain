@@ -617,22 +617,7 @@ namespace Phantasma.Tests
                 );
                 simulator.EndBlock();
             });
-
-            // make one bid from same address (should fail)
-            Assert.ThrowsException<ChainException>(() =>
-            {
-                simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
-                ScriptUtils.
-                    BeginScript().
-                    AllowGas(owner.Address, Address.Null, 1, 9999).
-                    CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, bidPrice + 100, buyingFee, Address.Null).
-                    SpendGas(owner.Address).
-                    EndScript()
-                );
-                simulator.EndBlock();
-            });
-
+            
             // make one other address outbids previous one
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser2, ProofOfWork.None, () =>
