@@ -381,20 +381,17 @@ namespace Phantasma.Tests
             );
             simulator.EndBlock();
 
-            // make one bid from same address (should fail)
-            Assert.ThrowsException<ChainException>(() =>
-            {
-                simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
-                ScriptUtils.
-                    BeginScript().
-                    AllowGas(owner.Address, Address.Null, 1, 9999).
-                    CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, bidPrice + 100, buyingFee, Address.Null).
-                    SpendGas(owner.Address).
-                    EndScript()
-                );
-                simulator.EndBlock();
-            });
+            // make one more bid from same address
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+            ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, 1, 9999).
+                CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, bidPrice + 100, buyingFee, Address.Null).
+                SpendGas(owner.Address).
+                EndScript()
+            );
+            simulator.EndBlock();
 
             // make one bid lower (should fail)
             Assert.ThrowsException<ChainException>(() =>
@@ -423,7 +420,7 @@ namespace Phantasma.Tests
                 ScriptUtils.
                     BeginScript().
                     AllowGas(testUser2.Address, Address.Null, 1, 9999).
-                    CallContract("market", "BidToken", testUser2.Address, token.Symbol, tokenID, bidPrice + 1, buyingFee, Address.Null).
+                    CallContract("market", "BidToken", testUser2.Address, token.Symbol, tokenID, bidPrice + 101, buyingFee, Address.Null).
                     SpendGas(testUser2.Address).
                     EndScript()
                 );
@@ -436,7 +433,7 @@ namespace Phantasma.Tests
             ScriptUtils.
                 BeginScript().
                 AllowGas(testUser2.Address, Address.Null, 1, 9999).
-                CallContract("market", "BidToken", testUser2.Address, token.Symbol, tokenID, bidPrice + 100, buyingFee, Address.Null).
+                CallContract("market", "BidToken", testUser2.Address, token.Symbol, tokenID, bidPrice + 200, buyingFee, Address.Null).
                 SpendGas(testUser2.Address).
                 EndScript()
             );
@@ -451,7 +448,7 @@ namespace Phantasma.Tests
             ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, bidPrice + 200, buyingFee, Address.Null).
+                CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, bidPrice + 300, buyingFee, Address.Null).
                 SpendGas(owner.Address).
                 EndScript()
             );
@@ -489,7 +486,7 @@ namespace Phantasma.Tests
 
             // verify balance after
             var balanceOwnerAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
-            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - (bidPrice + 200), " balanceOwnerBefore: " + balanceOwnerBefore + " bidPrice + 200: " + bidPrice + 200 + " balanceOwnerAfter: " + balanceOwnerAfter);
+            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - (bidPrice + 300), " balanceOwnerBefore: " + balanceOwnerBefore + " bidPrice + 200: " + bidPrice + 300 + " balanceOwnerAfter: " + balanceOwnerAfter);
         }
 
         [TestMethod]

@@ -234,6 +234,8 @@ namespace Phantasma.Blockchain.Contracts
             {
                 if (auction.Type == TypeAuction.Schedule)
                 {
+                    Runtime.Expect(from != auction.Creator, "you can not bid on your own auctions");
+
                     if (auction.EndPrice == 0)
                     {
                         Runtime.Expect(price >= auction.Price, "bid has to be higher or equal to starting price");
@@ -251,7 +253,6 @@ namespace Phantasma.Blockchain.Contracts
                             Runtime.Expect(false, "bid has to be minimum 1% higher than last bid");
                         }
                     }
-                    Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
                     Timestamp endDateNew;
 
@@ -322,6 +323,8 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (auction.Type == TypeAuction.Reserve)
                 {
+                    Runtime.Expect(from != auction.Creator, "you can not bid on your own auctions");
+
                     Timestamp startDateNew;
                     Timestamp endDateNew;
 
@@ -344,7 +347,6 @@ namespace Phantasma.Blockchain.Contracts
                         {
                             Runtime.Expect(price >= minBid + 1, "bid has to be minimum 1% higher than last bid");
                         }
-                        Runtime.Expect(from != auction.CurrentBidWinner, "you can not outbid yourself");
 
                         if ((auction.EndDate - Runtime.Time) < tenMinutes) // extend timer if < 10 minutes left
                         {
@@ -397,6 +399,8 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (auction.Type == TypeAuction.Dutch)
                 {
+                    Runtime.Expect(from != auction.CurrentBidWinner, "you can not bid on your own auctions");
+
                     Runtime.Expect(price < auction.Price, "bid has to be lower than initial price");
 
                     var priceDiff = auction.Price - auction.EndPrice;
