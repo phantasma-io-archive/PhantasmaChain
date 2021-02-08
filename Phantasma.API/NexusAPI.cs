@@ -482,7 +482,7 @@ namespace Phantasma.API
                 rom = Base16.Encode(nft.ROM),
                 type = auction.Type.ToString(),
                 listingFee = auction.ListingFee.ToString(),
-                currentWinner = auction.CurrentBidWinner.Text
+                currentWinner = auction.CurrentBidWinner == Address.Null ? "" : auction.CurrentBidWinner.Text
             };
         }
 
@@ -1680,7 +1680,7 @@ namespace Phantasma.API
                 rom = Base16.Encode(nft.ROM),
                 type = auction.Type.ToString(),
                 listingFee = auction.ListingFee.ToString(),
-                currentWinner = auction.CurrentBidWinner.Text
+                currentWinner = auction.CurrentBidWinner == Address.Null ? "" : auction.CurrentBidWinner.Text
             };
         }
 
