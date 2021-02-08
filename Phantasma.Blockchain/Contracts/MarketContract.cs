@@ -145,6 +145,10 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(startDate > Runtime.Time, "invalid start date");
+            if (startDate < Runtime.Time) // initialize start date to Runtime.Time if its before that
+            {
+                startDate = Runtime.Time;
+            }
 
             Runtime.Expect(Runtime.TokenExists(quoteSymbol), "invalid quote token");
             var quoteToken = Runtime.GetToken(quoteSymbol);
@@ -318,7 +322,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     auctionNew = new MarketAuction(auction.Creator, auction.StartDate, endDateNew, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, price, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
-                    Runtime.Notify(EventKind.OrderBid, auction.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
+                    Runtime.Notify(EventKind.OrderBid, from, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
                 }
 
                 if (auction.Type == TypeAuction.Reserve)
@@ -393,7 +397,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     auctionNew = new MarketAuction(auction.Creator, startDateNew, endDateNew, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, price, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
-                    Runtime.Notify(EventKind.OrderBid, auctionNew.Creator, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
+                    Runtime.Notify(EventKind.OrderBid, from, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
 
                 }
 
