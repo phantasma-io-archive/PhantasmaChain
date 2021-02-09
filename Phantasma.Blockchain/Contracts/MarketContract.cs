@@ -404,8 +404,6 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     Runtime.Expect(from != auction.CurrentBidWinner, "you can not bid on your own auctions");
 
-                    Runtime.Expect(price < auction.Price, "bid has to be lower than initial price");
-
                     var priceDiff = auction.Price - auction.EndPrice;
                     var timeDiff = auction.EndDate - auction.StartDate;
                     var timeSinceStart = Runtime.Time - auction.StartDate;
@@ -446,6 +444,7 @@ namespace Phantasma.Blockchain.Contracts
                     auctionNew = new MarketAuction(auction.Creator, auction.StartDate, auction.EndDate, auction.BaseSymbol, auction.QuoteSymbol, auction.TokenID, auction.Price, currentPrice, auction.ExtensionPeriod, auction.Type, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress, from);
                     _auctionMap.Set(auctionID, auctionNew);
                     EndSaleInternal(from, auction.BaseSymbol, auction.TokenID, auctionNew, auction.ListingFee, auction.ListingFeeAddress, buyingFee, buyingFeeAddress);
+                    Runtime.Notify(EventKind.OrderBid, auctionNew.CurrentBidWinner, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
                     Runtime.Notify(EventKind.OrderFilled, auctionNew.CurrentBidWinner, new MarketEventData() { ID = auctionNew.TokenID, BaseSymbol = auctionNew.BaseSymbol, QuoteSymbol = auctionNew.QuoteSymbol, Price = auctionNew.Price, EndPrice = auctionNew.EndPrice, Type = auctionNew.Type });
                 }
 
