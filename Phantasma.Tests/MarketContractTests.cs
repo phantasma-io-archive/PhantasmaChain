@@ -210,16 +210,16 @@ namespace Phantasma.Tests
             // move time half way through auction
             simulator.TimeSkipDays(2);
 
-            // make one bid higher than sale price (should fail)
+            // make one self bid (should fail)
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.
                     BeginScript().
-                    AllowGas(owner.Address, Address.Null, 1, 9999).
-                    CallContract("market", "BidToken", owner.Address, token.Symbol, tokenID, price + 1000, buyingFee, Address.Null).
-                    SpendGas(owner.Address).
+                    AllowGas(testUser.Address, Address.Null, 1, 9999).
+                    CallContract("market", "BidToken", testUser.Address, token.Symbol, tokenID, price + 1000, buyingFee, Address.Null).
+                    SpendGas(testUser.Address).
                     EndScript()
                 );
                 simulator.EndBlock();
@@ -617,7 +617,7 @@ namespace Phantasma.Tests
                 );
                 simulator.EndBlock();
             });
-            
+
             // make one other address outbids previous one
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser2, ProofOfWork.None, () =>

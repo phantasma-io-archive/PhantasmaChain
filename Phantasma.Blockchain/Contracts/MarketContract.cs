@@ -274,39 +274,16 @@ namespace Phantasma.Blockchain.Contracts
                     BigInteger combinedRefund = 0;
                     if (auction.ListingFee != 0)
                     {
-                        var listFee = price * auction.ListingFee / 100;
-                        combinedFees += listFee;
-                        var listFeeRefund = auction.EndPrice * auction.ListingFee / 100;
-                        combinedRefund += listFeeRefund;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && combinedFees == 0)
-                        {
-                            combinedFees = 1;
-                        }
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && combinedRefund == 0)
-                        {
-                            combinedRefund = 1;
-                        }
+                        combinedFees += GetFee(auction.QuoteSymbol, price, auction.ListingFee);
+                        combinedRefund += GetFee(auction.QuoteSymbol, auction.EndPrice, auction.ListingFee);
                     }
                     if (buyingFee != 0)
                     {
-                        var buyFee = price * buyingFee / 100;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
-                        {
-                            buyFee = 1;
-                        }
-                        combinedFees += buyFee;
+                        combinedFees += GetFee(auction.QuoteSymbol, price, buyingFee);
                     }
                     if (auction.BuyingFee != 0)
                     {
-                        var buyFeeRefund = auction.EndPrice * auction.BuyingFee / 100;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFeeRefund == 0)
-                        {
-                            buyFeeRefund = 1;
-                        }
-                        combinedRefund += buyFeeRefund;
+                        combinedRefund += GetFee(auction.QuoteSymbol, auction.EndPrice, auction.BuyingFee);
                     }
                     combinedFees += price;
                     combinedRefund += auction.EndPrice;
@@ -367,23 +344,11 @@ namespace Phantasma.Blockchain.Contracts
                     BigInteger combinedFees = 0;
                     if (auction.ListingFee != 0)
                     {
-                        var listFee = price * auction.ListingFee / 100;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
-                        {
-                            listFee = 1;
-                        }
-                        combinedFees += listFee;
+                        combinedFees += GetFee(auction.QuoteSymbol, price, auction.ListingFee);
                     }
                     if (buyingFee != 0)
                     {
-                        var buyFee = price * buyingFee / 100;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
-                        {
-                            buyFee = 1;
-                        }
-                        combinedFees += buyFee;
+                        combinedFees += GetFee(auction.QuoteSymbol, price, buyingFee);
                     }
                     combinedFees += price;
 
@@ -403,7 +368,7 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (auction.Type == TypeAuction.Dutch)
                 {
-                    Runtime.Expect(from != auction.CurrentBidWinner, "you can not bid on your own auctions");
+                    Runtime.Expect(from != auction.Creator, "you can not bid on your own auctions");
 
                     var priceDiff = auction.Price - auction.EndPrice;
                     var timeDiff = auction.EndDate - auction.StartDate;
@@ -420,23 +385,11 @@ namespace Phantasma.Blockchain.Contracts
                     BigInteger combinedFees = 0;
                     if (auction.ListingFee != 0)
                     {
-                        var listFee = currentPrice * auction.ListingFee / 100;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
-                        {
-                            listFee = 1;
-                        }
-                        combinedFees += listFee;
+                        combinedFees += GetFee(auction.QuoteSymbol, currentPrice, auction.ListingFee);
                     }
                     if (buyingFee != 0)
                     {
-                        var buyFee = currentPrice * buyingFee / 100;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
-                        {
-                            buyFee = 1;
-                        }
-                        combinedFees += buyFee;
+                        combinedFees += GetFee(auction.QuoteSymbol, currentPrice, buyingFee);
                     }
                     combinedFees += currentPrice;
 
@@ -606,21 +559,11 @@ namespace Phantasma.Blockchain.Contracts
                     BigInteger combinedFees = 0;
                     if (auction.ListingFee != 0)
                     {
-                        var listFee = auction.Price * auction.ListingFee / 100;
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
-                        {
-                            listFee = 1;
-                        }
-                        combinedFees += listFee;
+                        combinedFees += GetFee(auction.QuoteSymbol, auction.Price, auction.ListingFee);
                     }
                     if (buyingFee != 0)
                     {
-                        var buyFee = auction.Price * buyingFee / 100;
-                        if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && buyFee == 0)
-                        {
-                            buyFee = 1;
-                        }
-                        combinedFees += buyFee;
+                        combinedFees += GetFee(auction.QuoteSymbol, auction.Price, buyingFee);
                     }
                     combinedFees += auction.Price;
 
@@ -652,6 +595,17 @@ namespace Phantasma.Blockchain.Contracts
             var auctionID = symbol + "." + tokenID;
             _auctionMap.Remove<string>(auctionID);
             _auctionIds.Remove<string>(auctionID);
+        }
+
+        private BigInteger GetFee(string symbol, BigInteger price, BigInteger fee)
+        {
+            var listFee = price * fee / 100;
+            var quoteToken = Runtime.GetToken(symbol);
+            if (!quoteToken.Flags.HasFlag(TokenFlags.Divisible) && listFee == 0)
+            {
+                listFee = 1;
+            }
+            return listFee;
         }
 
         public MarketAuction[] GetAuctions()
