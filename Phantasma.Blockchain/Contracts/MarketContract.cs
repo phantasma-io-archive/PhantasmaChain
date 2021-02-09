@@ -144,7 +144,6 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            Runtime.Expect(startDate > Runtime.Time, "invalid start date");
             if (startDate < Runtime.Time) // initialize start date to Runtime.Time if its before that
             {
                 startDate = Runtime.Time;
