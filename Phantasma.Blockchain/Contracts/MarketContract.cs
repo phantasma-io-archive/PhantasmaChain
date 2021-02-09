@@ -255,7 +255,7 @@ namespace Phantasma.Blockchain.Contracts
                         }
                         else if (minBid == 0)
                         {
-                            Runtime.Expect(false, "bid has to be minimum 1% higher than last bid");
+                            Runtime.Expect(price >= minBid + 1, "bid has to be minimum 1% higher than last bid");
                         }
                     }
 
