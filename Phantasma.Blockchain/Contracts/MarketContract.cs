@@ -96,6 +96,8 @@ namespace Phantasma.Blockchain.Contracts
 
             var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
 
+            Runtime.Expect(auction.Creator == from, "invalid auction creator");
+
             if (auction.Type != TypeAuction.Fixed) // prevent edit already started auctions
             {
                 Runtime.Expect(auction.StartDate > Runtime.Time, "EditAuction can only be used before listing start");
