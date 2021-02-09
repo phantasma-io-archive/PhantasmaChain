@@ -1649,15 +1649,13 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
-
-            var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
+            var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", symbol, ID).AsBool();
             if (!forSale)
             {
                 return new ErrorResult { error = "Token not for sale" };
             }
 
-            var auction = (MarketAuction)chain.InvokeContract(chain.Storage, "market", "GetAuction", ID).ToObject();
+            var auction = (MarketAuction)chain.InvokeContract(chain.Storage, "market", "GetAuction", symbol, ID).ToObject();
 
             return new AuctionResult()
             {
