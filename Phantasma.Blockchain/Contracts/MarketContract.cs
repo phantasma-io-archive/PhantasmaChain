@@ -67,7 +67,6 @@ namespace Phantasma.Blockchain.Contracts
         public override NativeContractKind Kind => NativeContractKind.Market;
 
         private const int fiveMinutes = 86400 / 24 / 12;
-        private const int tenMinutes = 600;
         private const int oneHour = 3600;
 
         internal StorageMap _auctionMap; //<string, MarketAuction>
@@ -261,7 +260,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     Timestamp endDateNew;
 
-                    if ((auction.EndDate - Runtime.Time) < tenMinutes) // extend timer if < 10 minutes left
+                    if ((auction.EndDate - Runtime.Time) < auction.ExtensionPeriod) // extend timer if < extensionPeriod
                     {
                         endDateNew = Runtime.Time + TimeSpan.FromSeconds((double) auction.ExtensionPeriod);
                     }
@@ -353,7 +352,7 @@ namespace Phantasma.Blockchain.Contracts
                             Runtime.Expect(price >= minBid + 1, "bid has to be minimum 1% higher than last bid");
                         }
 
-                        if ((auction.EndDate - Runtime.Time) < tenMinutes) // extend timer if < 10 minutes left
+                        if ((auction.EndDate - Runtime.Time) < auction.ExtensionPeriod) // extend timer if < extensionPeriod
                         {
                             endDateNew = Runtime.Time + TimeSpan.FromSeconds((double) auction.ExtensionPeriod);
                         }
