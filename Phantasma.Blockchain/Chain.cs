@@ -158,7 +158,7 @@ namespace Phantasma.Blockchain
 
                     foreach (var evt in events)
                     {
-                        if (evt.Address.IsSystem && evt.Contract == "gas")
+                        if (evt.Contract == "gas" && (evt.Address.IsSystem || evt.Address == block.Validator))
                         {
                             continue;
                         }
@@ -416,7 +416,6 @@ namespace Phantasma.Blockchain
                 runtime = new RuntimeVM(index, script, offset, this, validator, time, transaction, changeSet, oracle, task, false);
             }
             runtime.MinimumFee = minimumFee;
-            runtime.ThrowOnFault = true;
 
             ExecutionState state;
             using (var m = new ProfileMarker("runtime.Execute"))

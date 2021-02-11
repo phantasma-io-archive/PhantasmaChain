@@ -1388,11 +1388,11 @@ namespace Phantasma.Blockchain
             //CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, tokenScript, abi);
 
-            SetTokenPlatformHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
-            SetTokenPlatformHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);
-            SetTokenPlatformHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
-            SetTokenPlatformHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
-            SetTokenPlatformHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
+            SetPlatformTokenHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
+            SetPlatformTokenHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);
+            SetPlatformTokenHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
+            SetPlatformTokenHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
+            SetPlatformTokenHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
         }
 
         public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp, int version)
@@ -2298,10 +2298,13 @@ namespace Phantasma.Blockchain
             foreach (var token in tokens)
             {
                 var key = GetNexusKey($"{token}.{platform}.hash");
-                var tokenHash = storage.Get<Hash>(key);
-                if (tokenHash == hash)
+                if (HasTokenPlatformHash(token, platform, storage))
                 {
-                    return token;
+                    var tokenHash = storage.Get<Hash>(key);
+                    if (tokenHash == hash)
+                    {
+                        return token;
+                    }
                 }
             }
 
@@ -2309,7 +2312,7 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public void SetTokenPlatformHash(string symbol, string platform, Hash hash, StorageContext storage)
+        public void SetPlatformTokenHash(string symbol, string platform, Hash hash, StorageContext storage)
         {
             if (platform == DomainSettings.PlatformName)
             {
