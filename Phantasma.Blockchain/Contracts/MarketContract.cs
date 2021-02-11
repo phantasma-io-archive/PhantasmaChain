@@ -229,7 +229,7 @@ namespace Phantasma.Blockchain.Contracts
 
             MarketAuction auctionNew;
 
-            if (Runtime.Time >= auction.EndDate && auction.EndDate != 0 && auction.Type != TypeAuction.Dutch) // if auction ended trigger sale end
+            if (Runtime.Time >= auction.EndDate && auction.EndDate != 0 && auction.Type != TypeAuction.Dutch && auction.Type != TypeAuction.Fixed) // if auction ended trigger sale end
             {
                 EndSaleInternal(auction.CurrentBidWinner, auction.BaseSymbol, auction.TokenID, auction, auction.ListingFee, auction.ListingFeeAddress, auction.BuyingFee, auction.BuyingFeeAddress);
                 Runtime.Notify(EventKind.OrderFilled, auction.CurrentBidWinner, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, EndPrice = auction.EndPrice, Type = auction.Type });
@@ -239,6 +239,9 @@ namespace Phantasma.Blockchain.Contracts
                 if (auction.Type == TypeAuction.Schedule)
                 {
                     Runtime.Expect(from != auction.Creator, "you can not bid on your own auctions");
+
+                    Timestamp startDateNew;
+                    Timestamp endDateNew;
 
                     if (auction.EndPrice == 0)
                     {
@@ -257,8 +260,6 @@ namespace Phantasma.Blockchain.Contracts
                             Runtime.Expect(price >= minBid + 1, "bid has to be minimum 1% higher than last bid");
                         }
                     }
-
-                    Timestamp endDateNew;
 
                     if ((auction.EndDate - Runtime.Time) < auction.ExtensionPeriod) // extend timer if < extensionPeriod
                     {
