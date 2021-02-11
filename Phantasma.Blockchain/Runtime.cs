@@ -586,20 +586,30 @@ namespace Phantasma.Blockchain
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
             var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Validator, this.Time, this.Transaction, this.changeSet, this.Oracle, ChainTask.Null, false, true, contextName);
             
-            //runtime.ThrowOnFault = true; // enable only if debugging some issue...
-
             for (int i = args.Length - 1; i >= 0; i--)
             {
                 var obj = VMObject.FromObject(args[i]);
                 runtime.Stack.Push(obj);
             }
 
-            var state = runtime.Execute();
-            // TODO catch VM exceptions?
+			ExecutionState state;
+			try {
+				state = runtime.Execute();
+				// TODO catch VM exceptions?
+			} 
+			catch (VMException ex) 
+            {
+                if (allowThrow)
+                {
+                    throw ex;
+                }
 
-            // propagate gas consumption
-            // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
-            this.ConsumeGas(runtime.UsedGas);
+				state = ExecutionState.Fault;
+			}
+
+			// propagate gas consumption
+			// TODO this should happen not here but in real time during previous execution, to prevent gas attacks
+			this.ConsumeGas(runtime.UsedGas);
 
             if (state == ExecutionState.Halt)
             {

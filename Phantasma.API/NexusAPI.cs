@@ -1164,8 +1164,6 @@ namespace Phantasma.API
             uint offset = 0;
             var vm = new RuntimeVM(-1, script, offset, chain, Address.Null, Timestamp.Now, null, changeSet, oracle, ChainTask.Null, true);
 
-            vm.ThrowOnFault = true;
-
             string error = null;
             ExecutionState state = ExecutionState.Fault;
             try

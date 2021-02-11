@@ -416,7 +416,6 @@ namespace Phantasma.Blockchain
                 runtime = new RuntimeVM(index, script, offset, this, validator, time, transaction, changeSet, oracle, task, false);
             }
             runtime.MinimumFee = minimumFee;
-            runtime.ThrowOnFault = true;
 
             ExecutionState state;
             using (var m = new ProfileMarker("runtime.Execute"))
