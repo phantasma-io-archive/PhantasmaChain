@@ -12,7 +12,7 @@ namespace Phantasma.Blockchain.Contracts
     public enum TypeAuction
     {
         Fixed = 0,
-        Schedule = 1,
+        Classic = 1,
         Reserve = 2,
         Dutch = 3,
     }
@@ -128,7 +128,7 @@ namespace Phantasma.Blockchain.Contracts
                 extensionPeriod = auction.ExtensionPeriod;
             }
 
-            if (auction.Type == TypeAuction.Schedule || auction.Type == TypeAuction.Reserve)
+            if (auction.Type == TypeAuction.Classic || auction.Type == TypeAuction.Reserve)
             {
                 Runtime.Expect(extensionPeriod <= oneHour, "extensionPeriod must be <= 1 hour");
                 Runtime.Expect(extensionPeriod >= fiveMinutes, "extensionPeriod must be >= 5 minutes");
@@ -166,7 +166,7 @@ namespace Phantasma.Blockchain.Contracts
 
             TypeAuction type;
 
-            if (typeAuction == 1) // Schedule
+            if (typeAuction == 1) // Classic
             {
                 Runtime.Expect(endDate > startDate, "end date must be later than start date");
                 Runtime.Expect(extensionPeriod <= oneHour, "extensionPeriod must be <= 1 hour");
@@ -174,7 +174,7 @@ namespace Phantasma.Blockchain.Contracts
                 var maxAllowedDate = Runtime.Time + TimeSpan.FromDays(30);
                 Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant, max: " + maxAllowedDate + ", received: " + endDate);
                 endPrice = 0;
-                type = TypeAuction.Schedule;
+                type = TypeAuction.Classic;
             }
             else if (typeAuction == 2) // Reserve
             {
@@ -236,7 +236,7 @@ namespace Phantasma.Blockchain.Contracts
             }
             else
             {
-                if (auction.Type == TypeAuction.Schedule)
+                if (auction.Type == TypeAuction.Classic)
                 {
                     Runtime.Expect(from != auction.Creator, "you can not bid on your own auctions");
 

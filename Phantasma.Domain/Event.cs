@@ -116,7 +116,7 @@ namespace Phantasma.Domain
     public enum TypeAuction
     {
         Fixed = 0,
-        Schedule = 1,
+        Classic = 1,
         Reserve = 2,
         Dutch = 3,
     }       
