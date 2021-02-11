@@ -96,7 +96,15 @@ namespace Phantasma.Network.P2P
 
         public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, string publicHost, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
-            Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
+            if (mempool != null)
+            {
+                Throw.If(!caps.HasFlag(PeerCaps.Mempool), "mempool not included in caps but a mempool instance was passed");
+                Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
+            }
+            else
+            {
+                Throw.If(caps.HasFlag(PeerCaps.Mempool), "mempool included in caps but mempool instance is null");
+            }
 
             this.Logger = Logger.Init(log);
 
