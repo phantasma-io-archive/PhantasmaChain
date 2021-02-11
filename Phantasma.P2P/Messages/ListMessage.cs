@@ -104,7 +104,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (kind.HasFlag(RequestKind.Peers))
             {
-                var peerCount = reader.ReadByte();
+                var peerCount = (int)reader.ReadVarInt();
                 var peers = new string[peerCount];
                 for (int i = 0; i < peerCount; i++)
                 {
@@ -116,7 +116,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (kind.HasFlag(RequestKind.Chains))
             {
-                var chainCount = reader.ReadUInt16();
+                var chainCount = (int)reader.ReadVarInt();
                 var chains = new ChainInfo[chainCount];
                 for (int i = 0; i < chainCount; i++)
                 {
@@ -128,7 +128,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (kind.HasFlag(RequestKind.Mempool))
             {
-                var txCount = reader.ReadUInt16();
+                var txCount = (int)reader.ReadVarInt();
                 var txs = new string[txCount];
                 for (int i = 0; i < txCount; i++)
                 {
@@ -140,7 +140,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (kind.HasFlag(RequestKind.Blocks))
             {
-                var chainCount = reader.ReadUInt16();
+                var chainCount = (int)reader.ReadVarInt();
                 while (chainCount > 0)
                 {
                     var chainName = reader.ReadVarString();
@@ -178,7 +178,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (Kind.HasFlag(RequestKind.Peers))
             {
-                writer.Write((byte)_peers.Length);
+                writer.WriteVarInt(_peers.Length);
                 foreach (var peer in _peers)
                 {
                     writer.WriteVarString(peer);
@@ -187,7 +187,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (Kind.HasFlag(RequestKind.Chains))
             {
-                writer.Write((ushort)_chains.Length);
+                writer.WriteVarInt(_chains.Length);
                 foreach (var chain in _chains)
                 {
                     chain.Serialize(writer);
@@ -196,16 +196,23 @@ namespace Phantasma.Network.P2P.Messages
 
             if (Kind.HasFlag(RequestKind.Mempool))
             {
-                writer.Write((ushort)_mempool.Length);
-                foreach (var tx in _mempool)
+                if (_mempool != null)
                 {
-                    writer.WriteVarString(tx);
+                    writer.WriteVarInt(_mempool.Length);
+                    foreach (var tx in _mempool)
+                    {
+                        writer.WriteVarString(tx);
+                    }
+                }
+                else
+                {
+                    writer.WriteVarInt(0);
                 }
             }
 
             if (Kind.HasFlag(RequestKind.Blocks))
             {
-                writer.Write((ushort)_blockRanges.Count);
+                writer.WriteVarInt(_blockRanges.Count);
                 foreach (var entry in _blockRanges)
                 {
                     var range = entry.Value;
