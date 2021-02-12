@@ -254,7 +254,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestMarketContractAuctionSchedule()
+        public void TestMarketContractAuctionClassic()
         {
             var owner = PhantasmaKeys.Generate();
             var nexus = new Nexus("simnet", null, null);
@@ -320,7 +320,7 @@ namespace Phantasma.Tests
             var tokenToSell = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
             var balanceOwnerBefore = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
 
-            // list token as schedule auction
+            // list token as Classic auction
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
             ScriptUtils.
@@ -1051,7 +1051,7 @@ namespace Phantasma.Tests
             var tokenToSell = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
             var balanceOwnerBefore = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
 
-            // list token as scheduled auction
+            // list token as classic auction
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
             ScriptUtils.
@@ -1467,10 +1467,10 @@ namespace Phantasma.Tests
             var balanceSellerAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenTicker, testUser.Address);
             var balanceListFeeAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenTicker, listingFeeAddress);
             var balanceBuyFeeAfter = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenTicker, buyingFeeAddress);
-            Assert.IsTrue(balanceListFeeAfter == balanceListFeeBefore + (listingFee * price / 100), " balanceSellerBefore: " + balanceSellerBefore + " balanceSellerAfter: " + balanceSellerAfter + " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter + " balanceListFeeBefore: " + balanceListFeeBefore + " balanceListFeeAfter: " + balanceListFeeAfter + " balanceBuyFeeBefore: " + balanceBuyFeeBefore + " balanceBuyFeeAfter: " + balanceBuyFeeAfter);
-            Assert.IsTrue(balanceBuyFeeAfter == balanceBuyFeeBefore + (buyingFee * price / 100), " balanceSellerBefore: " + balanceSellerBefore + " balanceSellerAfter: " + balanceSellerAfter + " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter + " balanceListFeeBefore: " + balanceListFeeBefore + " balanceListFeeAfter: " + balanceListFeeAfter + " balanceBuyFeeBefore: " + balanceBuyFeeBefore + " balanceBuyFeeAfter: " + balanceBuyFeeAfter);
+            Assert.IsTrue(balanceListFeeAfter == balanceListFeeBefore + 1, " balanceSellerBefore: " + balanceSellerBefore + " balanceSellerAfter: " + balanceSellerAfter + " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter + " balanceListFeeBefore: " + balanceListFeeBefore + " balanceListFeeAfter: " + balanceListFeeAfter + " balanceBuyFeeBefore: " + balanceBuyFeeBefore + " balanceBuyFeeAfter: " + balanceBuyFeeAfter);
+            Assert.IsTrue(balanceBuyFeeAfter == balanceBuyFeeBefore + 1, " balanceSellerBefore: " + balanceSellerBefore + " balanceSellerAfter: " + balanceSellerAfter + " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter + " balanceListFeeBefore: " + balanceListFeeBefore + " balanceListFeeAfter: " + balanceListFeeAfter + " balanceBuyFeeBefore: " + balanceBuyFeeBefore + " balanceBuyFeeAfter: " + balanceBuyFeeAfter);
             Assert.IsTrue(balanceSellerAfter == balanceSellerBefore + price, " balanceSellerBefore: " + balanceSellerBefore + " balanceSellerAfter: " + balanceSellerAfter + " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter + " balanceListFeeBefore: " + balanceListFeeBefore + " balanceListFeeAfter: " + balanceListFeeAfter + " balanceBuyFeeBefore: " + balanceBuyFeeBefore + " balanceBuyFeeAfter: " + balanceBuyFeeAfter);
-            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - price - (listingFee * price / 100) - 1 - (buyingFee * price / 100) - 1, " balanceSellerBefore: " + balanceSellerBefore + " balanceSellerAfter: " + balanceSellerAfter + " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter + " balanceListFeeBefore: " + balanceListFeeBefore + " balanceListFeeAfter: " + balanceListFeeAfter + " balanceBuyFeeBefore: " + balanceBuyFeeBefore + " balanceBuyFeeAfter: " + balanceBuyFeeAfter);
+            Assert.IsTrue(balanceOwnerAfter == balanceOwnerBefore - price - 1 - 1, " balanceSellerBefore: " + balanceSellerBefore + " balanceSellerAfter: " + balanceSellerAfter + " balanceOwnerBefore: " + balanceOwnerBefore + " balanceOwnerAfter: " + balanceOwnerAfter + " balanceListFeeBefore: " + balanceListFeeBefore + " balanceListFeeAfter: " + balanceListFeeAfter + " balanceBuyFeeBefore: " + balanceBuyFeeBefore + " balanceBuyFeeAfter: " + balanceBuyFeeAfter);
         }
     }
 }
