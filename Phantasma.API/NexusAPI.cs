@@ -1636,6 +1636,15 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
+            try
+            {
+                var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+            }
+            catch(Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
+
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
             {
