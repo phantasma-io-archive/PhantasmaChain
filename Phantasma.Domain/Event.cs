@@ -113,6 +113,23 @@ namespace Phantasma.Domain
             ChainName = chainName;
         }
     }
+    public enum TypeAuction
+    {
+        Fixed = 0,
+        Classic = 1,
+        Reserve = 2,
+        Dutch = 3,
+    }       
+
+    public struct MarketEventData
+    {
+        public string BaseSymbol;
+        public string QuoteSymbol;
+        public BigInteger ID;
+        public BigInteger Price;
+        public BigInteger EndPrice;
+        public TypeAuction Type;
+    }
 
     public struct ChainValueEventData
     {
