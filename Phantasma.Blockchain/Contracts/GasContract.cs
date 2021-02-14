@@ -357,22 +357,24 @@ namespace Phantasma.Blockchain.Contracts
 
         private void CheckInflation()
         {
-            if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
+            if (!Runtime.HasGenesis)
             {
-                if (_lastInflationDate.Value == 0)
+                return;
+            }
+
+            if (_lastInflationDate.Value == 0)
+            {
+                var genesisTime = Runtime.GetGenesisTime();
+                _lastInflationDate = genesisTime;
+            }
+            else
+            if (!_inflationReady)
+            {
+                var infDiff = Runtime.Time - _lastInflationDate;
+                var inflationPeriod = SecondsInDay * 90;
+                if (infDiff >= inflationPeriod)
                 {
-                    var genesisTime = Runtime.GetGenesisTime();
-                    _lastInflationDate = genesisTime;
-                }
-                else
-                if (!_inflationReady)
-                {
-                    var infDiff = Runtime.Time - _lastInflationDate;
-                    var inflationPeriod = SecondsInDay * 90;
-                    if (infDiff >= inflationPeriod)
-                    {
-                        _inflationReady = true;
-                    }
+                    _inflationReady = true;
                 }
             }
         }
