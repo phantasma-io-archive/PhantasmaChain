@@ -1392,7 +1392,7 @@ namespace Phantasma.Blockchain
             SetPlatformTokenHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);
             SetPlatformTokenHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
             SetPlatformTokenHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
-            SetPlatformTokenHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
+            //SetPlatformTokenHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
         }
 
         public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp, int version)
@@ -2314,6 +2314,8 @@ namespace Phantasma.Blockchain
 
         public void SetPlatformTokenHash(string symbol, string platform, Hash hash, StorageContext storage)
         {
+            Throw.If(!TokenExists(storage, symbol), $"token {symbol} does not exist");
+
             if (platform == DomainSettings.PlatformName)
             {
                 throw new ChainException($"cannot set token hash of {symbol} for native platform");
