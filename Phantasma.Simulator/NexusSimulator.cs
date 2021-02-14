@@ -993,7 +993,20 @@ namespace Phantasma.Simulator
                 CancelBlock();
             }
         }
+        public void TimeSkipMinutes(int minutes)
+        {
+            CurrentTime = CurrentTime.AddMinutes(minutes);
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
 
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+
+            var txCost = Nexus.RootChain.GetTransactionFee(tx);
+        }
         public void TimeSkipHours(int hours)
         {
             CurrentTime = CurrentTime.AddHours(hours);
