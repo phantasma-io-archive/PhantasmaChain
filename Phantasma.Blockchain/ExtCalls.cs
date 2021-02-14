@@ -60,7 +60,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Nexus.CreateChain", Nexus_CreateChain);
             vm.RegisterMethod("Nexus.CreatePlatform", Nexus_CreatePlatform);
             vm.RegisterMethod("Nexus.CreateOrganization", Nexus_CreateOrganization);
-            vm.RegisterMethod("Nexus.SetTokenPlatformHash", Nexus_SetTokenPlatformHash);
+            vm.RegisterMethod("Nexus.SetPlatformTokenHash", Nexus_SetPlatformTokenHash);
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
 
@@ -1472,7 +1472,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Nexus_SetTokenPlatformHash(RuntimeVM vm)
+        private static ExecutionState Nexus_SetPlatformTokenHash(RuntimeVM vm)
         {
             vm.ExpectStackSize(3);
 

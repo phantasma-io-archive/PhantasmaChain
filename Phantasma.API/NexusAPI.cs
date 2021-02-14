@@ -474,10 +474,15 @@ namespace Phantasma.API
                 creatorAddress = auction.Creator.Text,
                 chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
+                endPrice = auction.EndPrice.ToString(),
+                extensionPeriod = auction.ExtensionPeriod.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value,
                 ram = Base16.Encode(nft.RAM),
                 rom = Base16.Encode(nft.ROM),
+                type = auction.Type.ToString(),
+                listingFee = auction.ListingFee.ToString(),
+                currentWinner = auction.CurrentBidWinner == Address.Null ? "" : auction.CurrentBidWinner.Text
             };
         }
 
@@ -1656,6 +1661,8 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
+            var nft = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+
             var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", symbol, ID).AsBool();
             if (!forSale)
             {
@@ -1668,11 +1675,19 @@ namespace Phantasma.API
             {
                 baseSymbol = auction.BaseSymbol,
                 quoteSymbol = auction.QuoteSymbol,
-                creatorAddress = auction.Creator.Text,
                 tokenId = auction.TokenID.ToString(),
+                creatorAddress = auction.Creator.Text,
+                chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
+                endPrice = auction.EndPrice.ToString(),
+                extensionPeriod = auction.ExtensionPeriod.ToString(),
                 startDate = auction.StartDate.Value,
-                endDate = auction.EndDate.Value
+                endDate = auction.EndDate.Value,
+                ram = Base16.Encode(nft.RAM),
+                rom = Base16.Encode(nft.ROM),
+                type = auction.Type.ToString(),
+                listingFee = auction.ListingFee.ToString(),
+                currentWinner = auction.CurrentBidWinner == Address.Null ? "" : auction.CurrentBidWinner.Text
             };
         }
 
