@@ -455,6 +455,23 @@ namespace Phantasma.Blockchain.Contracts
 
                 var finalAmount = price;
 
+                if (auction.Type == TypeAuction.Fixed) // if fixed type auction, transfer to contract done in EndSaleInternal to account for original BuyToken and new BidToken
+                {
+                    // calculate total amount then transfer them to contract
+                    BigInteger combinedFees = buyFee + listFee + price;
+
+                    // check that we have enough balance first
+                    var balance = Runtime.GetBalance(quoteToken.Symbol, from);
+
+                    if (combinedFees > balance)
+                    {
+                        var diff = combinedFees - balance;
+                        throw new BalanceException(quoteToken.Symbol, from, diff);
+                    }
+
+                    Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
+                }
+
                 // handle royalties
                 if (Runtime.ProtocolVersion >= 4)
                 {
@@ -472,26 +489,9 @@ namespace Phantasma.Blockchain.Contracts
                             nftRoyalty = 50; // we don't allow more than 50% royalties fee
                         }
                         var royaltyFee = finalAmount * nftRoyalty / 100;
-                        Runtime.TransferTokens(quoteToken.Symbol, from, nftData.Creator, royaltyFee);
+                        Runtime.TransferTokens(quoteToken.Symbol, this.Address, nftData.Creator, royaltyFee);
                         finalAmount -= royaltyFee;
                     }
-                }
-
-                if (auction.Type == TypeAuction.Fixed) // if fixed type auction, transfer to contract done in EndSaleInternal to account for original BuyToken and new BidToken
-                {
-                    // calculate total amount then transfer them to contract
-                    BigInteger combinedFees = buyFee + listFee + price;
-
-                    // check that we have enough balance first
-                    var balance = Runtime.GetBalance(quoteToken.Symbol, from);
-
-                    if (combinedFees > balance)
-                    {
-                        var diff = finalAmount - balance;
-                        throw new BalanceException(quoteToken.Symbol, from, diff);
-                    }
-
-                    Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
                 }
 
                 // transfer sale amount
