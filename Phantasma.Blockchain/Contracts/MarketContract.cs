@@ -238,15 +238,10 @@ namespace Phantasma.Blockchain.Contracts
                     else
                     {
                         var minBid = (auction.EndPrice / 100) + auction.EndPrice;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (quoteToken.Flags.HasFlag(TokenFlags.Divisible))
-                        {
-                            Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
-                        }
-                        else if (minBid == 0)
-                        {
-                            Runtime.Expect(price >= minBid + 1, "bid has to be minimum 1% higher than last bid");
-                        }
+                        if (minBid == auction.EndPrice)
+                            minBid = minBid + 1;
+
+                        Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
                     }
 
                     Timestamp startDateNew = auction.StartDate;
