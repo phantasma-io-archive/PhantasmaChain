@@ -147,6 +147,8 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(listingFee <= 5, "listingFee has to be <= 5%");
 
+            Runtime.Expect(listFee == 0 || feeAddress != Address.Null, "Fee receiving address cannot be null")
+
             TypeAuction type;
 
             if (typeAuction == 1) // Classic
@@ -212,7 +214,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (Runtime.Time >= auction.EndDate && auction.EndDate != 0) // if auction ended trigger sale end
             {
-                if (auction.Type == TypeAuction.Dutch || auction.Type == TypeAuction.Fixed)
+                if (auction.Type == TypeAuction.Dutch || auction.Type == TypeAuction.Fixed || auction.CurrentBidWinner == Address.Null)
                 {
                     // no winners, cancel the auction
                     EndSaleInternal(auction.Creator, auction.BaseSymbol, auction.TokenID, auction);
@@ -221,8 +223,7 @@ namespace Phantasma.Blockchain.Contracts
                 else
                 {
                     // current bid is winner
-                    EndSaleInternal(auction.CurrentBidWinner, auction.BaseSymbol, auction.TokenID, auction);
-                    Runtime.Notify(EventKind.OrderFilled, auction.CurrentBidWinner, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, EndPrice = auction.EndPrice, Type = auction.Type });
+                    CancelSale(auction.BaseSymbol, auction.TokenID;
                 }
             }
             else
