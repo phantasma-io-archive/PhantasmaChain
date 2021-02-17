@@ -147,7 +147,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(listingFee <= 5, "listingFee has to be <= 5%");
 
-            Runtime.Expect(listFee == 0 || feeAddress != Address.Null, "Fee receiving address cannot be null")
+            Runtime.Expect(listFee == 0 || feeAddress != Address.Null, "Fee receiving address cannot be null");
 
             TypeAuction type;
 
@@ -223,7 +223,7 @@ namespace Phantasma.Blockchain.Contracts
                 else
                 {
                     // current bid is winner
-                    CancelSale(auction.BaseSymbol, auction.TokenID;
+                    CancelSale(auction.BaseSymbol, auction.TokenID);
                 }
             }
             else
