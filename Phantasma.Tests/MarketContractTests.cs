@@ -320,6 +320,21 @@ namespace Phantasma.Tests
             var tokenToSell = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
             var balanceOwnerBefore = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, tokenToSell, owner.Address);
 
+            // list token with a fee but no fee address (should fail)
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.
+                    BeginScript().
+                    AllowGas(testUser.Address, Address.Null, 1, 9999).
+                    CallContract("market", "ListToken", testUser.Address, token.Symbol, DomainSettings.StakingTokenSymbol, tokenID, price, endPrice, startDate, endDate, extensionPeriod, auctionType, 2, Address.Null).
+                    SpendGas(testUser.Address).
+                    EndScript()
+                );
+                simulator.EndBlock();
+            });
+
             // list token as Classic auction
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
