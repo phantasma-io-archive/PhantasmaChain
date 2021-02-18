@@ -381,7 +381,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(auction.Type == TypeAuction.Fixed, "BuyToken only supports fixed price listings");
 
-            Runtime.Expect(auction.StartDate < Runtime.Time, "you can not buy a nft for which the sale has not started");
+            Runtime.Expect(auction.StartDate <= Runtime.Time, "you can not buy a nft for which the sale has not started");
 
             if (auction.Creator == from)
             {
