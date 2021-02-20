@@ -49,6 +49,12 @@ namespace Phantasma.Network.P2P
             }
 
             var host = temp[1];
+
+            if (host!= null && host.StartsWith("//"))
+            {
+                host = host.Substring(2);
+            }
+
             if (string.IsNullOrEmpty(host))
             {
                 throw new NodeException("Invalid endpoint host: " + str);
