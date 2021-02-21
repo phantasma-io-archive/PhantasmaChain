@@ -532,7 +532,7 @@ namespace Phantasma.Network.P2P
             catch (Exception e)
             {
                 Logger.Error(e.ToString());
-                throw new NodeException("block add failed");
+                throw new NodeException($"Failed to add block {block.Height} to {chain.Name} chain");
             }
 
             return true;
