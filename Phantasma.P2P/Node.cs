@@ -91,6 +91,7 @@ namespace Phantasma.Network.P2P
         private Dictionary<Address, Cache<Event>> _events = new Dictionary<Address, Cache<Event>>();
 
         private Dictionary<string, PendingBlock> _pendingBlocks = new Dictionary<string, PendingBlock>();
+        private Dictionary<string, BigInteger> _knownHeights = new Dictionary<string, BigInteger>(); // known external heights for chains; dictionary key is the chain name
 
         private DateTime _lastRequestTime = DateTime.UtcNow;
 
@@ -502,14 +503,21 @@ namespace Phantasma.Network.P2P
 
             if (count > 0)
             {
+                BigInteger expectedHeight;
+                lock (_knownHeights)
+                {
+                    expectedHeight = _knownHeights[chain.Name];
+                }
+
+                int percent = (int)((last * 100) / expectedHeight);
 
                 if (start == last)
                 {
-                    Logger.Message($"{this.Version}: Added block #{start} in {chain.Name}");
+                    Logger.Message($"{this.Version}: Added block #{start} in {chain.Name} ...{percent}%");
                 }
                 else
                 {
-                    Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name}");
+                    Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name} ...{percent}%");
                 }
             }
         }
@@ -681,6 +689,11 @@ namespace Phantasma.Network.P2P
                                     }
 
                                     blockFetches[entry.name] = new RequestRange(start, end);
+
+                                    lock (_knownHeights)
+                                    {
+                                        _knownHeights[chain.Name] = entry.height;
+                                    }
                                 }
                             }
                         }
