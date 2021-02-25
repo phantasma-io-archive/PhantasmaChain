@@ -2321,6 +2321,10 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"cannot set token hash of {symbol} for native platform");
             }
 
+            var token = GetTokenInfo(storage, symbol);
+
+            Throw.If(!token.Flags.HasFlag(TokenFlags.Foreign), "token is not foreign");
+
             var key = GetNexusKey($"{symbol}.{platform}.hash");
 
             //should be updateable since a foreign token hash could change
