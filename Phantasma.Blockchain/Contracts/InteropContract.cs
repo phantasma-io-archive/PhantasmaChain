@@ -135,6 +135,7 @@ namespace Phantasma.Blockchain.Contracts
                     }
 
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
+                    Runtime.Expect(token.Flags.HasFlag(TokenFlags.Swappable), "transfer token must be swappable");
 
                     var withdraw = _withdraws.Get<InteropWithdraw>(index);
                     _withdraws.RemoveAt(index);
@@ -189,6 +190,7 @@ namespace Phantasma.Blockchain.Contracts
 
                                 
                                 Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
+                                Runtime.Expect(token.Flags.HasFlag(TokenFlags.Swappable), "transfer token must be swappable");
 
                                 Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
@@ -233,6 +235,7 @@ namespace Phantasma.Blockchain.Contracts
 
             var transferTokenInfo = this.Runtime.GetToken(symbol);
             Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "transfer token must be transferable");
+            Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.Swappable), "transfer token must be swappable");
 
             if (Runtime.ProtocolVersion >= 4)
             {
