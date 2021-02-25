@@ -1482,7 +1482,7 @@ namespace Phantasma.Blockchain
             var bytes = vm.PopBytes("hash");
             var hash = new Hash(bytes.Skip(1).ToArray());
 
-            vm.SetTokenPlatformHash(symbol, platform, hash);
+            vm.SetPlatformTokenHash(symbol, platform, hash);
 
             return ExecutionState.Running;
         }
