@@ -147,6 +147,8 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(listingFee <= 5, "listingFee has to be <= 5%");
 
+            Runtime.Expect(listingFee == 0 || listingFeeAddress != Address.Null, "Fee receiving address cannot be null");
+
             TypeAuction type;
 
             if (typeAuction == 1) // Classic
@@ -212,11 +214,10 @@ namespace Phantasma.Blockchain.Contracts
 
             if (Runtime.Time >= auction.EndDate && auction.EndDate != 0) // if auction ended trigger sale end
             {
-                if (auction.Type == TypeAuction.Dutch || auction.Type == TypeAuction.Fixed)
+                if (auction.Type == TypeAuction.Dutch || auction.Type == TypeAuction.Fixed || auction.CurrentBidWinner == Address.Null)
                 {
                     // no winners, cancel the auction
-                    EndSaleInternal(auction.Creator, auction.BaseSymbol, auction.TokenID, auction);
-                    Runtime.Notify(EventKind.OrderCancelled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price, EndPrice = 0, Type = auction.Type });
+                    CancelSale(auction.BaseSymbol, auction.TokenID);
                 }
                 else
                 {
@@ -238,15 +239,10 @@ namespace Phantasma.Blockchain.Contracts
                     else
                     {
                         var minBid = (auction.EndPrice / 100) + auction.EndPrice;
-                        var quoteToken = Runtime.GetToken(auction.QuoteSymbol);
-                        if (quoteToken.Flags.HasFlag(TokenFlags.Divisible))
-                        {
-                            Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
-                        }
-                        else if (minBid == 0)
-                        {
-                            Runtime.Expect(price >= minBid + 1, "bid has to be minimum 1% higher than last bid");
-                        }
+                        if (minBid == auction.EndPrice)
+                            minBid = minBid + 1;
+
+                        Runtime.Expect(price >= minBid, "bid has to be minimum 1% higher than last bid");
                     }
 
                     Timestamp startDateNew = auction.StartDate;
@@ -384,6 +380,8 @@ namespace Phantasma.Blockchain.Contracts
             var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
 
             Runtime.Expect(auction.Type == TypeAuction.Fixed, "BuyToken only supports fixed price listings");
+
+            Runtime.Expect(auction.StartDate <= Runtime.Time, "you can not buy a nft for which the sale has not started");
 
             if (auction.Creator == from)
             {

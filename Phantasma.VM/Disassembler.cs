@@ -33,6 +33,12 @@ namespace Phantasma.VM
 
                 switch (temp.Opcode)
                 {
+                    case Opcode.RET:
+                        {
+                            temp.Args = new object[0];
+                            result.Add(temp);
+                            return result;
+                        }
                     // args: byte src_reg, byte dest_reg
                     case Opcode.CTX:
                     case Opcode.MOVE:

@@ -1377,14 +1377,14 @@ namespace Phantasma.Blockchain
             var abi = ContractInterface.Empty;
 
             //UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals)
-            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript, abi);
+            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable, tokenScript, abi);
             CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, owner, 0, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript, abi);
             CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, owner, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript, abi);
             CreateToken(storage, DomainSettings.RewardTokenSymbol, DomainSettings.RewardTokenName, owner, 0, 0, TokenFlags.Transferable | TokenFlags.Burnable, tokenScript, abi);
 
-            CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
-            CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
-            CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
+            CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite, tokenScript, abi);
+            CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite, tokenScript, abi);
+            CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible, tokenScript, abi);
             //CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, tokenScript, abi);
 
@@ -2314,22 +2314,35 @@ namespace Phantasma.Blockchain
 
         public void SetPlatformTokenHash(string symbol, string platform, Hash hash, StorageContext storage)
         {
-            Throw.If(!TokenExists(storage, symbol), $"token {symbol} does not exist");
+            var tokenKey = GetTokenInfoKey(symbol);
+            if (!storage.Has(tokenKey))
+            {
+                throw new ChainException($"Token does not exist ({symbol})");
+            }
 
             if (platform == DomainSettings.PlatformName)
             {
                 throw new ChainException($"cannot set token hash of {symbol} for native platform");
             }
 
-            var key = GetNexusKey($"{symbol}.{platform}.hash");
+            var bytes = storage.Get(tokenKey);
+            var info = Serialization.Unserialize<TokenInfo>(bytes);
+
+            if (!info.Flags.HasFlag(TokenFlags.Swappable))
+            {
+                info.Flags |= TokenFlags.Swappable;
+                EditToken(storage, symbol, info);
+            }
+
+            var hashKey = GetNexusKey($"{symbol}.{platform}.hash");
 
             //should be updateable since a foreign token hash could change
-            if (storage.Has(key))
+            if (storage.Has(hashKey))
             {
                 _logger.Warning($"Token hash of {symbol} already set for platform {platform}, updating to {hash}");
             }
 
-            storage.Put<Hash>(key, hash);
+            storage.Put<Hash>(hashKey, hash);
         }
 
         public bool HasTokenPlatformHash(string symbol, string platform, StorageContext storage)

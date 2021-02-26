@@ -992,7 +992,7 @@ namespace Phantasma.Blockchain
             return Chain.GetTokenSupply(this.Storage, symbol);
         }
 
-        public void SetTokenPlatformHash(string symbol, string platform, Hash hash)
+        public void SetPlatformTokenHash(string symbol, string platform, Hash hash)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
