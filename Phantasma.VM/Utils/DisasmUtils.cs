@@ -83,6 +83,9 @@ namespace Phantasma.VM.Utils
             table["market.SellToken"] = 6;
             table["market.BuyToken"] = 3;
             table["market.CancelSale"] = 2;
+            table["market.EditAuction"] = 9;
+            table["market.ListToken"] = 12;
+            table["market.BidToken"] = 6;
 
             table["swap.GetRate"] = 3;
             table["swap.DepositTokens"] = 3;

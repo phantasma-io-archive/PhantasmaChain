@@ -11,17 +11,17 @@ namespace Phantasma.Network.P2P.Messages
         public readonly P2PError Code;
         public readonly string Text;
 
-        public ErrorMessage(Address address, P2PError code, string text = null) : base(Opcode.ERROR, address)
+        public ErrorMessage(Address address, string host, P2PError code, string text = null) : base(Opcode.ERROR, address, host)
         {
             this.Code = code;
             this.Text = text;
         }
 
-        internal static ErrorMessage FromReader(Address address, BinaryReader reader)
+        internal static ErrorMessage FromReader(Address address, string host, BinaryReader reader)
         {
             var code = (P2PError)reader.ReadByte();
             var text = reader.ReadVarString();
-            return new ErrorMessage(address, code, text);
+            return new ErrorMessage(address, host, code, text);
         }
 
         protected override void OnSerialize(BinaryWriter writer)

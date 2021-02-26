@@ -131,9 +131,9 @@ namespace Phantasma.Blockchain
 
         public virtual T Read<T>(Timestamp time, string url) where T : class
         {
-            if (_entries.ContainsKey(url))
+            if (TryGetOracleCache<T>(url, out T cachedEntry))
             {
-                return (_entries[url].Content) as T;
+                return cachedEntry as T;
             }
 
             T content;
@@ -156,6 +156,22 @@ namespace Phantasma.Blockchain
                 {
                     args = args.Skip(2).ToArray();
                     content = ReadChainOracle<T>(platformName, chainName, args);
+
+                    if (content is InteropBlock)
+                    {
+                        if ((content as InteropBlock).Hash == Hash.Null)
+                        {
+                            return content;
+                        }
+                    }
+
+                    if (content is InteropTransaction)
+                    {
+                        if ((content as InteropTransaction).Hash == Hash.Null)
+                        {
+                            return content;
+                        }
+                    }
                 }
                 else
                 { 
@@ -184,10 +200,18 @@ namespace Phantasma.Blockchain
 
                     var stakingURL = priceTag + DomainSettings.StakingTokenSymbol;
                     decimal soulPriceDec = 0;
-                    if (_entries.ContainsKey(stakingURL))
+                    if (TryGetOracleCache(stakingURL, out byte[] cachedContent))
                     {
                         BigInteger soulPriceBi;
-                        soulPriceBi = new BigInteger(_entries[url].Content);
+                        if (ProtocolVersion >= 3)
+                        {
+                            soulPriceBi = new BigInteger(cachedContent);
+                        }
+                        else
+                        {
+                            content = val.ToByteArray() as T;
+                            soulPriceBi = new BigInteger(cachedContent);
+                        }
 
                         soulPriceDec = UnitConversion.ToDecimal(soulPriceBi, DomainSettings.FiatTokenDecimals);
                     }
@@ -238,8 +262,37 @@ namespace Phantasma.Blockchain
             return content;
         }
 
+        private bool TryGetOracleCache<T>(string url, out T content)
+        {
+            lock (_txEntries)
+            {
+                if (_txEntries.ContainsKey(url))
+                {
+                    content = Serialization.Unserialize<T>(_txEntries[url].Content);
+                    return true;
+                }
+            }
+
+            lock (_entries)
+            {
+                if (_entries.ContainsKey(url))
+                {
+                    content = Serialization.Unserialize<T>(_entries[url].Content);
+                    return true;
+                }
+            }
+
+            content = default(T);
+            return false;
+        }
+
         private void CacheOracleData<T>(string url, T content)
         {
+            if (content == null)
+            {
+                return;
+            }
+
             var value = Serialization.Serialize(content);
             if (value == null)
             {
@@ -414,8 +467,7 @@ namespace Phantasma.Blockchain
 
                             return (block) as T;
                         }
-                        //TODO
-                        else if (BigInteger .TryParse(input[1], out height))
+                        else if (BigInteger.TryParse(input[1], out height))
                         {
                             if (platformName == DomainSettings.PlatformName)
                             {

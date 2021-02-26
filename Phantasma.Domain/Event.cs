@@ -66,7 +66,21 @@ namespace Phantasma.Domain
         TaskStop = 55,
         CrownRewards = 56,
         Infusion = 57,
-        Custom = 64,
+        SaleMilestone = 58,
+        OrderBid = 59,
+        Custom = 64
+    }
+
+    public struct OrganizationEventData
+    {
+        public readonly string Organization;
+        public readonly Address MemberAddress;
+
+        public OrganizationEventData(string organization, Address memberAddress)
+        {
+            this.Organization = organization;
+            this.MemberAddress = memberAddress;
+        }
     }
 
     public struct TokenEventData
@@ -99,6 +113,23 @@ namespace Phantasma.Domain
             InfusedValue = infusedValue;
             ChainName = chainName;
         }
+    }
+    public enum TypeAuction
+    {
+        Fixed = 0,
+        Classic = 1,
+        Reserve = 2,
+        Dutch = 3,
+    }       
+
+    public struct MarketEventData
+    {
+        public string BaseSymbol;
+        public string QuoteSymbol;
+        public BigInteger ID;
+        public BigInteger Price;
+        public BigInteger EndPrice;
+        public TypeAuction Type;
     }
 
     public struct ChainValueEventData

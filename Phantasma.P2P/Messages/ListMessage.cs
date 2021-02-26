@@ -54,8 +54,8 @@ namespace Phantasma.Network.P2P.Messages
     {
         public readonly RequestKind Kind;
 
-        private Endpoint[] _peers = null;
-        public IEnumerable<Endpoint> Peers => _peers;
+        private string[] _peers = null;
+        public IEnumerable<string> Peers => _peers;
 
         private string[] _mempool = null;
         public IEnumerable<string> Mempool => _mempool;
@@ -63,46 +63,51 @@ namespace Phantasma.Network.P2P.Messages
         private ChainInfo[] _chains = null;
         public IEnumerable<ChainInfo> Chains => _chains;
 
+        public const int MaxPeers = 255;
+        public const int MaxChains = 128;
+        public const int MaxTransactions = 1024; // for mempool
+        public const int MaxBlocks = 1024;
+
         // here the dictionary key is the chain name
         private Dictionary<string, BlockRange> _blockRanges;
         public IEnumerable<KeyValuePair<string, BlockRange>> Blocks => _blockRanges;
 
-        public ListMessage(Address address, RequestKind kind) : base(Opcode.LIST, address)
+        public ListMessage(Address address, string host, RequestKind kind) : base(Opcode.LIST, address, host)
         {
             this.Kind = kind;
         }
 
-        public void SetPeers(IEnumerable<Endpoint> peers)
+        public void SetPeers(IEnumerable<string> peers)
         {
             this._peers = peers.ToArray();
-            Throw.If(_peers.Length > 255, "too many peers");
+            Throw.If(_peers.Length > MaxPeers, "too many peers");
         }
 
         public void SetMempool(IEnumerable<string> txs)
         {
             this._mempool = txs.ToArray();
-            Throw.If(_mempool.Length > 65535, "too many txs");
+            Throw.If(_mempool.Length > MaxTransactions, "too many txs");
         }
 
         public void SetChains(IEnumerable<ChainInfo> chains)
         {
             this._chains = chains.ToArray();
-            Throw.If(_chains.Length > 65535, "too many chains");
+            Throw.If(_chains.Length > MaxChains, "too many chains");
         }
 
-        internal static ListMessage FromReader(Address address, BinaryReader reader)
+        internal static ListMessage FromReader(Address address, string host, BinaryReader reader)
         {
             var kind = (RequestKind)reader.ReadByte();
 
-            var result = new ListMessage(address, kind);
+            var result = new ListMessage(address, host, kind);
 
             if (kind.HasFlag(RequestKind.Peers))
             {
-                var peerCount = reader.ReadByte();
-                var peers = new Endpoint[peerCount];
+                var peerCount = (int)reader.ReadVarInt();
+                var peers = new string[peerCount];
                 for (int i = 0; i < peerCount; i++)
                 {
-                    peers[i] = Endpoint.Unserialize(reader);
+                    peers[i] = reader.ReadVarString();
                 }
 
                 result.SetPeers(peers);
@@ -110,7 +115,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (kind.HasFlag(RequestKind.Chains))
             {
-                var chainCount = reader.ReadUInt16();
+                var chainCount = (int)reader.ReadVarInt();
                 var chains = new ChainInfo[chainCount];
                 for (int i = 0; i < chainCount; i++)
                 {
@@ -122,7 +127,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (kind.HasFlag(RequestKind.Mempool))
             {
-                var txCount = reader.ReadUInt16();
+                var txCount = (int)reader.ReadVarInt();
                 var txs = new string[txCount];
                 for (int i = 0; i < txCount; i++)
                 {
@@ -134,7 +139,7 @@ namespace Phantasma.Network.P2P.Messages
 
             if (kind.HasFlag(RequestKind.Blocks))
             {
-                var chainCount = reader.ReadUInt16();
+                var chainCount = (int)reader.ReadVarInt();
                 while (chainCount > 0)
                 {
                     var chainName = reader.ReadVarString();
@@ -172,16 +177,16 @@ namespace Phantasma.Network.P2P.Messages
 
             if (Kind.HasFlag(RequestKind.Peers))
             {
-                writer.Write((byte)_peers.Length);
+                writer.WriteVarInt(_peers.Length);
                 foreach (var peer in _peers)
                 {
-                    peer.Serialize(writer);
+                    writer.WriteVarString(peer);
                 }
             }
 
             if (Kind.HasFlag(RequestKind.Chains))
             {
-                writer.Write((ushort)_chains.Length);
+                writer.WriteVarInt(_chains.Length);
                 foreach (var chain in _chains)
                 {
                     chain.Serialize(writer);
@@ -190,16 +195,23 @@ namespace Phantasma.Network.P2P.Messages
 
             if (Kind.HasFlag(RequestKind.Mempool))
             {
-                writer.Write((ushort)_mempool.Length);
-                foreach (var tx in _mempool)
+                if (_mempool != null)
                 {
-                    writer.WriteVarString(tx);
+                    writer.WriteVarInt(_mempool.Length);
+                    foreach (var tx in _mempool)
+                    {
+                        writer.WriteVarString(tx);
+                    }
+                }
+                else
+                {
+                    writer.WriteVarInt(0);
                 }
             }
 
             if (Kind.HasFlag(RequestKind.Blocks))
             {
-                writer.Write((ushort)_blockRanges.Count);
+                writer.WriteVarInt(_blockRanges.Count);
                 foreach (var entry in _blockRanges)
                 {
                     var range = entry.Value;
@@ -269,6 +281,12 @@ namespace Phantasma.Network.P2P.Messages
             }
 
             _blockRanges[chainName] = new BlockRange(blocks, transactions);
+        }
+
+        public void AddBlockRange(Chain chain, RequestRange range)
+        {
+            var count = (uint)(1 + range.End - range.Start);
+            AddBlockRange(chain, range.Start, count);
         }
 
         public void AddBlockRange(Chain chain, BigInteger startHeight, uint count)

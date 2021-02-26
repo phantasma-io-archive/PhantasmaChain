@@ -128,6 +128,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(block.Hash == block2.Hash);
         }
 
+
         [TestMethod]
         public void TransactionMining()
         {

@@ -126,7 +126,7 @@ namespace Phantasma.Domain
         BigInteger GetTokenSupply(string symbol);
 
         void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi);
-        void SetTokenPlatformHash(string symbol, string platform, Hash hash);
+        void SetPlatformTokenHash(string symbol, string platform, Hash hash);
         void CreateChain(Address creator, string organization, string name, string parentChain);
         void CreateFeed(Address owner, string name, FeedMode mode);
         IArchive CreateArchive(MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, IArchiveEncryption encryption);

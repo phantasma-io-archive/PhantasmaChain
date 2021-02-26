@@ -27,7 +27,7 @@ namespace Phantasma.Blockchain
         private const string BlockHashMapTag = ".blocks";
         private const string BlockHeightListTag = ".height";
         private const string TxBlockHashMapTag = ".txblmp";
-        private const string AddressBlockHashMapTag = ".adblmp";
+        private const string AddressTxHashMapTag = ".adblmp";
         private const string TaskListTag = ".tasks";
 
         #region PUBLIC
@@ -73,6 +73,35 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
+        private bool VerifyBlockBeforeAdd(Block block)
+        {
+            if (block.TransactionCount > DomainSettings.MaxTxPerBlock)
+            {
+                return false;
+            }
+
+            if (block.OracleData.Count() > DomainSettings.MaxOracleEntriesPerBlock)
+            {
+                return false;
+            }
+
+            if (block.Events.Count() > DomainSettings.MaxEventsPerBlock)
+            {
+                return false;
+            }
+
+            foreach (var txHash in block.TransactionHashes)
+            {
+                var evts = block.GetEventsForTransaction(txHash);
+                if (evts.Count() > DomainSettings.MaxEventsPerTx)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, StorageChangeSetContext changeSet)
         {
             if (!block.IsSigned)
@@ -84,6 +113,11 @@ namespace Phantasma.Blockchain
             if (!block.Signature.Verify(unsignedBytes, block.Validator))
             {
                 throw new BlockGenerationException($"block signature does not match validator {block.Validator.Text}");
+            }
+
+            if (!VerifyBlockBeforeAdd(block))
+            {
+                throw new BlockGenerationException($"block verification failed, would have overflown, hash:{block.Hash}");
             }
 
             var hashList = new StorageList(BlockHeightListTag, this.Storage);
@@ -125,7 +159,7 @@ namespace Phantasma.Blockchain
 
                     foreach (var evt in events)
                     {
-                        if (evt.Address.IsSystem)
+                        if (evt.Contract == "gas" && (evt.Address.IsSystem || evt.Address == block.Validator))
                         {
                             continue;
                         }
@@ -133,7 +167,7 @@ namespace Phantasma.Blockchain
                         addresses.Add(evt.Address);
                     }
 
-                    var addressTxMap = new StorageMap(AddressBlockHashMapTag, this.Storage);
+                    var addressTxMap = new StorageMap(AddressTxHashMapTag, this.Storage);
                     foreach (var address in addresses)
                     {
                         var addressList = addressTxMap.Get<Address, StorageList>(address);
@@ -170,8 +204,6 @@ namespace Phantasma.Blockchain
                     {
                         if (ExecuteTransaction(txIndex, tx, tx.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
                         {
-                            // merge transaction oracle data 
-                            oracle.MergeTxData();
                             if (vmResult != null)
                             {
                                 if (allowModify)
@@ -228,7 +260,6 @@ namespace Phantasma.Blockchain
 
 		            inflationTx = transaction;
                     block.AddTransactionHash(transaction.Hash);
-		            transactions = transactions.Concat(new [] { transaction });
                 }
             }
 
@@ -288,7 +319,34 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash));
+            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash).Distinct());
+
+            var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
+
+            var diff = transactions.Count() - inputHashes.Count;
+            if (diff > 0)
+            {
+                var temp = new HashSet<Hash>();
+                foreach (var tx in transactions)
+                {
+                    if (temp.Contains(tx.Hash))
+                    {
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} appears more than once in the block being minted");
+                    }
+                    else
+                    if (txBlockMap.ContainsKey<Hash>(tx.Hash))
+                    {
+                        var previousBlockHash = txBlockMap.Get<Hash, Hash>(tx.Hash);
+                        throw new DuplicatedTransactionException(tx.Hash, $"transaction {tx.Hash} already added to previous block {previousBlockHash}");
+                    }
+                    else
+                    {
+
+                        temp.Add(tx.Hash);
+                    }
+                }                
+            }
+
             foreach (var hash in block.TransactionHashes)
             {
                 if (!inputHashes.Contains(hash))
@@ -359,7 +417,6 @@ namespace Phantasma.Blockchain
                 runtime = new RuntimeVM(index, script, offset, this, validator, time, transaction, changeSet, oracle, task, false);
             }
             runtime.MinimumFee = minimumFee;
-            runtime.ThrowOnFault = true;
 
             ExecutionState state;
             using (var m = new ProfileMarker("runtime.Execute"))
@@ -370,7 +427,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var cost = runtime.UsedGas;
+            //var cost = runtime.UsedGas;
 
             using (var m = new ProfileMarker("runtime.Events"))
             {
@@ -388,6 +445,9 @@ namespace Phantasma.Blockchain
             {
                 result = runtime.Stack.Pop();
             }
+
+            // merge transaction oracle data 
+            oracle.MergeTxData();
 
             return true;
         }
@@ -872,9 +932,32 @@ namespace Phantasma.Blockchain
 
         public Hash[] GetTransactionHashesForAddress(Address address)
         {
-            var addressTxMap = new StorageMap(AddressBlockHashMapTag, this.Storage);
+            var addressTxMap = new StorageMap(AddressTxHashMapTag, this.Storage);
             var addressList = addressTxMap.Get<Address, StorageList>(address);
             return addressList.All<Hash>();
+        }
+
+        public Timestamp GetLastActivityOfAddress(Address address)
+        {
+            var addressTxMap = new StorageMap(AddressTxHashMapTag, this.Storage);
+            var addressList = addressTxMap.Get<Address, StorageList>(address);
+            var count = addressList.Count();
+            if (count <=0)
+            {
+                return Timestamp.Null;
+            }
+
+            var lastTxHash = addressList.Get<Hash>(count - 1);
+            var blockHash = GetBlockHashOfTransaction(lastTxHash);
+
+            var block = GetBlockByHash(blockHash);
+
+            if (block == null) // should never happen
+            {
+                return Timestamp.Null;
+            }
+
+            return block.Timestamp;
         }
 
         #region SWAPS
@@ -1005,7 +1088,7 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    taskList.RemoveAt<BigInteger>(i);
+                    taskList.RemoveAt(i);
                 }
 
                 if (tx != null)
@@ -1099,9 +1182,6 @@ namespace Phantasma.Blockchain
 
                 if (ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, task, minimumFee, out vmResult, allowModify))
                 {
-                    // merge transaction oracle data 
-                    oracle.MergeTxData();
-
                     var resultBytes = Serialization.Serialize(vmResult);
                     block.SetResultForHash(transaction.Hash, resultBytes);
 
@@ -1250,8 +1330,23 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-        public string LookUpAddressName(StorageContext storage, Address address)
+        public Address LookUpName(StorageContext storage, string name)
         {
+            if (IsContractDeployed(storage, name))
+            {
+                return SmartContract.GetAddressForName(name);
+            }
+
+            return this.Nexus.LookUpName(storage, name);
+        }
+
+        public string GetNameFromAddress(StorageContext storage, Address address)
+        {
+            if (address.IsNull)
+            {
+                return ValidationUtils.NULL_NAME;
+            }
+
             if (address.IsSystem)
             {
                 if (address == DomainSettings.InfusionAddress)
@@ -1278,7 +1373,7 @@ namespace Phantasma.Blockchain
                         return org.ID;
                     }
 
-                    return ValidationUtils.ANONYMOUS;
+                    return ValidationUtils.ANONYMOUS_NAME;
                 }
             }
 

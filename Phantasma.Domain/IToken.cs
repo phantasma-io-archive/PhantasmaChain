@@ -21,7 +21,7 @@ namespace Phantasma.Domain
         Fuel = 1 << 4,
         Stakable = 1 << 5,
         Fiat = 1 << 6,
-        Foreign = 1 << 7,
+        Swappable = 1 << 7,
         Burnable = 1 << 8,
     }
 

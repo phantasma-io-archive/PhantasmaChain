@@ -14,10 +14,12 @@ namespace Phantasma.Core
         private State _state = State.Stopped;
 
         public State CurrentState => _state;
+
+        public bool Running => CurrentState == State.Running;
         
         protected abstract bool Run();
 
-        public void Start(ThreadPriority priority = ThreadPriority.Normal)
+        public void StartInThread(ThreadPriority priority = ThreadPriority.Normal)
         {
             if (_state != State.Stopped)
             {
@@ -26,36 +28,45 @@ namespace Phantasma.Core
 
             _state = State.Running;
 
-#if BRIDGE_NET
-            OnStart();
-            do
-            {
-                if (!Run())
-                {
-                    break;
-                }
-            } while (_state == State.Running);
-            OnStop();
-#else 
             new Thread(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
 
                 OnStart();
 
-                do
+                while (_state == State.Running)
                 {
                     if (!Run())
                     {
                         break;
                     }
-                } while (_state == State.Running);
+                }
 
                 _state = State.Stopped;
                 OnStop();
             }).Start();
-#endif
         }
+
+        public void Start()
+        {
+            if (_state != State.Stopped)
+            {
+                return;
+            }
+
+            _state = State.Running;
+
+            OnStart();
+            while (_state == State.Running)
+            {
+                if (!Run())
+                {
+                    break;
+                }
+            }
+            OnStop();
+        }
+
 
         public bool IsRunning => _state == State.Running;
 

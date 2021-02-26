@@ -184,12 +184,29 @@ namespace Phantasma.Blockchain
             writer.WriteAddress(ChainAddress);
             writer.WriteVarInt(Protocol);
 
-            writer.Write((ushort)_transactionHashes.Count);
+            if (OldMode)
+            {
+                writer.Write((ushort)_transactionHashes.Count);
+            }
+            else
+            {
+                writer.WriteVarInt(_transactionHashes.Count);
+            }
+
             foreach (var hash in _transactionHashes)
             {
                 writer.WriteHash(hash);
                 var evts = GetEventsForTransaction(hash).ToArray();
-                writer.Write((ushort)evts.Length);
+
+                if (OldMode)
+                {
+                    writer.Write((ushort)evts.Length);
+                }
+                else
+                {
+                    writer.WriteVarInt(evts.Length);
+                }
+
                 foreach (var evt in evts)
                 {
                     evt.Serialize(writer);
@@ -203,30 +220,41 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            writer.Write((ushort)_oracleData.Count);
+            if (OldMode)
+            {
+                writer.Write((ushort)_oracleData.Count);
+            }
+            else
+            {
+                writer.WriteVarInt(_oracleData.Count);
+            }
+
             foreach (var entry in _oracleData)
             {
                 writer.WriteVarString(entry.URL);
                 writer.WriteByteArray(entry.Content);
             }
 
-            if (Payload != null)
+            if (Payload == null)
             {
-                writer.WriteVarInt(_events.Count);
-                foreach (var evt in _events)
-                {
-                    evt.Serialize(writer);
-                }
-
-                writer.WriteAddress(this.Validator);
-                writer.WriteByteArray(this.Payload);
-                writer.Write((byte)0); // indicates the end of the block
-
-                if (withSignatures)
-                {
-                    writer.WriteSignature(this.Signature);
-                }
+                Payload = new byte[0];
             }
+
+            writer.WriteVarInt(_events.Count);
+            foreach (var evt in _events)
+            {
+                evt.Serialize(writer);
+            }
+
+            writer.WriteAddress(this.Validator);
+            writer.WriteByteArray(this.Payload);
+
+            if (withSignatures)
+            {
+                writer.WriteSignature(this.Signature);
+            }
+
+            writer.Write((byte)0); // indicates the end of the block
         }
 
         public static Block Unserialize(byte[] bytes)
@@ -259,6 +287,8 @@ namespace Phantasma.Blockchain
             Serialize(writer, true);
         }
 
+        public static bool OldMode = false;
+
         public void UnserializeData(BinaryReader reader)
         {
             this.Height = reader.ReadBigInteger();
@@ -266,8 +296,8 @@ namespace Phantasma.Blockchain
             this.PreviousHash = reader.ReadHash();
             this.ChainAddress = reader.ReadAddress();
             this.Protocol = (uint)reader.ReadVarInt();
-        
-            var hashCount = reader.ReadUInt16();
+
+            var hashCount = OldMode ? reader.ReadUInt16() : (uint)reader.ReadVarInt();
             var hashes = new List<Hash>();
 
             _eventMap.Clear();
@@ -277,7 +307,7 @@ namespace Phantasma.Blockchain
                 var hash = reader.ReadHash();
                 hashes.Add(hash);
 
-                var evtCount = reader.ReadUInt16();
+                var evtCount = (int)(OldMode ? reader.ReadUInt16() : (uint)reader.ReadVarInt());
                 var evts = new List<Event>(evtCount);
                 for (int i = 0; i < evtCount; i++)
                 {
@@ -300,13 +330,13 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var oracleCount = reader.ReadUInt16();
+            var oracleCount = OldMode ? reader.ReadUInt16() : (uint)reader.ReadVarInt();
             _oracleData.Clear();
             while (oracleCount > 0)
             {
                 var key = reader.ReadVarString();
                 var val = reader.ReadByteArray();
-                _oracleData.Add(new OracleEntry( key, val));
+                _oracleData.Add(new OracleEntry(key, val));
                 oracleCount--;
             }
 
@@ -323,8 +353,6 @@ namespace Phantasma.Blockchain
                 Validator = reader.ReadAddress();
                 Payload = reader.ReadByteArray();
 
-                var blockEnd = reader.ReadByte();
-
                 Signature = reader.ReadSignature();
             }
             catch
@@ -333,6 +361,8 @@ namespace Phantasma.Blockchain
                 Validator = Address.Null;
                 Signature = null;
             }
+
+            var blockEnd = reader.ReadByte();
 
             _transactionHashes = new List<Hash>();
             foreach (var hash in hashes)
@@ -371,6 +401,7 @@ namespace Phantasma.Blockchain
                 _oracleData = oracle.Entries.ToList();
                 _dirty = true;
             }
+            oracle.Clear();
         }
         #endregion
     }

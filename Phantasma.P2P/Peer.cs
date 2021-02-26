@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Numerics;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
+using Phantasma.Numerics;
 
 namespace Phantasma.Network.P2P
 {
@@ -22,7 +24,7 @@ namespace Phantasma.Network.P2P
     {
         public Address Address { get; private set; }
         public string Version { get; private set; }
-        public readonly Endpoint Endpoint;
+        public Endpoint Endpoint { get; private set; }
 
         public PeerCaps Capabilities { get; set; }
 
@@ -46,6 +48,16 @@ namespace Phantasma.Network.P2P
         {
             this.Address = address;
             this.Status = address.IsNull ? Status.Anonymous : Status.Identified;
+        }
+
+        public void UpdateEndpoint(Endpoint endpoint)
+        {
+            if (endpoint.Protocol != this.Endpoint.Protocol)
+            {
+                throw new NodeException("Can't update protocol of peer");
+            }
+
+            this.Endpoint = endpoint;
         }
     }
 }

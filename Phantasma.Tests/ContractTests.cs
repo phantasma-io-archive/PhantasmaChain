@@ -40,96 +40,6 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestMarketContract()
-        {
-            var owner = PhantasmaKeys.Generate();
-            var nexus = new Nexus("simnet", null, null);
-            nexus.SetOracleReader(new OracleSimulator(nexus));
-            var simulator = new NexusSimulator(nexus, owner, 1234);
-
-            var chain = nexus.RootChain;
-
-            var symbol = "COOL";
-
-            var testUser = PhantasmaKeys.Generate();
-
-            // Create the token CoolToken as an NFT
-            simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
-            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Domain.TokenFlags.Transferable);
-            simulator.EndBlock();
-
-            var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
-            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
-
-            // verify nft presence on the user pre-mint
-            var ownerships = new OwnershipSheet(symbol);
-            var ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
-            Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
-
-            var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
-            var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
-
-            // Mint a new CoolToken 
-            simulator.BeginBlock();
-            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
-            simulator.EndBlock();
-
-            // obtain tokenID
-            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
-            Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
-            var tokenID = ownedTokenList.First();
-
-            var auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
-            var previousAuctionCount = auctions.Length;
-
-            // verify nft presence on the user post-mint
-            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
-            Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
-            tokenID = ownedTokenList.First();
-
-            var price = 1000;
-
-            Timestamp endDate = simulator.CurrentTime + TimeSpan.FromDays(2);
-
-            simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
-            ScriptUtils.
-                  BeginScript().
-                  AllowGas(testUser.Address, Address.Null, 1, 9999).
-                  CallContract("market", "SellToken", testUser.Address, token.Symbol, DomainSettings.FuelTokenSymbol, tokenID, price, endDate).
-                  SpendGas(testUser.Address).
-                  EndScript()
-            );
-            simulator.EndBlock();
-
-            auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
-            Assert.IsTrue(auctions.Length == 1 + previousAuctionCount, "auction ids missing");
-
-            simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
-            ScriptUtils.
-                  BeginScript().
-                  AllowGas(owner.Address, Address.Null, 1, 9999).
-                  CallContract("market", "BuyToken", owner.Address, token.Symbol, auctions[previousAuctionCount].TokenID).
-                  SpendGas(owner.Address).
-                  EndScript()
-            );
-            simulator.EndBlock();
-
-            auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
-            Assert.IsTrue(auctions.Length == previousAuctionCount, "auction ids should be empty at this point");
-
-            // verify that the nft was really moved
-            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
-            Assert.IsTrue(ownedTokenList.Count() == 0, "How does the seller still have one?");
-
-            ownedTokenList = ownerships.Get(chain.Storage, owner.Address);
-            Assert.IsTrue(ownedTokenList.Count() == 1, "How does the buyer does not have what he bought?");
-        }
-
-
-        [TestMethod]
         public void TestEnergyRatioDecimals()
         {
             var owner = PhantasmaKeys.Generate();
@@ -916,7 +826,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(unclaimedAmount == 0);
         }
 
-        [TestMethod]
+
+/*        [TestMethod]
         public void TestProxies()
         {
             var owner = PhantasmaKeys.Generate();
@@ -1410,7 +1321,7 @@ namespace Phantasma.Tests
 
             unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
-        }
+        }*/
 
         [TestMethod]
         public void TestVotingPower()

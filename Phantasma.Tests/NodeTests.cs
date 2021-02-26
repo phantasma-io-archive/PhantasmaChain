@@ -127,8 +127,6 @@ namespace Phantasma.Tests
 
         private void InitMainNode(int _port = 7077)
         {
-            var log = new ConsoleLogger();
-
             string wif = nexusWif;
 
             int port = _port;
@@ -142,12 +140,11 @@ namespace Phantasma.Tests
             // mempool setup
             mempool = new Mempool(nexus, Mempool.MinimumBlockTime, 1, System.Text.Encoding.UTF8.GetBytes("TEST"));
             mempool.SetKeys(node_keys);
-            mempool.Start();
+            mempool.StartInThread();
 
             // node setup
-            node = new Node("test node", nexus, mempool, node_keys, port, PeerCaps.Mempool, Enumerable.Empty<String>(), log);
-            log.Message("Phantasma Node address: " + node_keys.Address.Text);
-            node.Start();
+            node = new Node("test node", nexus, mempool, node_keys, "localhost", port, PeerCaps.Mempool, Enumerable.Empty<String>(), new DebugLogger());
+            node.StartInThread();
         }
 
         private void CloseNode()

@@ -252,8 +252,8 @@ namespace Phantasma.Simulator
             var readyNames = new List<Address>();
             foreach (var address in pendingNames)
             {
-                var currentName = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, address);
-                if (currentName != ValidationUtils.ANONYMOUS)
+                var currentName = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, address);
+                if (currentName != ValidationUtils.ANONYMOUS_NAME)
                 {
                     readyNames.Add(address);
                 }
@@ -349,7 +349,7 @@ namespace Phantasma.Simulator
 				                    transactions.Add(inflationTx);
 				                }
                                 block.Sign(this.blockValidator);
-                                chain.AddBlock(block, txs, MinimumFee, changeSet);
+                                chain.AddBlock(block, transactions, MinimumFee, changeSet);
                                 submitted = true;
                             }
                             catch (Exception e)
@@ -927,8 +927,8 @@ namespace Phantasma.Simulator
                                         break;
                                 }
 
-                                var currentName = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, source.Address);
-                                if (currentName == ValidationUtils.ANONYMOUS)
+                                var currentName = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, source.Address);
+                                if (currentName == ValidationUtils.ANONYMOUS_NAME)
                                 {
                                     var lookup = Nexus.LookUpName(Nexus.RootStorage, randomName);
                                     if (lookup.IsNull)
@@ -994,7 +994,20 @@ namespace Phantasma.Simulator
                 CancelBlock();
             }
         }
+        public void TimeSkipMinutes(int minutes)
+        {
+            CurrentTime = CurrentTime.AddMinutes(minutes);
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
 
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+
+            var txCost = Nexus.RootChain.GetTransactionFee(tx);
+        }
         public void TimeSkipHours(int hours)
         {
             CurrentTime = CurrentTime.AddHours(hours);

@@ -102,8 +102,6 @@ namespace Phantasma.VM
 
         public readonly static string EntryContextName = "entry";
 
-        public bool ThrowOnFault = false;
-
         public readonly Stack<VMObject> Stack = new Stack<VMObject>();
 
         public readonly byte[] entryScript;

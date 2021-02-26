@@ -510,10 +510,15 @@ namespace Phantasma.Blockchain
                 RejectTransaction(tx, "at least one signature required");
             }
 
-            if (tx.Payload.Length < 4)
+            if (tx.Payload == null || tx.Payload.Length == 0)
             {
                 RejectTransaction(tx, "expected payload identifier");
 
+            }
+
+            if (tx.Payload.Length < 4)
+            {
+                RejectTransaction(tx, "payload identifier is too short");
             }
 
             var currentTime = Timestamp.Now;

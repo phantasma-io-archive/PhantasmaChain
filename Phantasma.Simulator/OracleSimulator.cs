@@ -6,6 +6,7 @@ using Phantasma.Blockchain;
 using Phantasma.Domain;
 using Phantasma.Pay.Chains;
 using Phantasma.Core.Types;
+using System;
 
 namespace Phantasma.Simulator
 {
@@ -89,7 +90,41 @@ namespace Phantasma.Simulator
 
         protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, BigInteger height)
         {
-            throw new OracleException($"unknown block for {platformName}.{chainName} : {hash}");
+            InteropBlock interopBlock = null;
+            switch (platformName)
+            {
+                case "neo":
+                    {
+                        switch (chainName)
+                        {
+                            // we abuse chainName here to simulate different results
+                            case "neoEmpty":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.Null, new Hash[0]);
+                                break;
+                            case "neo":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.FromString("neohash"), new Hash[0]);
+                                break;
+                        }
+                    }
+                    break;
+                case "ethereum":
+                    {
+                        switch (chainName)
+                        {
+                            // we abuse chainName here to simulate different results
+                            case "ethereumEmpty":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.Null, new Hash[0]);
+                                break;
+                            case "ethereum":
+                                interopBlock = new InteropBlock(platformName, chainName, Hash.FromString("neohash"), new Hash[0]);
+                                break;
+                        }
+                    }
+                    break;
+            }
+
+            return interopBlock;
+
         }
 
         protected override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
@@ -119,23 +154,34 @@ namespace Phantasma.Simulator
 
         protected override decimal PullPrice(Timestamp time, string baseSymbol)
         {
-            // some dummy values, only really used in the test suite ...
-            decimal price;
-            switch (baseSymbol)
-            {
-                case "SOUL": price = 100; break;
-                case "KCAL": price = 20; break;
-                case "NEO": price = 2000; break;
-                case "GAS": price = 500; break;
-                case "ETH": price = 40000; break;
-                case "BTC": price = 800000; break;
-                case "COOL": price = 300; break;
-                default: throw new OracleException("Unknown token: "+baseSymbol);
-            }
-
-            price /= 1000m;
+            // some dummy values, only really used in the test suite ...                     
+            // TODO, remove that, use random data, oracle prices are not fixed in the real world....
+            decimal price;                                                                   
+            switch (baseSymbol)                                                              
+            {                                                                                
+                case "SOUL": price = 100; break;                                             
+                case "KCAL": price = 20; break;                                              
+                case "NEO": price = 2000; break;                                             
+                case "GAS": price = 500; break;                                              
+                case "ETH": price = 40000; break;                                            
+                case "BTC": price = 800000; break;                                           
+                case "COOL": price = 300; break;                                             
+                default: throw new OracleException("Unknown token: "+baseSymbol);            
+            }                                                                                
+                                                                                             
+            price /= 1000m;                                                                  
             return price;
         }
+
+        //protected override decimal PullPrice(Timestamp time, string baseSymbol)
+        //{
+        //    decimal price;
+        //    Random random = new Random();
+        //    price = (decimal) Math.Round((random.NextDouble() / 100), 3);
+        //    if (price == 0)
+        //        price = 1;
+        //    return price;
+        //}
 
         protected override InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID)
         {

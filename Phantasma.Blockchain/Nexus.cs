@@ -745,6 +745,26 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private string GetBurnKey(string symbol)
+        {
+            return $".burned.{symbol}";
+        }
+
+        private void UpdateBurnedSupply(StorageContext storage, string symbol, BigInteger burnAmount)
+        {
+            var burnKey = GetBurnKey(symbol);
+            var burnedSupply = storage.Has(burnKey) ? storage.Get<BigInteger>(burnKey) : 0;
+            burnedSupply += burnAmount;
+            storage.Put<BigInteger>(burnKey, burnedSupply);
+        }
+
+        public BigInteger GetBurnedTokenSupply(StorageContext storage, string symbol)
+        {
+            var burnKey = GetBurnKey(symbol);
+            var burnedSupply = storage.Has(burnKey) ? storage.Get<BigInteger>(burnKey) : 0;
+            return burnedSupply;
+        }
+
         internal void BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, string targetChain, BigInteger amount)
         {
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
@@ -771,6 +791,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                UpdateBurnedSupply(Runtime.Storage, token.Symbol, amount);
                 Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
         }
@@ -819,6 +840,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                UpdateBurnedSupply(Runtime.Storage, token.Symbol, 1);
                 Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
         }
@@ -893,8 +915,8 @@ namespace Phantasma.Blockchain
 
             if (destination.IsSystem)
             {
-                var destName = Runtime.Chain.LookUpAddressName(Runtime.Storage, destination);
-                Runtime.Expect(destName != ValidationUtils.ANONYMOUS, "anonymous system address as destination");
+                var destName = Runtime.Chain.GetNameFromAddress(Runtime.Storage, destination);
+                Runtime.Expect(destName != ValidationUtils.ANONYMOUS_NAME, "anonymous system address as destination");
             }
 
             var balances = new BalanceSheet(token.Symbol);
@@ -1184,7 +1206,7 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                Runtime.Expect(!mustExist, "nft does not exist");
+                Runtime.Expect(!mustExist, $"nft {symbol} {tokenID} does not exist");
                 var genID = GenerateNFT(Runtime, symbol, chainName, owner, rom, ram, seriesID);
                 Runtime.Expect(genID == tokenID, "failed to regenerate NFT");
             }
@@ -1215,7 +1237,7 @@ namespace Phantasma.Blockchain
         {
             var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            Throw.If(!storage.Has(tokenKey), "nft does not exists");
+            Throw.If(!storage.Has(tokenKey), $"nft {symbol} {tokenID} does not exist");
 
             var content = ReadNFTRaw(storage, tokenKey, ProtocolVersion);
 
@@ -1353,22 +1375,22 @@ namespace Phantasma.Blockchain
             var abi = ContractInterface.Empty;
 
             //UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals)
-            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript, abi);
+            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable, tokenScript, abi);
             CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, owner, 0, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript, abi);
             CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, owner, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript, abi);
             CreateToken(storage, DomainSettings.RewardTokenSymbol, DomainSettings.RewardTokenName, owner, 0, 0, TokenFlags.Transferable | TokenFlags.Burnable, tokenScript, abi);
 
-            CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
-            CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
-            CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
+            CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite, tokenScript, abi);
+            CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite, tokenScript, abi);
+            CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible, tokenScript, abi);
             //CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, tokenScript, abi);
 
-            SetTokenPlatformHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
-            SetTokenPlatformHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);
-            SetTokenPlatformHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
-            SetTokenPlatformHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
-            SetTokenPlatformHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
+            SetPlatformTokenHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
+            SetPlatformTokenHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);
+            SetPlatformTokenHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
+            SetPlatformTokenHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
+            //SetPlatformTokenHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
         }
 
         public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp, int version)
@@ -1457,7 +1479,7 @@ namespace Phantasma.Blockchain
 
                      {
                          StakeContract.StakeMaxBonusPercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             200, new ChainConstraint[]
+                             100, new ChainConstraint[]
                          {
                              new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 50},
                              new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 500 },
@@ -2274,10 +2296,13 @@ namespace Phantasma.Blockchain
             foreach (var token in tokens)
             {
                 var key = GetNexusKey($"{token}.{platform}.hash");
-                var tokenHash = storage.Get<Hash>(key);
-                if (tokenHash == hash)
+                if (HasTokenPlatformHash(token, platform, storage))
                 {
-                    return token;
+                    var tokenHash = storage.Get<Hash>(key);
+                    if (tokenHash == hash)
+                    {
+                        return token;
+                    }
                 }
             }
 
@@ -2285,22 +2310,37 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public void SetTokenPlatformHash(string symbol, string platform, Hash hash, StorageContext storage)
+        public void SetPlatformTokenHash(string symbol, string platform, Hash hash, StorageContext storage)
         {
+            var tokenKey = GetTokenInfoKey(symbol);
+            if (!storage.Has(tokenKey))
+            {
+                throw new ChainException($"Token does not exist ({symbol})");
+            }
+
             if (platform == DomainSettings.PlatformName)
             {
                 throw new ChainException($"cannot set token hash of {symbol} for native platform");
             }
 
-            var key = GetNexusKey($"{symbol}.{platform}.hash");
+            var bytes = storage.Get(tokenKey);
+            var info = Serialization.Unserialize<TokenInfo>(bytes);
+
+            if (!info.Flags.HasFlag(TokenFlags.Swappable))
+            {
+                info.Flags |= TokenFlags.Swappable;
+                EditToken(storage, symbol, info);
+            }
+
+            var hashKey = GetNexusKey($"{symbol}.{platform}.hash");
 
             //should be updateable since a foreign token hash could change
-            if (storage.Has(key))
+            if (storage.Has(hashKey))
             {
                 _logger.Warning($"Token hash of {symbol} already set for platform {platform}, updating to {hash}");
             }
 
-            storage.Put<Hash>(key, hash);
+            storage.Put<Hash>(hashKey, hash);
         }
 
         public bool HasTokenPlatformHash(string symbol, string platform, StorageContext storage)

@@ -8,6 +8,10 @@ using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Storage.Context;
 using Phantasma.Core.Performance;
+using Phantasma.VM;
+using System.Collections.Generic;
+using Phantasma.Storage;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -77,7 +81,16 @@ namespace Phantasma.Blockchain.Contracts
 
             BigInteger balance;
             using (var m = new ProfileMarker("Runtime.GetBalance"))
+            {
                 balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            }
+
+            if (maxAmount > balance)
+            {
+                var diff = maxAmount - balance;
+                throw new BalanceException("KCAL", from, diff);
+            }
+
             Runtime.Expect(balance >= maxAmount, $"not enough {DomainSettings.FuelTokenSymbol} {balance} in address {from} {maxAmount}");
 
             using (var m = new ProfileMarker("Runtime.TransferTokens"))
@@ -165,12 +178,22 @@ namespace Phantasma.Blockchain.Contracts
                 var phantomFunding = inflationAmount / 3;
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, phantomOrg.Address, phantomFunding);
                 inflationAmount -= phantomFunding;
+
+                if (phantomOrg.Size == 1)
+                {
+                    Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Stake), phantomOrg.Address, phantomFunding);
+                }
             }
 
             var bpOrg = Runtime.GetOrganization(DomainSettings.ValidatorsOrganizationName);
             if (bpOrg != null)
             {
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, bpOrg.Address, inflationAmount);
+
+                if (bpOrg.Size == 1)
+                {
+                    Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Stake), bpOrg.Address, inflationAmount);
+                }
             }
 
             Runtime.Notify(EventKind.Inflation, from, new TokenEventData(DomainSettings.StakingTokenSymbol, mintedAmount, Runtime.Chain.Name));
@@ -338,22 +361,24 @@ namespace Phantasma.Blockchain.Contracts
 
         private void CheckInflation()
         {
-            if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
+            if (!Runtime.HasGenesis)
             {
-                if (_lastInflationDate.Value == 0)
+                return;
+            }
+
+            if (_lastInflationDate.Value == 0)
+            {
+                var genesisTime = Runtime.GetGenesisTime();
+                _lastInflationDate = genesisTime;
+            }
+            else
+            if (!_inflationReady)
+            {
+                var infDiff = Runtime.Time - _lastInflationDate;
+                var inflationPeriod = SecondsInDay * 90;
+                if (infDiff >= inflationPeriod)
                 {
-                    var genesisTime = Runtime.GetGenesisTime();
-                    _lastInflationDate = genesisTime;
-                }
-                else
-                if (!_inflationReady)
-                {
-                    var infDiff = Runtime.Time - _lastInflationDate;
-                    var inflationPeriod = SecondsInDay * 90;
-                    if (infDiff >= inflationPeriod)
-                    {
-                        _inflationReady = true;
-                    }
+                    _inflationReady = true;
                 }
             }
         }

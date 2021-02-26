@@ -75,16 +75,17 @@ namespace Phantasma.Storage.Context
             return index;
         }
 
-        public static void Replace<T>(this StorageList list, BigInteger index, T element)
+        public static BigInteger AddRaw(this StorageList list, byte[] bytes)
         {
-            var size = list.Count();
-            if (index < 0 || index >= size)
-            {
-                throw new StorageException("outside of range");
-            }
+            var index = list.Count();
+            list.Context.Put(CountKey(list.BaseKey), index + 1);
 
-            var key = ElementKey(list.BaseKey, index);
+            list.ReplaceRaw(index, bytes);
+            return index;
+        }
 
+        public static void Replace<T>(this StorageList list, BigInteger index, T element)
+        {           
             byte[] bytes;
             if (typeof(IStorageCollection).IsAssignableFrom(typeof(T)))
             {
@@ -96,10 +97,11 @@ namespace Phantasma.Storage.Context
             {
                 bytes = Serialization.Serialize(element);
             }
-            list.Context.Put(key, bytes);
+
+            ReplaceRaw(list, index, bytes);
         }
 
-        public static T Get<T>(this StorageList list, BigInteger index)
+        public static void ReplaceRaw(this StorageList list, BigInteger index, byte[] bytes)
         {
             var size = list.Count();
             if (index < 0 || index >= size)
@@ -108,7 +110,12 @@ namespace Phantasma.Storage.Context
             }
 
             var key = ElementKey(list.BaseKey, index);
-            var bytes = list.Context.Get(key);
+            list.Context.Put(key, bytes);
+        }
+
+        public static T Get<T>(this StorageList list, BigInteger index)
+        {
+            var bytes = GetRaw(list, index);
 
             if (typeof(IStorageCollection).IsAssignableFrom(typeof(T)))
             {
@@ -122,7 +129,7 @@ namespace Phantasma.Storage.Context
             }
         }
 
-        public static void RemoveAt<T>(this StorageList list, BigInteger index)
+        public static byte[] GetRaw(this StorageList list, BigInteger index)
         {
             var size = list.Count();
             if (index < 0 || index >= size)
@@ -130,15 +137,26 @@ namespace Phantasma.Storage.Context
                 throw new StorageException("outside of range");
             }
 
-            var indexKey = ElementKey(list.BaseKey, index);
+            var key = ElementKey(list.BaseKey, index);
+            var bytes = list.Context.Get(key);
+
+            return bytes;
+        }
+
+        public static void RemoveAt(this StorageList list, BigInteger index)
+        {
+            var size = list.Count();
+            if (index < 0 || index >= size)
+            {
+                throw new StorageException("outside of range");
+            }
 
             size = size - 1;
 
             if (size > index)
             {
-                // TODO <T> would not really be necessary here, this swap could be improved by using byte[]
-                var last = list.Get<T>(size);
-                list.Replace(index, last);
+                var last = list.GetRaw(size);
+                list.ReplaceRaw(index, last);
             }
 
             var key = ElementKey(list.BaseKey, size);
@@ -180,7 +198,7 @@ namespace Phantasma.Storage.Context
             var index = list.IndexOf(obj);
             if (index >= 0)
             {
-                list.RemoveAt<T>(index);
+                list.RemoveAt(index);
             }
         }
 

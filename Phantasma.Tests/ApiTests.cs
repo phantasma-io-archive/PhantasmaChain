@@ -51,7 +51,7 @@ namespace Phantasma.Tests
                 api = api
             };
 
-            mempool?.Start();
+            mempool?.StartInThread();
 
             return data;
         }
@@ -110,7 +110,7 @@ namespace Phantasma.Tests
             var names = scriptResult.results.Select(x => Base16.Decode(x)).Select(bytes => Serialization.Unserialize<VMObject>(bytes)).Select(obj => obj.AsString()).ToArray();
             Assert.IsTrue(names.Length == 2);
             Assert.IsTrue(names[0] == "genesis");
-            Assert.IsTrue(names[1] == ValidationUtils.ANONYMOUS);
+            Assert.IsTrue(names[1] == ValidationUtils.ANONYMOUS_NAME);
         }
 
         [TestMethod]
@@ -201,7 +201,7 @@ namespace Phantasma.Tests
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);
             Assert.IsTrue(account.address == testUser.Address.Text);
-            Assert.IsTrue(account.name == ValidationUtils.ANONYMOUS);
+            Assert.IsTrue(account.name == ValidationUtils.ANONYMOUS_NAME);
             Assert.IsTrue(account.balances.Length == 1);
 
             var balance = account.balances[0];

@@ -13,12 +13,12 @@ using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Domain;
 using Phantasma.Core.Types;
 using Phantasma.VM;
 using System.Collections.Generic;
 using Phantasma.Storage;
 using Phantasma.Pay.Chains;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {
@@ -342,7 +342,7 @@ namespace Phantasma.Tests
             Assert.IsFalse(registerName(testUser, targetName + "!"));
             Assert.IsTrue(registerName(testUser, targetName));
 
-            var currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            var currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, testUser.Address);
             Assert.IsTrue(currentName == targetName);
 
             var someAddress = nexus.LookUpName(nexus.RootStorage, targetName);
@@ -404,7 +404,7 @@ namespace Phantasma.Tests
             }
 
 
-            var currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            var currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, testUser.Address);
             Assert.IsTrue(currentName == targetName);
 
             var someAddress = nexus.LookUpName(nexus.RootStorage, targetName);
@@ -423,11 +423,11 @@ namespace Phantasma.Tests
             });
             simulator.EndBlock().FirstOrDefault();
 
-            currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            currentName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, testUser.Address);
             Assert.IsFalse(currentName == targetName);
 
-            currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, migratedUser.Address);
-            Assert.IsTrue(currentName == targetName);
+            var newName = nexus.RootChain.GetNameFromAddress(nexus.RootStorage, migratedUser.Address);
+            Assert.IsTrue(newName == targetName);
         }
 
         [TestMethod]
@@ -1251,6 +1251,70 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void NftMassMint()
+        {
+            var owner = PhantasmaKeys.Generate();
+
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var chain = nexus.RootChain;
+
+            var symbol = "COOL";
+            
+            var testUser = PhantasmaKeys.Generate();
+
+            // Create the token CoolToken as an NFT
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Transferable);
+            simulator.EndBlock();
+
+            var tokenAddress = TokenUtils.GetContractAddress(symbol);
+            var storageStakeAmount = UnitConversion.ToBigInteger(100000, DomainSettings.StakingTokenDecimals);
+
+            // Add some storage to the NFT contract
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, tokenAddress, chain, DomainSettings.StakingTokenSymbol, storageStakeAmount);
+
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().
+                    AllowGas(owner.Address, Address.Null, 1, 9999).
+                    CallContract(Nexus.StakeContractName, nameof(StakeContract.Stake), tokenAddress, storageStakeAmount).
+                    SpendGas(owner.Address).
+                    EndScript());
+            simulator.EndBlock();
+
+
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
+
+            // verify nft presence on the user pre-mint
+            var ownerships = new OwnershipSheet(symbol);
+            var ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have nfts?");
+
+            var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
+
+            var nftCount = 1000;
+
+            // Mint several nfts to test limit per tx
+            simulator.BeginBlock();
+            for (int i=1; i<=nftCount; i++)
+            {
+                var tokenROM = BitConverter.GetBytes(i);
+                simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
+            }
+            var block = simulator.EndBlock().First();
+
+            Assert.IsTrue(block.TransactionCount == nftCount);
+
+            // obtain tokenID
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
+            var ownedTotal = ownedTokenList.Count();
+            Assert.IsTrue(ownedTotal == nftCount);
+        }
+
+        [TestMethod]
         [Ignore] //TODO side chain transfers of NFTs do currently not work, because Storage contract is not deployed on the side chain.
         public void SidechainNftTransfer()
         {
@@ -2035,6 +2099,87 @@ namespace Phantasma.Tests
             Assert.AreEqual(true, inflation);
         }
 
+
+        [TestMethod]
+        public void PriceOracle()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9997)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            var block = simulator.EndBlock().First();
+
+            foreach (var txHash in block.TransactionHashes)
+            {
+                var blkResult = block.GetResultForTransaction(txHash);
+                var vmObj = VMObject.FromBytes(blkResult);
+                Console.WriteLine("price: " + vmObj);
+            }
+
+            //TODO finish test
+        }
+
+        [TestMethod]
+        public void OracleData()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "KCAL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            var block1 = simulator.EndBlock().First();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "SOUL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Moderate,
+                () => ScriptUtils.BeginScript()
+                    .CallInterop("Oracle.Price", "KCAL")
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            var block2 = simulator.EndBlock().First();
+
+            var oData1 = block1.OracleData.Count();
+            var oData2 = block2.OracleData.Count();
+
+            Console.WriteLine("odata1: " + oData1);
+            Console.WriteLine("odata2: " + oData2);
+
+            Assert.IsTrue(oData1 == oData2);
+        }
+
         [TestMethod]
         public void DuplicateTransferTest()
         {
@@ -2048,7 +2193,10 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
-            simulator.EndBlock();
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.EndBlock();
+            });
         }
     }
 

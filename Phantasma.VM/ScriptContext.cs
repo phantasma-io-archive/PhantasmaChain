@@ -970,10 +970,7 @@ namespace Phantasma.VM
                     ex = new VMException(frame.VM, ex.Message);
                 }
 
-                if (frame.VM.ThrowOnFault) // enable this when debugging difficult stuff in the VM, should not be activated for production code
-                {
-                    throw ex; 
-                }                
+                throw ex; 
             }
         }
 

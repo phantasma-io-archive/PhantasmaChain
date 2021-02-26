@@ -361,7 +361,6 @@ namespace Phantasma.API
         public ITokenSwapper TokenSwapper;
         public Mempool Mempool;
         public Node Node;
-        public bool acceptTransactions;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>(StringComparer.InvariantCultureIgnoreCase);
@@ -379,7 +378,6 @@ namespace Phantasma.API
             Nexus = nexus;
             UseCache = useCache;
             this.logger = logger;
-            this.acceptTransactions = true;
 
             var methodInfo = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
@@ -422,6 +420,7 @@ namespace Phantasma.API
         {
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
+            var burnedSupply = Nexus.GetBurnedTokenSupply(Nexus.RootStorage, tokenSymbol);
 
             var seriesList = new List<TokenSeriesResult>();
 
@@ -439,6 +438,7 @@ namespace Phantasma.API
                             seriesID = (uint)ID,
                             currentSupply = series.MintCount.ToString(),
                             maxSupply = series.MaxSupply.ToString(),
+                            burnedSupply = "0", // TODO
                             mode = series.Mode,
                             script = Base16.Encode(series.Script),
                             methods = extended ?  FillMethods(series.ABI.Methods): new ABIMethodResult[0]
@@ -453,6 +453,7 @@ namespace Phantasma.API
                 name = tokenInfo.Name,
                 currentSupply = currentSupply.ToString(),
                 maxSupply = tokenInfo.MaxSupply.ToString(),
+                burnedSupply = burnedSupply.ToString(),
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 address = SmartContract.GetAddressForName(tokenInfo.Symbol).Text,
@@ -474,10 +475,15 @@ namespace Phantasma.API
                 creatorAddress = auction.Creator.Text,
                 chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
+                endPrice = auction.EndPrice.ToString(),
+                extensionPeriod = auction.ExtensionPeriod.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value,
                 ram = Base16.Encode(nft.RAM),
                 rom = Base16.Encode(nft.ROM),
+                type = auction.Type.ToString(),
+                listingFee = auction.ListingFee.ToString(),
+                currentWinner = auction.CurrentBidWinner == Address.Null ? "" : auction.CurrentBidWinner.Text
             };
         }
 
@@ -709,7 +715,10 @@ namespace Phantasma.API
                     var avatarArchive = Nexus.GetArchive(Nexus.RootStorage, avatarHash);
 
                     var avatarData = Nexus.ReadArchiveBlock(avatarArchive, 0);
-                    storage.avatar = Encoding.ASCII.GetString(avatarData);
+                    if (avatarData != null && avatarData.Length > 0)
+                    {
+                        storage.avatar = Encoding.ASCII.GetString(avatarData);
+                    }
                 }
             }
             else
@@ -738,7 +747,7 @@ namespace Phantasma.API
             var result = new AccountResult();
             var address = Address.FromText(account);
             result.address = address.Text;
-            result.name = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, address);
+            result.name = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, address);
 
             var stake = Nexus.GetStakeFromAddress(Nexus.RootStorage, address);
 
@@ -1086,11 +1095,6 @@ namespace Phantasma.API
         {
             if (Mempool == null)
             {
-                return new ErrorResult { error = "No mempool" };
-            }
-
-            if (!acceptTransactions)
-            {
                 return new ErrorResult { error = "Node not accepting transactions" };
             }
 
@@ -1165,8 +1169,6 @@ namespace Phantasma.API
             var oracle = Nexus.GetOracleReader();
             uint offset = 0;
             var vm = new RuntimeVM(-1, script, offset, chain, Address.Null, Timestamp.Now, null, changeSet, oracle, ChainTask.Null, true);
-
-            vm.ThrowOnFault = true;
 
             string error = null;
             ExecutionState state = ExecutionState.Fault;
@@ -1640,6 +1642,15 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
+            try
+            {
+                var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+            }
+            catch(Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
+
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
             {
@@ -1651,25 +1662,33 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+            var nft = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
 
-            var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
+            var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", symbol, ID).AsBool();
             if (!forSale)
             {
                 return new ErrorResult { error = "Token not for sale" };
             }
 
-            var auction = (MarketAuction)chain.InvokeContract(chain.Storage, "market", "GetAuction", ID).ToObject();
+            var auction = (MarketAuction)chain.InvokeContract(chain.Storage, "market", "GetAuction", symbol, ID).ToObject();
 
             return new AuctionResult()
             {
                 baseSymbol = auction.BaseSymbol,
                 quoteSymbol = auction.QuoteSymbol,
-                creatorAddress = auction.Creator.Text,
                 tokenId = auction.TokenID.ToString(),
+                creatorAddress = auction.Creator.Text,
+                chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
+                endPrice = auction.EndPrice.ToString(),
+                extensionPeriod = auction.ExtensionPeriod.ToString(),
                 startDate = auction.StartDate.Value,
-                endDate = auction.EndDate.Value
+                endDate = auction.EndDate.Value,
+                ram = Base16.Encode(nft.RAM),
+                rom = Base16.Encode(nft.ROM),
+                type = auction.Type.ToString(),
+                listingFee = auction.ListingFee.ToString(),
+                currentWinner = auction.CurrentBidWinner == Address.Null ? "" : auction.CurrentBidWinner.Text
             };
         }
 
@@ -1797,7 +1816,7 @@ namespace Phantasma.API
 
             var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
 
-            peers.Add(new PeerResult() { url = $"{Node.PublicIP}:{Node.Port}", version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
+            peers.Add(new PeerResult() { url = $"{Node.PublicEndpoint}", version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
 
             peers.Shuffle();
 
@@ -1982,6 +2001,11 @@ namespace Phantasma.API
                 return new ErrorResult { error = "token swapper not available" };
             }
 
+            if (!TokenSwapper.SupportsSwap(sourcePlatform, destPlatform))
+            {
+                return new ErrorResult { error = $"swaps between {sourcePlatform} and {destPlatform} not available" };
+            }
+
             if (!Nexus.PlatformExists(Nexus.RootStorage, sourcePlatform))
             {
                 return new ErrorResult { error = "Invalid source platform" };
@@ -2034,7 +2058,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 0)]
-        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account)
+        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account, bool extended = false)
         {
             if (TokenSwapper == null)
             {
@@ -2088,6 +2112,25 @@ namespace Phantasma.API
                     symbol = x.Value.Transfers[0].Symbol,
                     value = x.Value.Transfers[0].Value.ToString(),
                 });
+
+            if (extended)
+            {
+                var oldSwaps = (InteropHistory[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "interop", nameof(InteropContract.GetSwapsForAddress), address).ToObject();
+
+                swaps = swaps.Concat(oldSwaps.Select(x => new SwapResult()
+                {
+                    sourcePlatform = x.sourcePlatform,
+                    sourceChain = x.sourceChain,
+                    sourceHash = x.sourceHash.ToString(),
+                    destinationPlatform = x.destPlatform,
+                    destinationChain = x.destChain,
+                    destinationHash = x.destHash.ToString(),
+                    sourceAddress = x.sourceAddress.Text,
+                    destinationAddress = x.destAddress.Text,
+                    symbol = x.symbol,
+                    value = x.value.ToString(),
+                }));
+            }
 
             return new ArrayResult() { values = swaps.Select(x => (object)x).ToArray() };
         }

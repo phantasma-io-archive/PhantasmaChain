@@ -53,7 +53,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var info = Runtime.GetToken(symbol);
-            return info.IsFungible() && info.Flags.HasFlag(TokenFlags.Foreign);
+            return info.IsFungible() && info.Flags.HasFlag(TokenFlags.Swappable);
         }
 
         public const string SwapMakerFeePercentTag = "swap.fee.maker";

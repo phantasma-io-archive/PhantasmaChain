@@ -1,8 +1,10 @@
-﻿using System.Text;
-using System.Numerics;
+﻿using System.Numerics;
 using Phantasma.Numerics;
 using Phantasma.Core.Utils;
 using Phantasma.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace Phantasma.Storage.Context
 {
@@ -31,12 +33,6 @@ namespace Phantasma.Storage.Context
         {
             byte[] bytes = Serialization.Serialize(index);
             return ByteArrayUtils.ConcatBytes(baseKey, bytes);
-        }
-
-        private static byte[] MergeKey(byte[] parentKey, object childKey)
-        {
-            var bytes = Encoding.UTF8.GetBytes($".{childKey}");
-            return ByteArrayUtils.ConcatBytes(parentKey, bytes);
         }
 
         public static BigInteger Count(this StorageSet set)
@@ -72,5 +68,46 @@ namespace Phantasma.Storage.Context
                 set.Context.Put(CountKey(set.BaseKey), size);
             }
         }
+
+        public static V[] AllValues<V>(this StorageSet set)
+        {
+            var values = new List<V>();
+            var countKey = CountKey(set.BaseKey);
+            var found = false;
+            var countKeyRun = false;
+
+            set.Context.Visit((key, value) =>
+            {
+                if (!found && key.SequenceEqual(countKey))
+                {
+                    countKeyRun = true;
+                    found = true;
+                }
+
+                if (!countKeyRun)
+                {
+                    V Val;
+                    if (typeof(IStorageCollection).IsAssignableFrom(typeof(V)))
+                    {
+                        var args = new object[] { value, set.Context };
+                        var obj = (V)Activator.CreateInstance(typeof(V), args);
+                        Val = obj;
+                        values.Add(Val);
+                    }
+                    else
+                    {
+                        Val = Serialization.Unserialize<V>(value);
+                        values.Add(Val);
+                    }
+                }
+                else
+                {
+                    countKeyRun = false;
+                }
+            }, (uint)set.Count(), set.BaseKey);
+
+            return values.ToArray();
+        }
+
     }
 }

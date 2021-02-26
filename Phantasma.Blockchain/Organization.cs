@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
@@ -25,8 +25,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public RuntimeVM Runtime { get; private set; }
-
         public byte[] Script { get; private set; }
 
         public BigInteger Size => GetMemberList().Count();
@@ -36,7 +34,7 @@ namespace Phantasma.Blockchain
         public Organization(string name, StorageContext storage)
         {
             this.Storage = storage;
-
+ 
             this.ID = name;
 
             var key = GetKey("script");
@@ -102,6 +100,13 @@ namespace Phantasma.Blockchain
 
         public bool AddMember(RuntimeVM Runtime, Address from, Address target)
         {
+            if (from.IsSystem)
+            {
+                Runtime.Expect(from != this.Address, "can't add organization as member of itself");
+            }
+
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
             var set = GetMemberSet();
 
             if (set.Contains<Address>(target))
@@ -114,7 +119,7 @@ namespace Phantasma.Blockchain
             var list = GetMemberList();
             list.Add<Address>(target);
 
-            Runtime.Notify(EventKind.OrganizationAdd, from, target);
+            Runtime.Notify(EventKind.OrganizationAdd, from, new OrganizationEventData(this.ID, target));
             return true;
         }
 
@@ -135,12 +140,14 @@ namespace Phantasma.Blockchain
 
             if (index >= 0)
             {
-                list.RemoveAt<Address>(index);
+                list.RemoveAt(index);
             }
         }
 
         public bool RemoveMember(RuntimeVM Runtime, Address from, Address target)
         {
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
             var set = GetMemberSet();
 
             if (!set.Contains<Address>(target))
@@ -151,17 +158,8 @@ namespace Phantasma.Blockchain
             set.Remove<Address>(target);
             RemoveMemberFromList(target);
 
-            Runtime.Notify(EventKind.OrganizationRemove, from, target);
+            Runtime.Notify(EventKind.OrganizationRemove, from, new OrganizationEventData(this.ID, target));
             return true;
-        }
-
-        public void Migrate(RuntimeVM Runtime, Address admin, Address from, Address to)
-        {
-            Runtime.Expect(IsMember(from), "from is not a member");
-            Runtime.Expect(!IsMember(to), "to is already a member");
-
-            Runtime.Expect(RemoveMember(Runtime, admin, from), "remove failed");
-            Runtime.Expect(AddMember(Runtime, admin, to), "add failed");
         }
 
         public bool IsWitness(Transaction transaction)
@@ -202,6 +200,39 @@ namespace Phantasma.Blockchain
             }
 
             return witnessCount >= majorityCount;
+        }
+
+        public bool MigrateMember(RuntimeVM Runtime, Address admin, Address from, Address to)
+        {
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            if (to.IsSystem)
+            {
+                Runtime.Expect(to!= this.Address, "can't add organization as member of itself");
+            }
+
+            var set = GetMemberSet();
+
+            if (!set.Contains<Address>(from))
+            {
+                return false;
+            }
+
+            Runtime.Expect(!set.Contains<Address>(to), "target address is already a member of organization");
+
+            set.Remove<Address>(from);
+            RemoveMemberFromList(to);
+
+            set.Add<Address>(to);
+
+            var list = GetMemberList();
+            list.Add<Address>(to);
+            
+
+            Runtime.Notify(EventKind.OrganizationRemove, admin, new OrganizationEventData(this.ID, from));
+            Runtime.Notify(EventKind.OrganizationAdd, admin, new OrganizationEventData(this.ID, to));
+
+            return true;
         }
     }
 }

@@ -11,7 +11,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -237,8 +236,11 @@ namespace Phantasma.Blockchain
 
         public void Notify(EventKind kind, Address address, byte[] bytes)
         {
-            var contract = CurrentContext.Name;
+            Notify(kind, address, bytes, CurrentContext.Name);
+        }
 
+        public void Notify(EventKind kind, Address address, byte[] bytes, string contract)
+        {
             switch (kind)
             {
                 case EventKind.GasEscrow:
@@ -321,6 +323,11 @@ namespace Phantasma.Blockchain
 
         public bool IsMintingAddress(Address address, string symbol)
         {
+            if (ProtocolVersion < 3 && address == GenesisAddress)
+            {
+                return true;
+            }
+
             if (TokenExists(symbol))
             {
                 var info = GetToken(symbol);
@@ -409,6 +416,7 @@ namespace Phantasma.Blockchain
 
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
             var bytes = Oracle.Read<byte[]>(this.Time, "price://" + symbol);
+            Expect(bytes != null && bytes.Length > 0, $"Could not read price of {symbol} from oracle");
             var value = new BigInteger(bytes);
 
             Expect(value > 0, "token price not available for " + symbol);
@@ -577,27 +585,37 @@ namespace Phantasma.Blockchain
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
             var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Validator, this.Time, this.Transaction, this.changeSet, this.Oracle, ChainTask.Null, false, true, contextName);
             
-            //runtime.ThrowOnFault = true; // enable only if debugging some issue...
-
             for (int i = args.Length - 1; i >= 0; i--)
             {
                 var obj = VMObject.FromObject(args[i]);
                 runtime.Stack.Push(obj);
             }
 
-            var state = runtime.Execute();
-            // TODO catch VM exceptions?
+			ExecutionState state;
+			try {
+				state = runtime.Execute();
+				// TODO catch VM exceptions?
+			} 
+			catch (VMException ex) 
+            {
+                if (allowThrow)
+                {
+                    throw ex;
+                }
 
-            // propagate gas consumption
-            // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
-            this.ConsumeGas(runtime.UsedGas);
+				state = ExecutionState.Fault;
+			}
+
+			// propagate gas consumption
+			// TODO this should happen not here but in real time during previous execution, to prevent gas attacks
+			this.ConsumeGas(runtime.UsedGas);
 
             if (state == ExecutionState.Halt)
             {
                 // propagate events to the other runtime
                 foreach (var evt in runtime.Events)
                 {
-                    this.Notify(evt.Kind, evt.Address, evt.Data);
+                    this.Notify(evt.Kind, evt.Address, evt.Data, evt.Contract);
                 }
 
                 return TriggerResult.Success;
@@ -873,7 +891,7 @@ namespace Phantasma.Blockchain
 
         public Address LookUpName(string name)
         {
-            return Nexus.LookUpName(this.RootStorage, name);
+            return this.Chain.LookUpName(this.RootStorage, name);
         }
 
         public bool HasAddressScript(Address from)
@@ -888,7 +906,7 @@ namespace Phantasma.Blockchain
 
         public string GetAddressName(Address from)
         {
-            return Chain.LookUpAddressName(this.RootStorage, from);
+            return Chain.GetNameFromAddress(this.RootStorage, from);
         }
 
         public Event[] GetTransactionEvents(Hash transactionHash)
@@ -973,7 +991,7 @@ namespace Phantasma.Blockchain
             return Chain.GetTokenSupply(this.Storage, symbol);
         }
 
-        public void SetTokenPlatformHash(string symbol, string platform, Hash hash)
+        public void SetPlatformTokenHash(string symbol, string platform, Hash hash)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
@@ -994,7 +1012,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
 
-            Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
+            Nexus.SetPlatformTokenHash(symbol, platform, hash, this.RootStorage);
         }
 
         public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi)
@@ -1161,7 +1179,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(!Nexus.OrganizationExists(RootStorage, ID), "organization already exists");
 
-            Nexus.CreateOrganization(RootStorage, ID, name, script);
+            Nexus.CreateOrganization(this.RootStorage, ID, name, script);
 
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
@@ -1655,7 +1673,7 @@ namespace Phantasma.Blockchain
         public void MigrateMember(string organization, Address admin, Address source, Address destination)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
-            org.Migrate(this, admin, source, destination);
+            org.MigrateMember(this, admin, source, destination);
         }
 
         public Address GetValidator(Timestamp time)

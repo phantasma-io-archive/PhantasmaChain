@@ -66,6 +66,12 @@ namespace Phantasma.Storage.Context
             Put(key, bytes);
         }
 
+        public void Put<T>(string key, T obj)
+        {
+            var bytes = Serialization.Serialize(obj);
+            Put(key, bytes);
+        }
+
         public void Put(string key, byte[] value) { Put(Encoding.UTF8.GetBytes(key), value); }
 
         public void Delete(string key) { Delete(Encoding.UTF8.GetBytes(key)); }
