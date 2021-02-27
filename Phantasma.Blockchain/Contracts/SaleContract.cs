@@ -43,9 +43,10 @@ namespace Phantasma.Blockchain.Contracts
         public string SellSymbol;
         public string ReceiveSymbol;
         public BigInteger Price;
-        public BigInteger SoftCap;
-        public BigInteger HardCap;
-        public BigInteger UserLimit;
+        public BigInteger GlobalSoftCap;
+        public BigInteger GlobalHardCap;
+        public BigInteger UserSoftCap;
+        public BigInteger UserHardCap;
     }
 
     public sealed class SaleContract : NativeContract
@@ -64,7 +65,7 @@ namespace Phantasma.Blockchain.Contracts
         {
         }
 
-        public Hash CreateSale(Address from, string name, SaleFlags flags, Timestamp startDate, Timestamp endDate, string sellSymbol, string receiveSymbol, BigInteger price, BigInteger softCap, BigInteger hardCap, BigInteger userLimit)
+        public Hash CreateSale(Address from, string name, SaleFlags flags, Timestamp startDate, Timestamp endDate, string sellSymbol, string receiveSymbol, BigInteger price, BigInteger globalSoftCap, BigInteger globalHardCap, BigInteger userSoftCap, BigInteger userHardCap)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
@@ -77,10 +78,11 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(token.IsTransferable(), "token must be transferable: " + sellSymbol);
 
             Runtime.Expect(price >= minPrice, "invalid price");
-            Runtime.Expect(softCap >= 0, "invalid softcap");
-            Runtime.Expect(hardCap > 0, "invalid hard cap");
-            Runtime.Expect(hardCap >= softCap, "hard cap must be larger or equal to soft capt");
-            Runtime.Expect(userLimit >= 0, "invalid user limit");
+            Runtime.Expect(globalSoftCap >= 0, "invalid softcap");
+            Runtime.Expect(globalHardCap > 0, "invalid hard cap");
+            Runtime.Expect(globalHardCap >= globalSoftCap, "hard cap must be larger or equal to soft capt");
+            Runtime.Expect(userSoftCap >= 0, "invalid user soft cap");
+            Runtime.Expect(userHardCap >= userSoftCap, "invalid user hard cap");
 
             Runtime.Expect(receiveSymbol != sellSymbol, "invalid receive token symbol: " + receiveSymbol);
 
@@ -88,7 +90,7 @@ namespace Phantasma.Blockchain.Contracts
             // TODO remove this later when Cosmic Swaps 2.0 are released
             Runtime.Expect(receiveSymbol == DomainSettings.StakingTokenSymbol, "invalid receive token symbol: " + receiveSymbol);
 
-            Runtime.TransferTokens(sellSymbol, from, this.Address, hardCap);
+            Runtime.TransferTokens(sellSymbol, from, this.Address, globalHardCap);
 
             var sale = new SaleInfo()
             {
@@ -100,9 +102,10 @@ namespace Phantasma.Blockchain.Contracts
                 SellSymbol = sellSymbol,
                 ReceiveSymbol = receiveSymbol,
                 Price = price,
-                SoftCap = softCap,
-                HardCap = hardCap,
-                UserLimit = userLimit
+                GlobalSoftCap = globalSoftCap,
+                GlobalHardCap = globalHardCap,
+                UserSoftCap = userSoftCap,
+                UserHardCap = userHardCap,
             };
 
             var bytes = Serialization.Serialize(sale);
@@ -237,9 +240,9 @@ namespace Phantasma.Blockchain.Contracts
             var nextSupply = previousSupply + convertedAmount;
 
             //Runtime.Expect(nextSupply <= sale.HardCap, "hard cap reached");
-            if (nextSupply > sale.HardCap)
+            if (nextSupply > sale.GlobalHardCap)
             {
-                convertedAmount = sale.HardCap - previousSupply;
+                convertedAmount = sale.GlobalHardCap - previousSupply;
                 Runtime.Expect(convertedAmount > 0, "hard cap reached");
                 quoteAmount = Runtime.ConvertBaseToQuote(convertedAmount, sale.Price, saleToken, quoteToken);
                 nextSupply = 0;
@@ -250,7 +253,7 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.HardCap, saleHash = saleHash });
             }
             else
-            if (previousSupply < sale.SoftCap && nextSupply >= sale.SoftCap)
+            if (previousSupply < sale.GlobalSoftCap && nextSupply >= sale.GlobalSoftCap)
             {
                 Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.SoftCap, saleHash = saleHash });
             }
@@ -265,9 +268,14 @@ namespace Phantasma.Blockchain.Contracts
             var amountMap = _buyerAmounts.Get<Hash, StorageMap>(saleHash);
             var totalAmount = amountMap.Get<Address, BigInteger>(from);
 
-            if (sale.UserLimit > 0)
+            if (sale.UserSoftCap > 0)
             {
-                Runtime.Expect(totalAmount + convertedAmount <= sale.UserLimit, "user purchase limit exceeded");
+                Runtime.Expect(totalAmount + convertedAmount >= sale.UserSoftCap, "user purchase minimum limit not reached");
+            }
+
+            if (sale.UserHardCap > 0)
+            {
+                Runtime.Expect(totalAmount + convertedAmount <= sale.UserHardCap, "user purchase maximum limit exceeded");
             }
 
             var addressMap = _buyerAddresses.Get<Hash, StorageSet>(saleHash);
@@ -294,7 +302,7 @@ namespace Phantasma.Blockchain.Contracts
             var saleToken = Runtime.GetToken(sale.SellSymbol);
             var receiveToken = Runtime.GetToken(sale.ReceiveSymbol);
 
-            if (soldSupply >= sale.SoftCap) // if at least soft cap reached, send tokens to buyers and funds to sellers
+            if (soldSupply >= sale.GlobalSoftCap) // if at least soft cap reached, send tokens to buyers and funds to sellers
             {
                 foreach (var buyer in buyerAddresses)
                 {
@@ -315,7 +323,7 @@ namespace Phantasma.Blockchain.Contracts
                     Runtime.TransferTokens(sale.ReceiveSymbol, this.Address, buyer, amount);
                 }
 
-                Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, sale.HardCap);
+                Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, sale.GlobalHardCap);
             }
         }
     }
