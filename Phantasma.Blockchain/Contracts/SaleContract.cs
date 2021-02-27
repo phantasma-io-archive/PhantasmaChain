@@ -210,6 +210,12 @@ namespace Phantasma.Blockchain.Contracts
             return totalAmount;
         }
 
+        public BigInteger GetRaisedAmount(Hash saleHash)
+        {
+            var total = _saleSupply.Get<Hash, BigInteger>(saleHash);
+            return total;
+        }
+
         public void Purchase(Address from, Hash saleHash, string quoteSymbol, BigInteger quoteAmount)
         {
             //For now, prevent purchases with other tokens 
