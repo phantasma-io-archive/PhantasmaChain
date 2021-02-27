@@ -86,7 +86,7 @@ namespace Phantasma.Blockchain.Contracts
 
 
             // TODO remove this later when Cosmic Swaps 2.0 are released
-            Runtime.Expect(receiveSymbol == DomainSettings.StakingTokenSymbol, "invalid receive token symbol: " + receiveSymbol); 
+            Runtime.Expect(receiveSymbol == DomainSettings.StakingTokenSymbol, "invalid receive token symbol: " + receiveSymbol);
 
             Runtime.TransferTokens(sellSymbol, from, this.Address, hardCap);
 
@@ -171,6 +171,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(sale.Flags.HasFlag(SaleFlags.Whitelist), "this sale is not using whitelists");
 
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
+            Runtime.Expect(target != sale.Creator, "sale creator can't be whitelisted");
 
             var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
 
@@ -208,6 +209,9 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Purchase(Address from, Hash saleHash, string quoteSymbol, BigInteger quoteAmount)
         {
+            //For now, prevent purchases with other tokens 
+            Runtime.Expect(quoteSymbol == DomainSettings.StakingTokenSymbol, "invalid receive token symbol: " + quoteSymbol + ". SOUL token must be used for purchase");
+
             Runtime.Expect(Runtime.TokenExists(quoteSymbol), "token must exist: " + quoteSymbol);
             var quoteToken = Runtime.GetToken(quoteSymbol);
 
@@ -215,6 +219,7 @@ namespace Phantasma.Blockchain.Contracts
 
             var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
             Runtime.Expect(quoteSymbol != sale.SellSymbol, "cannot participate in the sale using " + quoteSymbol);
+            Runtime.Expect(from != sale.Creator, "sale creator can't participate");
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             if (sale.Flags.HasFlag(SaleFlags.Whitelist))
