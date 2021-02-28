@@ -39,6 +39,175 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestSale()
+        {
+            var owner = PhantasmaKeys.Generate();
+
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var saleUser = PhantasmaKeys.Generate();
+            var saleBuyer = PhantasmaKeys.Generate();
+            var otherSaleBuyer = PhantasmaKeys.Generate();
+
+            var stakeAmount = MinimumValidStake;
+            double realStakeAmount = ((double)stakeAmount) * Math.Pow(10, -DomainSettings.StakingTokenDecimals);
+            double realExpectedUnclaimedAmount = ((double)(StakeToFuel(stakeAmount, DefaultEnergyRatioDivisor))) * Math.Pow(10, -DomainSettings.FuelTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, saleUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, saleUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+
+            simulator.GenerateTransfer(owner, saleBuyer.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, saleBuyer.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+
+            simulator.GenerateTransfer(owner, otherSaleBuyer.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, otherSaleBuyer.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+            simulator.EndBlock();
+
+            var saleSymbol = "DANK";
+            var supply = 100000000;
+
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, saleSymbol, "Dank Token", supply, 2, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, saleUser.Address, saleSymbol, supply);
+            simulator.EndBlock();
+
+            var oldSellerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, "SOUL", saleUser.Address);
+
+            var saleRate = 10;
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
+                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.CreateSale), saleUser.Address, "Dank pre-sale", SaleFlags.Whitelist, (Timestamp) simulator.CurrentTime, (Timestamp)( simulator.CurrentTime + TimeSpan.FromDays(2)), saleSymbol, "SOUL", saleRate, 0, supply, 0, 1500).
+                    SpendGas(saleUser.Address).EndScript());
+            var block = simulator.EndBlock().First();
+
+            var resultBytes = block.GetResultForTransaction(tx.Hash);
+            var resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+            var saleHash = resultObj.AsInterop<Hash>();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
+                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.AddToWhitelist), saleHash, saleBuyer.Address)
+                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.AddToWhitelist), saleHash, otherSaleBuyer.Address).
+                    SpendGas(saleUser.Address).EndScript());
+            simulator.EndBlock().First();
+
+            var purchaseAmount = 50;
+            BigInteger expectedAmount = 0;
+
+            for (int i=1; i<=3; i++)
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(saleBuyer, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(saleBuyer.Address, Address.Null, 1, 9999)
+                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.Purchase), saleBuyer.Address, saleHash, "SOUL", purchaseAmount).
+                        SpendGas(saleBuyer.Address).EndScript());
+                simulator.EndBlock().First();
+
+                expectedAmount += saleRate * purchaseAmount;
+
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
+                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash).
+                        SpendGas(saleUser.Address).EndScript());
+                block = simulator.EndBlock().First();
+                resultBytes = block.GetResultForTransaction(tx.Hash);
+                resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+                var raisedAmount = resultObj.AsNumber();
+
+                Assert.IsTrue(raisedAmount == expectedAmount);
+
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
+                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetPurchasedAmount), saleHash, saleBuyer.Address).
+                        SpendGas(saleUser.Address).EndScript());
+                block = simulator.EndBlock().First();
+                resultBytes = block.GetResultForTransaction(tx.Hash);
+                resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+                var purchasedAmount = resultObj.AsNumber();
+
+                Assert.IsTrue(purchasedAmount == expectedAmount);
+            }
+
+            /*
+            Assert.ThrowsException<ChainException>(() =>
+           {
+               simulator.BeginBlock();
+               simulator.GenerateCustomTransaction(saleBuyer, ProofOfWork.None, () =>
+                   ScriptUtils.BeginScript().AllowGas(saleBuyer.Address, Address.Null, 1, 9999)
+                       .CallContract(NativeContractKind.Sale, nameof(SaleContract.Purchase), saleBuyer.Address, saleHash, "SOUL", purchaseAmount).
+                       SpendGas(saleBuyer.Address).EndScript());
+               simulator.EndBlock().First();
+           });*/
+
+            var otherPurchaseAmount = 150;
+
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(otherSaleBuyer, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(otherSaleBuyer.Address, Address.Null, 1, 9999)
+                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.Purchase), otherSaleBuyer.Address, saleHash, "SOUL", otherPurchaseAmount).
+                        SpendGas(otherSaleBuyer.Address).EndScript());
+                simulator.EndBlock().First();
+
+                expectedAmount += saleRate * otherPurchaseAmount;
+
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
+                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash).
+                        SpendGas(saleUser.Address).EndScript());
+                block = simulator.EndBlock().First();
+                resultBytes = block.GetResultForTransaction(tx.Hash);
+                resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+                var raisedAmount = resultObj.AsNumber();
+
+                Assert.IsTrue(raisedAmount == expectedAmount);
+            }
+
+            simulator.TimeSkipDays(4);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
+                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash).
+                    SpendGas(saleUser.Address).EndScript());
+            block = simulator.EndBlock().First();
+            resultBytes = block.GetResultForTransaction(tx.Hash);
+            resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+            var totalSoldAmount = resultObj.AsNumber();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(saleBuyer, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(saleBuyer.Address, Address.Null, 1, 9999)
+                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.CloseSale), saleBuyer.Address, saleHash).
+                    SpendGas(saleBuyer.Address).EndScript());
+            simulator.EndBlock().First();
+
+            var buyerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, saleSymbol, saleBuyer.Address);
+            BigInteger expectedBalance = 3 * purchaseAmount * saleRate;
+            Assert.IsTrue(buyerBalance == expectedBalance);
+
+            var otherBuyerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, saleSymbol, saleBuyer.Address);
+            expectedBalance = otherPurchaseAmount * saleRate;
+            Assert.IsTrue(otherBuyerBalance == expectedBalance);
+
+            var newSellerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, "SOUL", saleUser.Address);
+            expectedBalance = oldSellerBalance + (totalSoldAmount / saleRate);
+            Assert.IsTrue(newSellerBalance == expectedBalance);
+        }
+
+        [TestMethod]
         public void TestEnergyRatioDecimals()
         {
             var owner = PhantasmaKeys.Generate();
