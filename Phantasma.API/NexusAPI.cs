@@ -2134,5 +2134,14 @@ namespace Phantasma.API
             return new ArrayResult() { values = swaps.Select(x => (object)x).ToArray() };
         }
 
+        [APIInfo(typeof(SingleResult), "Returns latest sale hash.", false, -1)]
+        [APIFailCase("hash is invalid", "43242342")]
+        public IAPIResult GetLatestSaleHash()
+        {
+            var hash = (Hash)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "sale", nameof(SaleContract.GetLatestSaleHash)).ToObject();
+
+            return new SingleResult() { value = hash.ToString() };
+        }
+
     }
 }
