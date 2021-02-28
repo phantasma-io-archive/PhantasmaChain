@@ -344,6 +344,21 @@ namespace Phantasma.VM
 
         public T AsInterop<T>()
         {
+            if (typeof(T) == typeof(Hash) && this.Type != VMType.Object)
+            {
+                var bytes = this.AsByteArray();
+
+                if (bytes.Length == 33 && bytes[0] == 32)
+                {
+                    bytes = bytes.Skip(1).ToArray();
+                }
+
+                if (bytes.Length == 32)
+                {
+                    return (T)(object)(new Hash(bytes));
+                }
+            }
+
             Throw.If(this.Type != VMType.Object, $"Invalid cast: expected object, got {this.Type}");
 
             if (this.Data == null)
