@@ -139,7 +139,6 @@ namespace Phantasma.Tests
                 Assert.IsTrue(purchasedAmount == expectedAmount);
             }
 
-            /*
             Assert.ThrowsException<ChainException>(() =>
            {
                simulator.BeginBlock();
@@ -148,7 +147,7 @@ namespace Phantasma.Tests
                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.Purchase), saleBuyer.Address, saleHash, "SOUL", purchaseAmount).
                        SpendGas(saleBuyer.Address).EndScript());
                simulator.EndBlock().First();
-           });*/
+           });
 
             var otherPurchaseAmount = 150;
 
