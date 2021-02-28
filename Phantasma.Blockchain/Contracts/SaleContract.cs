@@ -23,7 +23,8 @@ namespace Phantasma.Blockchain.Contracts
         AddedToWhitelist,
         RemovedFromWhitelist,
         Completion,
-        Refund
+        Refund,
+        PriceChange,
     }
 
     public struct SaleEventData
@@ -113,7 +114,7 @@ namespace Phantasma.Blockchain.Contracts
             _saleMap.Set(hash, sale);
             _saleSupply.Set<Hash, BigInteger>(hash, 0);
 
-            Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.Creation, saleHash = hash });
+            Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.Creation, saleHash = hash });
 
             return hash;
         }
@@ -140,9 +141,9 @@ namespace Phantasma.Blockchain.Contracts
             return false;
         }
 
-        public SaleInfo[] GetSales()
+        public SaleInfo GetSale(Hash saleHash)
         {
-            return _saleList.All<SaleInfo>();
+            return _saleMap.Get<Hash, SaleInfo>(saleHash);
         }
 
         public Address[] GetSaleParticipants(Hash saleHash)
@@ -179,7 +180,7 @@ namespace Phantasma.Blockchain.Contracts
             if (!addressMap.Contains<Address>(target))
             {
                 addressMap.Add<Address>(target);
-                Runtime.Notify(EventKind.SaleMilestone, target, new SaleEventData() { kind = SaleEventKind.AddedToWhitelist, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, target, new SaleEventData() { kind = SaleEventKind.AddedToWhitelist, saleHash = saleHash });
             }
         }
 
@@ -197,7 +198,7 @@ namespace Phantasma.Blockchain.Contracts
             if (addressMap.Contains<Address>(target))
             {
                 addressMap.Remove<Address>(target);
-                Runtime.Notify(EventKind.SaleMilestone, target, new SaleEventData() { kind = SaleEventKind.RemovedFromWhitelist, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, target, new SaleEventData() { kind = SaleEventKind.RemovedFromWhitelist, saleHash = saleHash });
             }
         }
 
@@ -256,12 +257,12 @@ namespace Phantasma.Blockchain.Contracts
 
             if (nextSupply == 0)
             {
-                Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.HardCap, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.HardCap, saleHash = saleHash });
             }
             else
             if (previousSupply < sale.GlobalSoftCap && nextSupply >= sale.GlobalSoftCap)
             {
-                Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.SoftCap, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.SoftCap, saleHash = saleHash });
             }
 
             Runtime.TransferTokens(quoteSymbol, from, this.Address, quoteAmount);
@@ -338,6 +339,30 @@ namespace Phantasma.Blockchain.Contracts
 
                 Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, sale.GlobalHardCap);
             }
+        }
+
+        public void EditSalePrice(Hash saleHash, BigInteger price)
+        {
+            Runtime.Expect(_saleMap.ContainsKey(saleHash), "sale does not exist or already closed");
+
+            var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+
+            Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
+
+            Runtime.Expect(Runtime.Time > sale.EndDate, "sale still not reached end date");
+
+            Runtime.Expect(price > 0, "invalid price");
+            Runtime.Expect(price != sale.Price, "price must be different");
+
+            var soldSupply = _saleSupply.Get<Hash, BigInteger>(saleHash);
+            Runtime.Expect(soldSupply == 0, "sale already started");
+
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale already reached end date");
+
+            sale.Price = price;
+            _saleMap.Set<Hash, SaleInfo>(saleHash, sale);
+
+            Runtime.Notify(EventKind.Crowdsale, sale.Creator, new SaleEventData() { kind = SaleEventKind.PriceChange, saleHash = saleHash });
         }
     }
 }
