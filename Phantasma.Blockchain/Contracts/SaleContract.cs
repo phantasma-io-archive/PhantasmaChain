@@ -341,6 +341,20 @@ namespace Phantasma.Blockchain.Contracts
             }
         }
 
+        public Hash GetLatestSaleHash()
+        {
+            var count = (int)_saleList.Count();
+
+            if (count <= 0)
+            {
+                return Hash.Null;
+            }
+
+            var index = count - 1;
+            var firstHash = _saleList.Get<Hash>(index);
+            return firstHash;
+        }
+
         public void EditSalePrice(Hash saleHash, BigInteger price)
         {
             Runtime.Expect(_saleMap.ContainsKey(saleHash), "sale does not exist or already closed");
