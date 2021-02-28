@@ -69,15 +69,13 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            var minPrice = UnitConversion.ToBigInteger(0.001m, DomainSettings.FiatTokenDecimals);
-
             Runtime.Expect(Runtime.TokenExists(sellSymbol), "token must exist: " + sellSymbol);
 
             var token = Runtime.GetToken(sellSymbol);
             Runtime.Expect(token.IsFungible(), "token must be fungible: " + sellSymbol);
             Runtime.Expect(token.IsTransferable(), "token must be transferable: " + sellSymbol);
 
-            Runtime.Expect(price >= minPrice, "invalid price");
+            Runtime.Expect(price >= 1, "invalid price");
             Runtime.Expect(globalSoftCap >= 0, "invalid softcap");
             Runtime.Expect(globalHardCap > 0, "invalid hard cap");
             Runtime.Expect(globalHardCap >= globalSoftCap, "hard cap must be larger or equal to soft capt");
@@ -113,7 +111,7 @@ namespace Phantasma.Blockchain.Contracts
 
             _saleList.Add(hash);
             _saleMap.Set(hash, sale);
-            _saleSupply.Set(hash, 0);
+            _saleSupply.Set<Hash, BigInteger>(hash, 0);
 
             Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.Creation, saleHash = hash });
 
@@ -149,19 +147,19 @@ namespace Phantasma.Blockchain.Contracts
 
         public Address[] GetSaleParticipants(Hash saleHash)
         {
-            var addressMap = _buyerAddresses.Get<Hash, StorageSet>(saleHash);
-            return addressMap.AllValues<Address>();
+            var addressMap = _buyerAddresses.Get<Hash, StorageList>(saleHash);
+            return addressMap.All<Address>();
         }
 
         public Address[] GetSaleWhitelists(Hash saleHash)
         {
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
-            return addressMap.AllValues<Address>();
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
+            return addressMap.All<Address>();
         }
 
         public bool IsWhitelisted(Hash saleHash, Address address)
         {
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
 
             return addressMap.Contains<Address>(address);
         }
@@ -176,7 +174,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
             Runtime.Expect(target != sale.Creator, "sale creator can't be whitelisted");
 
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
 
             if (!addressMap.Contains<Address>(target))
             {
@@ -194,7 +192,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
 
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
 
             if (addressMap.Contains<Address>(target))
             {
@@ -210,7 +208,7 @@ namespace Phantasma.Blockchain.Contracts
             return totalAmount;
         }
 
-        public BigInteger GetRaisedAmount(Hash saleHash)
+        public BigInteger GetSoldAmount(Hash saleHash)
         {
             var total = _saleSupply.Get<Hash, BigInteger>(saleHash);
             return total;
@@ -254,6 +252,8 @@ namespace Phantasma.Blockchain.Contracts
                 nextSupply = 0;
             }
 
+            _saleSupply.Set<Hash, BigInteger>(saleHash, nextSupply);
+
             if (nextSupply == 0)
             {
                 Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.HardCap, saleHash = saleHash });
@@ -274,25 +274,31 @@ namespace Phantasma.Blockchain.Contracts
             var amountMap = _buyerAmounts.Get<Hash, StorageMap>(saleHash);
             var totalAmount = amountMap.Get<Address, BigInteger>(from);
 
+            var newAmount = totalAmount + convertedAmount;
+
             if (sale.UserSoftCap > 0)
             {
-                Runtime.Expect(totalAmount + convertedAmount >= sale.UserSoftCap, "user purchase minimum limit not reached");
+                Runtime.Expect(newAmount >= sale.UserSoftCap, "user purchase minimum limit not reached");
             }
 
             if (sale.UserHardCap > 0)
             {
-                Runtime.Expect(totalAmount + convertedAmount <= sale.UserHardCap, "user purchase maximum limit exceeded");
+                Runtime.Expect(newAmount <= sale.UserHardCap, "user purchase maximum limit exceeded");
             }
 
-            var addressMap = _buyerAddresses.Get<Hash, StorageSet>(saleHash);
-            addressMap.Add<Address>(from);
+            var addressMap = _buyerAddresses.Get<Hash, StorageList>(saleHash);
+            if (!addressMap.Contains<Address>(from))
+            {
+                addressMap.Add<Address>(from);
+            }
+
+            amountMap.Set<Address, BigInteger>(from, newAmount);
         }
 
         // anyone can call this, not only manager, in order to be able to trigger refunds
         public void CloseSale(Address from, Hash saleHash)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
 
             Runtime.Expect(_saleMap.ContainsKey(saleHash), "sale does not exist or already closed");
 
