@@ -186,12 +186,16 @@ namespace Phantasma.Domain
         // price is in quote Tokens
         public static BigInteger ConvertQuoteToBase(this IRuntime runtime, BigInteger quoteAmount, BigInteger price, IToken baseToken, IToken quoteToken)
         {
-            return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(quoteAmount, quoteToken.Decimals) / UnitConversion.ToDecimal(price, quoteToken.Decimals), baseToken.Decimals);
+            var temp = UnitConversion.ToDecimal(quoteAmount, quoteToken.Decimals) / UnitConversion.ToDecimal(price, quoteToken.Decimals);
+            return UnitConversion.ToBigInteger(temp, baseToken.Decimals);
         }
 
         public static BigInteger ConvertBaseToQuote(this IRuntime runtime, BigInteger baseAmount, BigInteger price, IToken baseToken, IToken quoteToken)
         {
-            return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(baseAmount, baseToken.Decimals) * UnitConversion.ToDecimal(price, quoteToken.Decimals), quoteToken.Decimals);
+            var baseVal = UnitConversion.ToDecimal(baseAmount, baseToken.Decimals);
+            var quoteVal = UnitConversion.ToDecimal(price, quoteToken.Decimals);
+            var temp = baseVal * quoteVal;
+            return UnitConversion.ToBigInteger(temp, quoteToken.Decimals);
         }
 
 

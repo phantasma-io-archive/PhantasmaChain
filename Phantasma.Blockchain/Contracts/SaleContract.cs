@@ -322,7 +322,8 @@ namespace Phantasma.Blockchain.Contracts
                     Runtime.TransferTokens(sale.SellSymbol, this.Address, buyer, amount);
                 }
 
-                var fundsAmount = Runtime.ConvertBaseToQuote(soldSupply, sale.Price, saleToken, receiveToken);
+                var fundsAmount = Runtime.ConvertBaseToQuote(soldSupply, UnitConversion.GetUnitValue(receiveToken.Decimals), saleToken, receiveToken);
+                fundsAmount /= sale.Price;
                 Runtime.TransferTokens(sale.ReceiveSymbol, this.Address, sale.Creator, fundsAmount);
             }
             else // otherwise return funds to buyers and return tokens to sellers

@@ -51,7 +51,7 @@ namespace Phantasma.Tests
             var saleBuyer = PhantasmaKeys.Generate();
             var otherSaleBuyer = PhantasmaKeys.Generate();
 
-            var stakeAmount = MinimumValidStake;
+            var stakeAmount = UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals);
             double realStakeAmount = ((double)stakeAmount) * Math.Pow(10, -DomainSettings.StakingTokenDecimals);
             double realExpectedUnclaimedAmount = ((double)(StakeToFuel(stakeAmount, DefaultEnergyRatioDivisor))) * Math.Pow(10, -DomainSettings.FuelTokenDecimals);
 
@@ -67,10 +67,11 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             var saleSymbol = "DANK";
-            var supply = 100000000;
+            var decimals = 18;
+            var supply = UnitConversion.ToBigInteger(2000000, decimals);
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, saleSymbol, "Dank Token", supply, 2, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite);
+            simulator.GenerateToken(owner, saleSymbol, "Dank Token", supply, decimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite);
             simulator.EndBlock();
 
             simulator.BeginBlock();
@@ -79,12 +80,12 @@ namespace Phantasma.Tests
 
             var oldSellerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, "SOUL", saleUser.Address);
 
-            var saleRate = 10;
+            var saleRate = 3;
 
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
-                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.CreateSale), saleUser.Address, "Dank pre-sale", SaleFlags.Whitelist, (Timestamp) simulator.CurrentTime, (Timestamp)( simulator.CurrentTime + TimeSpan.FromDays(2)), saleSymbol, "SOUL", saleRate, 0, supply, 0, 1500).
+                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.CreateSale), saleUser.Address, "Dank pre-sale", SaleFlags.Whitelist, (Timestamp) simulator.CurrentTime, (Timestamp)( simulator.CurrentTime + TimeSpan.FromDays(2)), saleSymbol, "SOUL", saleRate, 0, supply, 0, UnitConversion.ToBigInteger(1500/saleRate, decimals)).
                     SpendGas(saleUser.Address).EndScript());
             var block = simulator.EndBlock().First();
 
@@ -100,8 +101,11 @@ namespace Phantasma.Tests
                     SpendGas(saleUser.Address).EndScript());
             simulator.EndBlock().First();
 
-            var purchaseAmount = 50;
+            var purchaseAmount = UnitConversion.ToBigInteger(50, DomainSettings.StakingTokenDecimals);
             BigInteger expectedAmount = 0;
+
+            var baseToken = nexus.GetTokenInfo(nexus.RootStorage, "SOUL");
+            var quoteToken = nexus.GetTokenInfo(nexus.RootStorage, saleSymbol);
 
             for (int i=1; i<=3; i++)
             {
@@ -112,7 +116,7 @@ namespace Phantasma.Tests
                         SpendGas(saleBuyer.Address).EndScript());
                 simulator.EndBlock().First();
 
-                expectedAmount += saleRate * purchaseAmount;
+                expectedAmount += saleRate * DomainExtensions.ConvertBaseToQuote(null, purchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
 
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
@@ -149,7 +153,7 @@ namespace Phantasma.Tests
                simulator.EndBlock().First();
            });
 
-            var otherPurchaseAmount = 150;
+            var otherPurchaseAmount = UnitConversion.ToBigInteger(150, DomainSettings.StakingTokenDecimals);
 
             {
                 simulator.BeginBlock();
@@ -159,7 +163,7 @@ namespace Phantasma.Tests
                         SpendGas(otherSaleBuyer.Address).EndScript());
                 simulator.EndBlock().First();
 
-                expectedAmount += saleRate * otherPurchaseAmount;
+                expectedAmount += saleRate * DomainExtensions.ConvertBaseToQuote(null, otherPurchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
 
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
@@ -194,15 +198,18 @@ namespace Phantasma.Tests
             simulator.EndBlock().First();
 
             var buyerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, saleSymbol, saleBuyer.Address);
-            BigInteger expectedBalance = 3 * purchaseAmount * saleRate;
+            BigInteger expectedBalance = 3 * saleRate * DomainExtensions.ConvertBaseToQuote(null, purchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
             Assert.IsTrue(buyerBalance == expectedBalance);
 
             var otherBuyerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, saleSymbol, saleBuyer.Address);
-            expectedBalance = otherPurchaseAmount * saleRate;
+            expectedBalance = saleRate * DomainExtensions.ConvertBaseToQuote(null, otherPurchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
             Assert.IsTrue(otherBuyerBalance == expectedBalance);
 
             var newSellerBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, "SOUL", saleUser.Address);
-            expectedBalance = oldSellerBalance + (totalSoldAmount / saleRate);
+
+            var totalRaisedAmount = DomainExtensions.ConvertQuoteToBase(null, totalSoldAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken) / saleRate;
+
+            expectedBalance = oldSellerBalance + totalRaisedAmount;
             Assert.IsTrue(newSellerBalance == expectedBalance);
         }
 
