@@ -235,7 +235,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var saleToken = Runtime.GetToken(sale.SellSymbol);
-            var convertedAmount = Runtime.ConvertQuoteToBase(quoteAmount, sale.Price, saleToken, quoteToken);
+            var convertedAmount = Runtime.ConvertQuoteToBase(quoteAmount, UnitConversion.GetUnitValue(quoteToken.Decimals), saleToken, quoteToken) * sale.Price;
 
             var temp = UnitConversion.ToDecimal(convertedAmount, saleToken.Decimals);
             Runtime.Expect(temp >= 1, "cannot purchase very tiny amount");
