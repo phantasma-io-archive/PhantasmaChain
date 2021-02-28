@@ -167,9 +167,11 @@ namespace Phantasma.Blockchain.Contracts
 
         public void AddToWhitelist(Hash saleHash, Address target)
         {
-            Runtime.Expect(IsSaleActive(saleHash), "sale not active or does not exist");
+            Runtime.Expect(_saleMap.ContainsKey<Hash>(saleHash), "sale does not exist");
 
             var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
+
             Runtime.Expect(sale.Flags.HasFlag(SaleFlags.Whitelist), "this sale is not using whitelists");
 
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
@@ -186,9 +188,11 @@ namespace Phantasma.Blockchain.Contracts
 
         public void RemoveFromWhitelist(Hash saleHash, Address target)
         {
-            Runtime.Expect(IsSaleActive(saleHash), "sale not active or does not exist");
+            Runtime.Expect(_saleMap.ContainsKey<Hash>(saleHash), "sale does not exist");
 
             var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
+
             Runtime.Expect(sale.Flags.HasFlag(SaleFlags.Whitelist), "this sale is not using whitelists");
 
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
@@ -223,9 +227,12 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.TokenExists(quoteSymbol), "token must exist: " + quoteSymbol);
             var quoteToken = Runtime.GetToken(quoteSymbol);
 
-            Runtime.Expect(IsSaleActive(saleHash), "sale not active or does not exist");
-
+            Runtime.Expect(_saleMap.ContainsKey<Hash>(saleHash), "sale does not exist");
             var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+
+            Runtime.Expect(Runtime.Time >= sale.StartDate, "sale has not started");
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
+
             Runtime.Expect(quoteSymbol != sale.SellSymbol, "cannot participate in the sale using " + quoteSymbol);
             Runtime.Expect(from != sale.Creator, "sale creator can't participate");
 
