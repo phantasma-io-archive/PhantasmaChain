@@ -26,12 +26,15 @@ namespace Phantasma.Numerics
 
             if (units == 0)
             {
-                return (long)value;
+                return (decimal)value;
             }
 
-            var multiplier = (decimal)GetMultiplier(units);
-            var n = decimal.Parse(value.ToString()); // TODO not very efficient, improve later...
-            n /= multiplier;
+            // TODO to be rewritten completely
+            var str = value.ToString();
+            var part1 = str.Substring(0, str.Length - units);
+            var part2 = str.Substring(str.Length - units);
+            var n = decimal.Parse(part1) + decimal.Parse("0" + System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator + part2);
+            
             return n;
         }
 

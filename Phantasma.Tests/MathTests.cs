@@ -433,6 +433,26 @@ namespace Phantasma.Tests
             Assert.IsTrue(negBigInt.Sign== -1);
             Assert.IsTrue(negBigInt.ToUintArray().SequenceEqual(posBigint.ToUintArray()));
         }
+
+        [TestMethod]
+        public void BigIntToDecimal()
+        {
+            string ax = "332f389d332f3831332f389e";
+            string bx = "332f389d332f";
+
+            var a = new BigInteger(ax, 16);
+            var b = new BigInteger(bx, 16);
+
+            Console.WriteLine("UnitConversion.ToDecimal(a, 5): " + UnitConversion.ToDecimal(a, 5));
+            Console.WriteLine("UnitConversion.ToDecimal(a, 10): " + UnitConversion.ToDecimal(a, 10));
+            Console.WriteLine("UnitConversion.ToDecimal(a, 15): " + UnitConversion.ToDecimal(a, 15));
+            Console.WriteLine("UnitConversion.ToDecimal(b, 0): " + UnitConversion.ToDecimal(b, 0));
+
+            Assert.IsTrue(UnitConversion.ToDecimal(a, 5) == 158408223667605747525096.06046m);
+            Assert.IsTrue(UnitConversion.ToDecimal(a, 10) == 1584082236676057475.2509606046m);
+            Assert.IsTrue(UnitConversion.ToDecimal(a, 15) == 15840822366760.574752509606046m);
+            Assert.IsTrue(UnitConversion.ToDecimal(b, 0) == 56277906305839m);
+        }
         #endregion
 
         #region Proof of Work
