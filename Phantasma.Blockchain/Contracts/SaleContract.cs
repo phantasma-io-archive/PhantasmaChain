@@ -363,7 +363,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
 
-            Runtime.Expect(Runtime.Time > sale.EndDate, "sale still not reached end date");
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
 
             Runtime.Expect(price > 0, "invalid price");
             Runtime.Expect(price != sale.Price, "price must be different");
