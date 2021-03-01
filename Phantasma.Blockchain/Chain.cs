@@ -527,6 +527,16 @@ namespace Phantasma.Blockchain
             return context;
         }
 
+        public VMObject InvokeContract(StorageContext storage, NativeContractKind nativeContract, string methodName, Timestamp time, params object[] args)
+        {
+            return InvokeContract(storage, nativeContract.GetContractName(), methodName, time, args);
+        }
+
+        public VMObject InvokeContract(StorageContext storage, NativeContractKind nativeContract, string methodName, params object[] args)
+        {
+            return InvokeContract(storage, nativeContract.GetContractName(), methodName, args);
+        }
+
         public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, Timestamp time, params object[] args)
         {
             var contract = Nexus.GetContractByName(storage, contractName);
