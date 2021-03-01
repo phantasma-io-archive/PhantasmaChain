@@ -40,6 +40,24 @@ namespace Phantasma.API
         public string[] members;
     }
 
+    // TODO add APIDescription tags
+    public struct CrowdsaleResult : IAPIResult
+    {
+        public string hash;
+        public string name;
+        public string creator;
+        public string flags;
+        public uint startDate;
+        public uint endDate;
+        public string sellSymbol;
+        public string receiveSymbol;
+        public uint price;
+        public string globalSoftCap;
+        public string globalHardCap;
+        public string userSoftCap;
+        public string userHardCap;
+    }
+
     public struct NexusResult : IAPIResult
     {
         [APIDescription("Name of the nexus")]

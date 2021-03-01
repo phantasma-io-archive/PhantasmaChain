@@ -440,7 +440,7 @@ namespace Phantasma.API
                             burnedSupply = "0", // TODO
                             mode = series.Mode,
                             script = Base16.Encode(series.Script),
-                            methods = extended ?  FillMethods(series.ABI.Methods): new ABIMethodResult[0]
+                            methods = extended ? FillMethods(series.ABI.Methods) : new ABIMethodResult[0]
                         });
                     }
                 }
@@ -695,7 +695,7 @@ namespace Phantasma.API
 
             if (storage.used > 0)
             {
-                var files = (Hash[]) Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetFiles), address).ToObject();
+                var files = (Hash[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetFiles), address).ToObject();
 
                 Hash avatarHash = Hash.Null;
                 storage.archives = files.Select(x => {
@@ -1182,7 +1182,7 @@ namespace Phantasma.API
 
             if (error != null)
             {
-                return new ErrorResult { error = $"Execution failed: {error}"};
+                return new ErrorResult { error = $"Execution failed: {error}" };
             }
 
             var results = new Stack<string>();
@@ -1203,10 +1203,10 @@ namespace Phantasma.API
             var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
             var oracleReads = oracle.Entries.Select(x => new OracleResult()
-                    {
-                        url = x.URL,
-                        content = Base16.Encode((x.Content.GetType() == typeof(byte[]) ? x.Content as byte[] : Serialization.Serialize(x.Content)))
-                    }).ToArray();
+            {
+                url = x.URL,
+                content = Base16.Encode((x.Content.GetType() == typeof(byte[]) ? x.Content as byte[] : Serialization.Serialize(x.Content)))
+            }).ToArray();
 
             var resultArray = results.ToArray();
             return new ScriptResult { results = resultArray, result = resultArray.FirstOrDefault(), events = evts, oracles = oracleReads };
@@ -1428,7 +1428,7 @@ namespace Phantasma.API
 
         // deprecated
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
-        public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")]string symbol, [APIParameter("ID of token", "1")]string IDtext)
+        public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")] string symbol, [APIParameter("ID of token", "1")] string IDtext)
         {
             return GetNFT(symbol, IDtext, false);
         }
@@ -1453,7 +1453,7 @@ namespace Phantasma.API
             {
                 info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return new ErrorResult() { error = e.Message };
             }
@@ -1482,17 +1482,18 @@ namespace Phantasma.API
 
             var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
 
-            return new TokenDataResult() { 
-                chainName = info.CurrentChain, 
-                creatorAddress = info.Creator.Text, 
-                ownerAddress = info.CurrentOwner.Text, 
-                series = info.SeriesID.ToString(), 
-                mint = info.MintID.ToString(), 
-                ID = ID.ToString(), 
-                rom = Base16.Encode(info.ROM), 
-                ram = Base16.Encode(info.RAM), 
-                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused": "active", 
-                infusion = infusion, 
+            return new TokenDataResult()
+            {
+                chainName = info.CurrentChain,
+                creatorAddress = info.Creator.Text,
+                ownerAddress = info.CurrentOwner.Text,
+                series = info.SeriesID.ToString(),
+                mint = info.MintID.ToString(),
+                ID = ID.ToString(),
+                rom = Base16.Encode(info.ROM),
+                ram = Base16.Encode(info.RAM),
+                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused" : "active",
+                infusion = infusion,
                 properties = properties.ToArray()
             };
         }
@@ -1628,7 +1629,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", false, 30)]
-        public IAPIResult GetAuction([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName, [APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
+        public IAPIResult GetAuction([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName, [APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")] string IDtext)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
@@ -1645,7 +1646,7 @@ namespace Phantasma.API
             {
                 var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return new ErrorResult() { error = e.Message };
             }
@@ -1992,8 +1993,8 @@ namespace Phantasma.API
 
         [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 0)]
         public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")] string sourcePlatform
-                ,[APIParameter("Name of platform to settle", "phantasma")] string destPlatform
-                ,[APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+                , [APIParameter("Name of platform to settle", "phantasma")] string destPlatform
+                , [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (TokenSwapper == null)
             {
@@ -2135,12 +2136,41 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(SingleResult), "Returns latest sale hash.", false, -1)]
-        [APIFailCase("hash is invalid", "43242342")]
         public IAPIResult GetLatestSaleHash()
         {
             var hash = (Hash)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "sale", nameof(SaleContract.GetLatestSaleHash)).ToObject();
 
             return new SingleResult() { value = hash.ToString() };
+        }
+
+        [APIInfo(typeof(CrowdsaleResult), "Returns data about a crowdsale.", false, -1)]
+        [APIFailCase("hash is invalid", "43242342")]
+        public IAPIResult GetSale([APIParameter("Hash of sale", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+        {
+            Hash hash;
+            if (!Hash.TryParse(hashText, out hash) || hash == Hash.Null)
+            {
+                return new ErrorResult { error = "Invalid hash" };
+            }
+
+            var sale = (SaleInfo)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "sale", nameof(SaleContract.GetSale), hash).ToObject();
+
+            return new CrowdsaleResult()
+            {
+                hash = hashText,
+                name = sale.Name,
+                creator = sale.Creator.Text,
+                flags = sale.Flags.ToString(),
+                startDate = sale.StartDate.Value,
+                endDate = sale.EndDate.Value,
+                sellSymbol = sale.SellSymbol,
+                receiveSymbol = sale.ReceiveSymbol,
+                price = (uint)sale.Price,
+                globalSoftCap = sale.GlobalSoftCap.ToString(),
+                globalHardCap = sale.GlobalHardCap.ToString(),
+                userSoftCap = sale.UserSoftCap.ToString(),
+                userHardCap = sale.UserHardCap.ToString(),
+            };
         }
 
     }
