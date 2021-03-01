@@ -118,13 +118,11 @@ namespace Phantasma.Tests
 
                 expectedAmount += saleRate * DomainExtensions.ConvertBaseToQuote(null, purchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
 
-                simulator.BeginBlock();
                 resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash);
                 var raisedAmount = resultObj.AsNumber();
 
                 Assert.IsTrue(raisedAmount == expectedAmount);
 
-                simulator.BeginBlock();
                 resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetPurchasedAmount), saleHash, saleBuyer.Address);
                 var purchasedAmount = resultObj.AsNumber();
 
@@ -153,7 +151,6 @@ namespace Phantasma.Tests
 
                 expectedAmount += saleRate * DomainExtensions.ConvertBaseToQuote(null, otherPurchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
 
-                simulator.BeginBlock();
                 resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash);
                 var raisedAmount = resultObj.AsNumber();
 
@@ -162,7 +159,6 @@ namespace Phantasma.Tests
 
             simulator.TimeSkipDays(4);
 
-            simulator.BeginBlock();
             resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash);
             var totalSoldAmount = resultObj.AsNumber();
 
