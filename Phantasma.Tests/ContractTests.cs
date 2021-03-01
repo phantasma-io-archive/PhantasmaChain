@@ -119,25 +119,13 @@ namespace Phantasma.Tests
                 expectedAmount += saleRate * DomainExtensions.ConvertBaseToQuote(null, purchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
 
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
-                    ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
-                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash).
-                        SpendGas(saleUser.Address).EndScript());
-                block = simulator.EndBlock().First();
-                resultBytes = block.GetResultForTransaction(tx.Hash);
-                resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+                resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash);
                 var raisedAmount = resultObj.AsNumber();
 
                 Assert.IsTrue(raisedAmount == expectedAmount);
 
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
-                    ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
-                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetPurchasedAmount), saleHash, saleBuyer.Address).
-                        SpendGas(saleUser.Address).EndScript());
-                block = simulator.EndBlock().First();
-                resultBytes = block.GetResultForTransaction(tx.Hash);
-                resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+                resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetPurchasedAmount), saleHash, saleBuyer.Address);
                 var purchasedAmount = resultObj.AsNumber();
 
                 Assert.IsTrue(purchasedAmount == expectedAmount);
@@ -166,13 +154,7 @@ namespace Phantasma.Tests
                 expectedAmount += saleRate * DomainExtensions.ConvertBaseToQuote(null, otherPurchaseAmount, UnitConversion.GetUnitValue(decimals), baseToken, quoteToken);
 
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
-                    ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
-                        .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash).
-                        SpendGas(saleUser.Address).EndScript());
-                block = simulator.EndBlock().First();
-                resultBytes = block.GetResultForTransaction(tx.Hash);
-                resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+                resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash);
                 var raisedAmount = resultObj.AsNumber();
 
                 Assert.IsTrue(raisedAmount == expectedAmount);
@@ -181,13 +163,7 @@ namespace Phantasma.Tests
             simulator.TimeSkipDays(4);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(saleUser, ProofOfWork.None, () =>
-                ScriptUtils.BeginScript().AllowGas(saleUser.Address, Address.Null, 1, 9999)
-                    .CallContract(NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash).
-                    SpendGas(saleUser.Address).EndScript());
-            block = simulator.EndBlock().First();
-            resultBytes = block.GetResultForTransaction(tx.Hash);
-            resultObj = Serialization.Unserialize<VMObject>(resultBytes);
+            resultObj = nexus.RootChain.InvokeContract(nexus.RootStorage, NativeContractKind.Sale, nameof(SaleContract.GetSoldAmount), saleHash);
             var totalSoldAmount = resultObj.AsNumber();
 
             simulator.BeginBlock();
