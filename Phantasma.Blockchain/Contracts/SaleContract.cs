@@ -22,9 +22,10 @@ namespace Phantasma.Blockchain.Contracts
         HardCap,
         AddedToWhitelist,
         RemovedFromWhitelist,
-        Completion,
+        Distribution,
         Refund,
         PriceChange,
+        Participation,
     }
 
     public struct SaleEventData
@@ -260,6 +261,9 @@ namespace Phantasma.Blockchain.Contracts
                 nextSupply = 0;
             }
 
+            Runtime.TransferTokens(quoteSymbol, from, this.Address, quoteAmount);
+            Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.Participation, saleHash = saleHash });
+
             _saleSupply.Set<Hash, BigInteger>(saleHash, nextSupply);
 
             if (nextSupply == 0)
@@ -271,8 +275,6 @@ namespace Phantasma.Blockchain.Contracts
             {
                 Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.SoftCap, saleHash = saleHash });
             }
-
-            Runtime.TransferTokens(quoteSymbol, from, this.Address, quoteAmount);
 
             if (quoteSymbol != sale.ReceiveSymbol)
             {
