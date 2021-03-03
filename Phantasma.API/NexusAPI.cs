@@ -851,7 +851,7 @@ namespace Phantasma.API
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
-                var block = Nexus.FindBlockByHash(hash);
+                var block = Nexus.FindBlockByTransactionHash(hash);
 
                 if (block != null)
                 {
@@ -964,11 +964,17 @@ namespace Phantasma.API
         [APIInfo(typeof(TransactionResult), "Returns the information about a transaction requested by a block hash and transaction index.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
         [APIFailCase("index transaction is invalid", "-1")]
-        public IAPIResult GetTransactionByBlockHashAndIndex([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash, [APIParameter("Index of transaction", "0")] int index)
+        public IAPIResult GetTransactionByBlockHashAndIndex([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName, [APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash, [APIParameter("Index of transaction", "0")] int index)
         {
+            var chain = FindChainByInput(chainAddressOrName);
+            if (chain == null)
+            {
+                return new ErrorResult { error = "Chain not found" };
+            }
+
             if (Hash.TryParse(blockHash, out var hash))
             {
-                var block = Nexus.FindBlockByHash(hash);
+                var block = chain.GetBlockByHash(hash);
 
                 if (block == null)
                 {
