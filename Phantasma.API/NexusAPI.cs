@@ -847,11 +847,18 @@ namespace Phantasma.API
 
         [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
-        public IAPIResult GetBlockTransactionCountByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
+        public IAPIResult GetBlockTransactionCountByHash([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName, [APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
+            var chain = FindChainByInput(chainAddressOrName);
+            if (chain == null)
+            {
+                return new ErrorResult { error = "Chain not found" };
+            }
+
+
             if (Hash.TryParse(blockHash, out var hash))
             {
-                var block = Nexus.FindBlockByTransactionHash(hash);
+                var block = chain.GetBlockByHash(hash);
 
                 if (block != null)
                 {
