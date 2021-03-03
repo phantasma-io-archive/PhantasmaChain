@@ -9,6 +9,7 @@ using Phantasma.Core.Types;
 using Phantasma.Storage.Utils;
 using Phantasma.Storage;
 using System.Linq;
+using System.Reflection;
 
 namespace Phantasma.VM
 {
@@ -342,6 +343,40 @@ namespace Phantasma.VM
             }
         }
 
+        public T AsStruct<T>()
+        {
+            Throw.If(this.Type != VMType.Struct, $"Invalid cast: expected struct, got {this.Type}");
+
+            if (this.Data == null)
+            {
+                return default(T);
+            }
+
+            var values = this.Data as Dictionary<VMObject, VMObject>;
+
+            Throw.If(values == null, "invalid struct data");
+
+            var result = Activator.CreateInstance<T>();
+
+            var structType = typeof(T);
+            TypedReference reference = __makeref(result);
+
+            // WARNING this code is still experimental, probably wont work in every situation
+            // TODO check that values.Count equals the number of fields in type T
+            foreach (var entry in values)
+            {
+                var fieldName = entry.Key.AsString();
+                FieldInfo fi = structType.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
+
+                Throw.If(fi == null, "unknown field: " + fieldName);
+
+                var fieldValue = entry.Value.ToObject();
+                fi.SetValueDirect(reference, fieldValue);
+            }
+
+            return result;
+        }
+
         public T AsInterop<T>()
         {
             if (typeof(T) == typeof(Hash) && this.Type != VMType.Object)
@@ -434,8 +469,16 @@ namespace Phantasma.VM
                                 break;
 
                             default:
-                                throw new Exception("Cannot decode interop object from bytes with length: " + len);
-                        }
+                                try
+                                {
+                                    this.UnserializeData(bytes);
+                                }
+                                catch (Exception e)
+                                {
+                                    throw new Exception("Cannot decode interop object from bytes with length: " + len);
+                                }
+                                break;
+                    }
 
                         break;
                     }
@@ -1162,13 +1205,18 @@ namespace Phantasma.VM
 
         public static VMObject FromBytes(byte[] bytes)
         {
+            var result = new VMObject();
+            result.UnserializeData(bytes);
+            return result;
+        }
+
+        public void UnserializeData(byte[] bytes)
+        {
             using (var stream = new MemoryStream(bytes))
             {
                 using (var reader = new BinaryReader(stream))
                 {
-                    var result = new VMObject();
-                    result.UnserializeData(reader);
-                    return result;
+                    UnserializeData(reader);
                 }
             }
         }
