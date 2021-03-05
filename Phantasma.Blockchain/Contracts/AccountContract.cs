@@ -185,10 +185,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
-            if (!Runtime.IsWitness(Runtime.GenesisAddress))
-            {
-                Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            }
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             var symbols = Runtime.GetTokens();
             foreach (var symbol in symbols)
@@ -208,7 +205,7 @@ namespace Phantasma.Blockchain.Contracts
                         {
                             Runtime.TransferToken(symbol, from, target, tokenID);
                         }
-                    }                            
+                    }
                 }
             }
 
@@ -242,7 +239,7 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.CallNativeContext(NativeContractKind.Validator, nameof(ValidatorContract.Migrate), from, target);
             }
 
-            var usedSpace = Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.GetUsedSpace), from).AsNumber(); 
+            var usedSpace = Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.GetUsedSpace), from).AsNumber();
             if (usedSpace > 0)
             {
                 Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.Migrate), from, target);
@@ -254,7 +251,18 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.MigrateMember(orgID, from, from, target);
             }
 
-            // TODO support custom contract migrations
+            var migrateMethod = new ContractMethod("OnMigrate", VM.VMType.None, -1, new ContractParameter[] { new ContractParameter("from", VM.VMType.Object), new ContractParameter("to", VM.VMType.Object) });
+
+            var contracts = Runtime.GetContracts();
+            foreach (var contract in contracts)
+            {
+                var abi = contract.ABI;
+
+                if (abi.Implements(migrateMethod))
+                {
+                    Runtime.CallContext(contract.Name, migrateMethod, from, target);
+                }
+            }
         }
 
 
