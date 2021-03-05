@@ -67,6 +67,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             _currentEnergyRatioDivisor = DefaultEnergyRatioDivisor; // used as 1/500, will initially generate 0.002 per staked token
         }
+
         public BigInteger GetMasterThreshold()
         {
             if (Runtime.HasGenesis)
@@ -207,6 +208,8 @@ namespace Phantasma.Blockchain.Contracts
             _masterClaims.Migrate<Address, Timestamp>(from, to);
             _masterAgeMap.Migrate<Address, Timestamp>(from, to);
             _voteHistory.Migrate<Address, StorageList>(from, to);
+            _leftoverMap.Migrate<Address, Timestamp>(from, to);
+            _claimMap.Migrate<Address, StorageList>(from, to);
 
             Runtime.Notify(EventKind.AddressMigration, to, from);
         }
