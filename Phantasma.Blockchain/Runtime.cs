@@ -11,6 +11,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Storage;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -1582,9 +1583,9 @@ namespace Phantasma.Blockchain
             return Nexus.GetTokens(this.RootStorage);
         }
 
-        public string[] GetContracts()
+        public IContract[] GetContracts()
         {
-            return Nexus.GetContracts(this.RootStorage);
+            return Chain.GetContracts(this.RootStorage);
         }
 
         public string[] GetChains()

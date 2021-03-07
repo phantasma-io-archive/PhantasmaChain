@@ -528,11 +528,23 @@ namespace Phantasma.Blockchain
             return context;
         }
 
-        public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, Timestamp time, params object[] args)
+        public VMObject InvokeContractAtTimestamp(StorageContext storage, Timestamp time, NativeContractKind nativeContract, string methodName, params object[] args)
         {
-            var contract = Nexus.GetContractByName(storage, contractName);
-            Throw.IfNull(contract, nameof(contract));
+            return InvokeContractAtTimestamp(storage, time, nativeContract.GetContractName(), methodName, args);
+        }
 
+        public VMObject InvokeContract(StorageContext storage, NativeContractKind nativeContract, string methodName, params object[] args)
+        {
+            return InvokeContract(storage, nativeContract.GetContractName(), methodName, args);
+        }
+
+        public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, params object[] args)
+        {
+            return InvokeContractAtTimestamp(storage, Timestamp.Now, contractName, methodName, args);
+        }
+
+        public VMObject InvokeContractAtTimestamp(StorageContext storage, Timestamp time, string contractName, string methodName, params object[] args)
+        {
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
 
             var result = InvokeScript(storage, script, time);
@@ -543,11 +555,6 @@ namespace Phantasma.Blockchain
             }
 
             return result;
-        }
-
-        public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, params object[] args)
-        {
-            return InvokeContract(storage, contractName, methodName, Timestamp.Now, args);
         }
 
         public VMObject InvokeScript(StorageContext storage, byte[] script)

@@ -206,10 +206,10 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockByTransaction(Transaction tx)
         {
-            return FindBlockByHash(tx.Hash);
+            return FindBlockByTransactionHash(tx.Hash);
         }
 
-        public Block FindBlockByHash(Hash hash)
+        public Block FindBlockByTransactionHash(Hash hash)
         {
             var chainNames = this.GetChains(RootStorage);
             foreach (var chainName in chainNames)
