@@ -38,7 +38,7 @@ namespace Phantasma.Storage.Context
         public static BigInteger Count(this StorageSet set)
         {
             // TODO maintain a count var of type bigint instead of creating a new instance each time Count is called.
-            return new BigInteger(set.Context.Get(CountKey(set.BaseKey)));
+            return set.Context.Get(CountKey(set.BaseKey)).AsBigInteger();
         }
 
         public static bool Contains<K>(this StorageSet set, K key)

@@ -62,8 +62,8 @@ namespace Phantasma.Storage.Context
         public static BigInteger Count(this StorageList list)
         {
             //var result = list.Context.Get(CountKey(list.BaseKey)).ToBigInteger();
-            var result = new BigInteger(list.Context.Get(CountKey(list.BaseKey)));
-            return result;
+            var count = list.Context.Get(CountKey(list.BaseKey)).AsBigInteger();
+            return count;
         }
 
         public static BigInteger Add<T>(this StorageList list, T element)

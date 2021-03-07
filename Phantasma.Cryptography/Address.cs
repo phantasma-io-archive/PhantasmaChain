@@ -140,7 +140,7 @@ namespace Phantasma.Cryptography
 
         public static Address FromHash(byte[] input)
         {
-            var hash = CryptoExtensions.SHA256(input);
+            var hash = CryptoExtensions.Sha256(input);
             var bytes = ByteArrayUtils.ConcatBytes(new byte[] { (byte)AddressKind.System, 0 }, hash);
             return new Address(bytes);
         }

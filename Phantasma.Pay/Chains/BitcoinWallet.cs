@@ -121,7 +121,7 @@ namespace Phantasma.Pay.Chains
         {
             var publicKey = ECDsa.GetPublicKey(keys.PrivateKey, true, ECDsaCurve.Secp256k1);
 
-            var bytes = ByteArrayUtils.ConcatBytes(new byte[] { 0 }, publicKey.SHA256().RIPEMD160());
+            var bytes = ByteArrayUtils.ConcatBytes(new byte[] { 0 }, publicKey.Sha256().RIPEMD160());
 
             return bytes.Base58CheckEncode();
         }

@@ -123,7 +123,7 @@ namespace Phantasma.Pay.Chains
             Array.Copy(bytes, 0, script, 1, bytes.Length);
             script[script.Length - 1] = 0xAC; // OpCode.CHECKSIG;
 
-            var scriptHash = script.SHA256().RIPEMD160();
+            var scriptHash = script.Sha256().RIPEMD160();
 
             //this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
 

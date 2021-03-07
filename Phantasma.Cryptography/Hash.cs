@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Numerics;
+using System.Linq;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
@@ -210,7 +211,7 @@ namespace Phantasma.Cryptography
         {
             if (input.Length != Length) // NOTE this is actually problematic, better to separate into 2 methods
             {
-                input = CryptoExtensions.SHA256(input);
+                input = CryptoExtensions.Sha256(input);
             }
 
             var bytes = new byte[Length];
@@ -230,9 +231,10 @@ namespace Phantasma.Cryptography
 
         public static implicit operator BigInteger(Hash val)
         {
-            var unsignedByteArray = val.ToByteArray();
-
-            return new BigInteger(unsignedByteArray);
+            var result = new byte[Hash.Length + 1];
+            ByteArrayUtils.CopyBytes(val.ToByteArray(), 0, result, 0, Hash.Length);
+            Console.WriteLine("biggi: " + new BigInteger(result));
+            return new BigInteger(result);
         }
 
         public static Hash MerkleCombine(Hash A, Hash B)

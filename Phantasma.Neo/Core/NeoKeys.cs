@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Neo;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using NeoSmartContract = Neo.SmartContract;
@@ -17,6 +18,7 @@ namespace Phantasma.Neo.Core
         public readonly byte[] UncompressedPublicKey;
         public readonly string Address;
         public readonly string WIF;
+        public readonly UInt160 SignatureHash;
 
         public readonly byte[] signatureScript;
 
@@ -31,8 +33,8 @@ namespace Phantasma.Neo.Core
 
             this.UncompressedPublicKey = keyPair.PublicKey.EncodePoint(false).Skip(1).ToArray();
 
-            var signatureHash = NeoSmartContractHelper.ToScriptHash(signatureScript);
-            this.Address = NeoWalletsHelper.ToAddress(signatureHash);
+            this.SignatureHash = NeoSmartContractHelper.ToScriptHash(signatureScript);
+            this.Address = NeoWalletsHelper.ToAddress(this.SignatureHash);
             this.WIF = GetWIF();
         }
 

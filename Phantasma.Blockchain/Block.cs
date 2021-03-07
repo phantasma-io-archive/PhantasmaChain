@@ -136,7 +136,7 @@ namespace Phantasma.Blockchain
         internal void UpdateHash()
         {
             var data = ToByteArray(false);
-            var hashBytes = CryptoExtensions.SHA256(data);
+            var hashBytes = CryptoExtensions.Sha256(data);
             _hash = new Hash(hashBytes);
             _dirty = false;
         }
