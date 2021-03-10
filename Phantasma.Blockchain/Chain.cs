@@ -789,7 +789,7 @@ namespace Phantasma.Blockchain
 
             var abiKey = GetContractKey(address, "abi");
             var abiBytes = abi.ToByteArray();
-            storage.Put(abiBytes, abiBytes);
+            storage.Put(abiKey, abiBytes);
         }
 
         public Address GetContractOwner(StorageContext storage, Address contractAddress)
