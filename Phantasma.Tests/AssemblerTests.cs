@@ -2564,6 +2564,37 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void Range()
+        {
+                //TODO: missing tests with byte data
+
+            string r1 = "Hello funny world";
+            int index = 6;
+            int len = 5;
+            string target = "funny";
+
+            var scriptString = new string[1];
+
+            scriptString = new string[]
+            {
+                $"load r1, \"{r1}\"",
+                $"range r1, r2, {index}, {len}",
+                @"push r2",
+                @"ret"
+            };
+
+
+            var vm = ExecuteScriptIsolated(scriptString);
+
+            Assert.IsTrue(vm.Stack.Count == 1);
+
+            var resultBytes = vm.Stack.Pop().AsByteArray();
+            var result = Encoding.UTF8.GetString(resultBytes);
+
+            Assert.IsTrue(result == target);
+        }
+
+        [TestMethod]
         public void Left()
         {
             var args = new List<List<string>>()

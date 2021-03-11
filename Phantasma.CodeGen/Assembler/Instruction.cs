@@ -111,7 +111,10 @@ namespace Phantasma.CodeGen.Assembler
                         ProcessExtCall(sb);
                         break;
 
-                    case Opcode.SUBSTR:
+                    case Opcode.RANGE:
+                        ProcessRange(sb);
+                        break;
+
                     case Opcode.LEFT:
                     case Opcode.RIGHT:
                         ProcessRightLeft(sb);
@@ -254,6 +257,31 @@ namespace Phantasma.CodeGen.Assembler
                         dest_reg
                 });
 
+                sb.EmitVarBytes(length);
+            }
+            else
+            {
+                throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
+            }
+        }
+
+        private void ProcessRange(ScriptBuilder sb)
+        {
+            if (Arguments.Length != 4) throw new CompilerException(LineNumber, ERR_INCORRECT_NUMBER);
+            if (Arguments[0].IsRegister() && Arguments[1].IsRegister() && Arguments[2].IsNumber() && Arguments[3].IsNumber())
+            {
+                var src_reg = Arguments[0].AsRegister();
+                var dest_reg = Arguments[1].AsRegister();
+                var index = (int)Arguments[2].AsNumber();
+                var length = (int)Arguments[3].AsNumber();
+
+                sb.Emit(this._opcode.Value, new byte[]
+                {
+                        src_reg,
+                        dest_reg
+                });
+
+                sb.EmitVarBytes(index);
                 sb.EmitVarBytes(length);
             }
             else
