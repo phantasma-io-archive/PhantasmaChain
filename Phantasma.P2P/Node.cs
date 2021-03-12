@@ -137,12 +137,15 @@ namespace Phantasma.Network.P2P
 
             this.PublicEndpoint = $"tcp:{publicHost}:{port}";
 
-            QueueEndpoints(seeds);
+            if (this.Capabilities.HasFlag(PeerCaps.Sync))
+            {
+                QueueEndpoints(seeds);
 
-            // TODO this is a security issue, later change this to be configurable and default to localhost
-            var bindAddress = IPAddress.Any;
+                // TODO this is a security issue, later change this to be configurable and default to localhost
+                var bindAddress = IPAddress.Any;
 
-            listener = new TcpListener(bindAddress, port);
+                listener = new TcpListener(bindAddress, port);
+            }
         }
 
         private void QueueEndpoints(IEnumerable<string> hosts)
@@ -289,9 +292,16 @@ namespace Phantasma.Network.P2P
 
         protected override void OnStart()
         {
-            Logger.Message($"Phantasma node listening on port {Port}, using address: {Address}");
+            if (this.Capabilities.HasFlag(PeerCaps.Sync))
+            {
+                Logger.Message($"Phantasma node listening on port {Port}, using address: {Address}");
 
-            listener.Start();
+                listener.Start();
+            }
+            else
+            {
+                Logger.Warning($"Since sync not enabled, this node won't accept connections from other nodes.");
+            }
         }
 
         protected override void OnStop()
