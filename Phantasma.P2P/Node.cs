@@ -439,6 +439,9 @@ namespace Phantasma.Network.P2P
             var request = new RequestMessage(this.Address, this.PublicEndpoint, requestKind, Nexus.Name);
             var active = SendMessage(peer, request);
 
+            string ip = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString();
+            Logger.Debug($"Incoming connection from " + ip);
+
             while (active)
             {
                 var msg = peer.Receive();
