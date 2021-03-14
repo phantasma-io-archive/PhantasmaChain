@@ -62,7 +62,6 @@ namespace Phantasma.Blockchain.Contracts
         internal StorageList _saleList; //List<Hash>
         internal StorageMap _saleSupply; //Map<Hash, BigInteger>
 
-
         public SaleContract() : base()
         {
         }
@@ -326,15 +325,29 @@ namespace Phantasma.Blockchain.Contracts
 
             if (soldSupply >= sale.GlobalSoftCap) // if at least soft cap reached, send tokens to buyers and funds to sellers
             {
-                foreach (var buyer in buyerAddresses)
+                foreach (var addr in buyerAddresses)
                 {
+                    var buyer = addr;
                     var amount = amountMap.Get<Address, BigInteger>(buyer);
+
+                    Runtime.Notify(EventKind.Crowdsale, buyer, new SaleEventData() { kind = SaleEventKind.Distribution, saleHash = saleHash });
+
+                    if (Runtime.ProtocolVersion <= 5)
+                    {
+                        buyer = sale.Creator;
+                    }
+
                     Runtime.TransferTokens(sale.SellSymbol, this.Address, buyer, amount);
                 }
 
                 var fundsAmount = Runtime.ConvertBaseToQuote(soldSupply, UnitConversion.GetUnitValue(receiveToken.Decimals), saleToken, receiveToken);
                 fundsAmount /= sale.Price;
+
+                Runtime.Notify(EventKind.Crowdsale, sale.Creator, new SaleEventData() { kind = SaleEventKind.Distribution, saleHash = saleHash });
                 Runtime.TransferTokens(sale.ReceiveSymbol, this.Address, sale.Creator, fundsAmount);
+
+                var leftovers = sale.GlobalHardCap - soldSupply;
+                Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, leftovers);
             }
             else // otherwise return funds to buyers and return tokens to sellers
             {
@@ -343,9 +356,11 @@ namespace Phantasma.Blockchain.Contracts
                     var amount = amountMap.Get<Address, BigInteger>(buyer);
 
                     amount = Runtime.ConvertBaseToQuote(amount, sale.Price, saleToken, receiveToken);
+                    Runtime.Notify(EventKind.Crowdsale, buyer, new SaleEventData() { kind = SaleEventKind.Refund, saleHash = saleHash });
                     Runtime.TransferTokens(sale.ReceiveSymbol, this.Address, buyer, amount);
                 }
 
+                Runtime.Notify(EventKind.Crowdsale, sale.Creator, new SaleEventData() { kind = SaleEventKind.Refund, saleHash = saleHash });
                 Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, sale.GlobalHardCap);
             }
         }
