@@ -5,6 +5,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using System;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -64,6 +65,29 @@ namespace Phantasma.Blockchain.Contracts
 
         public SaleContract() : base()
         {
+        }
+
+        public SaleInfo[] GetSales()
+        {
+            var hashes = _saleList.All<Hash>();
+            var sales = hashes.Select(x => GetSale(x)).ToArray();
+            return sales;
+        }
+
+        public bool IsSeller(Address target)
+        {
+            var hashes = _saleList.All<Hash>();
+
+            foreach (var hash in hashes)
+            {
+                var sale = GetSale(hash);
+                if (sale.Creator == target && IsSaleActive(hash))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public Hash CreateSale(Address from, string name, SaleFlags flags, Timestamp startDate, Timestamp endDate, string sellSymbol, string receiveSymbol, BigInteger price, BigInteger globalSoftCap, BigInteger globalHardCap, BigInteger userSoftCap, BigInteger userHardCap)
