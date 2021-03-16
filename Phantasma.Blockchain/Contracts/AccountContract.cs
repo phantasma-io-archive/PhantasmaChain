@@ -187,6 +187,15 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
+            bool isSeller = Runtime.CallNativeContext(NativeContractKind.Market, nameof(MarketContract.IsSeller), from).AsBool();
+            Runtime.Expect(!isSeller, "sale pending on market");
+
+            isSeller = Runtime.CallNativeContext(NativeContractKind.Sale, nameof(SaleContract.IsSeller), from).AsBool();
+            Runtime.Expect(!isSeller, "crowdsale pending");
+
+            var relayBalance = Runtime.CallNativeContext(NativeContractKind.Relay, nameof(RelayContract.GetBalance), from).AsNumber();
+            Runtime.Expect(relayBalance == 0, "relay channel can't be open");
+
             var symbols = Runtime.GetTokens();
             foreach (var symbol in symbols)
             {
@@ -244,6 +253,10 @@ namespace Phantasma.Blockchain.Contracts
             {
                 Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.Migrate), from, target);
             }
+
+            Runtime.CallNativeContext(NativeContractKind.Consensus, nameof(ConsensusContract.Migrate), from, target);
+
+            // TODO exchange, friend
 
             var orgs = Runtime.GetOrganizations();
             foreach (var orgID in orgs)
