@@ -128,13 +128,13 @@ namespace Phantasma.Storage.Context
             baseContext.Visit((key, value) =>
             {
                 var entryPrefix = key.Take(prefix.Length);
-                if (count < searchCount && entryPrefix.SequenceEqual(prefix))
+                if (count <= searchCount && entryPrefix.SequenceEqual(prefix))
                 {
                     visitor(key, value);
                     count++;
                 }
 
-                if (count == searchCount)
+                if (count > searchCount)
                     return;
 
             }, searchCount, prefix);
