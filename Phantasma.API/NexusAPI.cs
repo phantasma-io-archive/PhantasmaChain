@@ -498,6 +498,52 @@ namespace Phantasma.API
             };
         }
 
+        private TokenDataResult FillNFT(string symbol, BigInteger ID, bool extended)
+        {
+            TokenContent info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+
+            var properties = new List<TokenPropertyResult>();
+            if (extended)
+            {
+                var chain = FindChainByInput("main");
+                var series = Nexus.GetTokenSeries(Nexus.RootStorage, symbol, info.SeriesID);
+                if (series != null)
+                {
+                    foreach (var method in series.ABI.Methods)
+                    {
+                        if (method.IsProperty())
+                        {
+                            NFTUtils.FetchProperty(chain, method.name, series, ID, (propName, propValue) =>
+                            {
+                                properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
+                            });
+                        }
+                    }
+
+                }
+
+            }
+
+            var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
+
+            var result = new TokenDataResult()
+            {
+                chainName = info.CurrentChain,
+                creatorAddress = info.Creator.Text,
+                ownerAddress = info.CurrentOwner.Text,
+                series = info.SeriesID.ToString(),
+                mint = info.MintID.ToString(),
+                ID = ID.ToString(),
+                rom = Base16.Encode(info.ROM),
+                ram = Base16.Encode(info.RAM),
+                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused" : "active",
+                infusion = infusion,
+                properties = properties.ToArray()
+            };
+
+            return result;
+        }
+
         private AuctionResult FillAuction(MarketAuction auction, Chain chain)
         {
             var nft = Nexus.ReadNFT(Nexus.RootStorage, auction.BaseSymbol, auction.TokenID);
@@ -1481,6 +1527,7 @@ namespace Phantasma.API
             return GetNFT(symbol, IDtext, false);
         }
 
+
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
         public IAPIResult GetNFT([APIParameter("Symbol of token", "NACHO")] string symbol, [APIParameter("ID of token", "1")] string IDtext, bool extended = false)
         {
@@ -1495,55 +1542,53 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
-            TokenContent info;
-
+            TokenDataResult result;
             try
             {
-                info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+                result = FillNFT(symbol, ID, extended); ;
             }
             catch (Exception e)
             {
                 return new ErrorResult() { error = e.Message };
             }
 
-            var properties = new List<TokenPropertyResult>();
-            if (extended)
+            return result;
+        }
+
+
+        [APIInfo(typeof(TokenDataResult[]), "Returns an array of NFTs.", false, 300)]
+        public IAPIResult GetNFTs([APIParameter("Symbol of token", "NACHO")] string symbol, [APIParameter("Multiple IDs of token, separated by comman", "1")] string IDText, bool extended = false)
+        {
+            if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
-                var chain = FindChainByInput("main");
-                var series = Nexus.GetTokenSeries(Nexus.RootStorage, symbol, info.SeriesID);
-                if (series != null)
-                {
-                    foreach (var method in series.ABI.Methods)
-                    {
-                        if (method.IsProperty())
-                        {
-                            NFTUtils.FetchProperty(chain, method.name, series, ID, (propName, propValue) =>
-                            {
-                                properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
-                            });
-                        }
-                    }
-
-                }
-
+                return new ErrorResult() { error = "invalid token" };
             }
 
-            var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
+            var IDs = IDText.Split(',');
 
-            return new TokenDataResult()
+            var list = new List<object>();
+
+            try
             {
-                chainName = info.CurrentChain,
-                creatorAddress = info.Creator.Text,
-                ownerAddress = info.CurrentOwner.Text,
-                series = info.SeriesID.ToString(),
-                mint = info.MintID.ToString(),
-                ID = ID.ToString(),
-                rom = Base16.Encode(info.ROM),
-                ram = Base16.Encode(info.RAM),
-                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused" : "active",
-                infusion = infusion,
-                properties = properties.ToArray()
-            };
+                foreach (var str in IDs)
+                {
+                    BigInteger ID;
+                    if (!BigInteger.TryParse(str, out ID))
+                    {
+                        return new ErrorResult() { error = "invalid ID" };
+                    }
+
+                    var result = FillNFT(symbol, ID, extended);
+
+                    list.Add(result);
+                }
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
+
+            return new ArrayResult() { values = list.ToArray() };
         }
 
 
