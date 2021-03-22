@@ -415,6 +415,22 @@ namespace Phantasma.API
         }
 
         #region UTILS
+
+        private static string ExternalHashToString(string platform, Hash hash)
+        {
+            var result = hash.ToString();
+
+            switch (platform)
+            {
+                case "neo":
+                case "ethereum":
+                    result = result.Substring(0, 40);
+                    break;
+            }
+
+            return result;
+        }
+
         private TokenResult FillToken(string tokenSymbol, bool fillSeries, bool extended)
         {
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
@@ -446,6 +462,25 @@ namespace Phantasma.API
                 }
             }
 
+            var external = new List<TokenExternalResult>();
+
+            if (tokenInfo.Flags.HasFlag(TokenFlags.Swappable))
+            {
+                var platforms = this.Nexus.GetPlatforms(Nexus.RootStorage);
+                foreach (var platform in platforms)
+                {
+                    var extHash = this.Nexus.GetTokenPlatformHash(tokenSymbol, platform, Nexus.RootStorage);
+                    if (!extHash.IsNull)
+                    {
+                        external.Add(new TokenExternalResult()
+                        {   
+                            hash = ExternalHashToString(platform, extHash),
+                            platform = platform,
+                        });
+                    }
+                }
+            }
+
             return new TokenResult
             {
                 symbol = tokenInfo.Symbol,
@@ -458,7 +493,8 @@ namespace Phantasma.API
                 address = SmartContract.GetAddressForName(tokenInfo.Symbol).Text,
                 owner = tokenInfo.Owner.Text,
                 script = tokenInfo.Script.Encode(),
-                series = seriesList.ToArray()
+                series = seriesList.ToArray(),
+                external = external.ToArray(),
             };
         }
 
@@ -1432,7 +1468,6 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid token" };
             }
 
-            var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
             var result = FillToken(symbol, true, extended);
 
             return result;
