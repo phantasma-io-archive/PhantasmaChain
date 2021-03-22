@@ -825,8 +825,56 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid address" };
             }
 
-            var result = new AccountResult();
             var address = Address.FromText(account);
+
+            AccountResult result;
+
+            try
+            {
+                result = FillAccount(address);
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult { error = e.Message };
+            }
+
+            return result;
+        }
+
+        [APIInfo(typeof(AccountResult[]), "Returns data about several accounts.", false, 10)]
+        public IAPIResult GetAccounts([APIParameter("Multiple addresses separated by comma", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV,PDHcFHq2femFnj2ZaFc7iu3qD4XjZG9eVZXuwDrtJGDhj")] string accountText)
+        {
+            var accounts = accountText.Split(',');
+
+            var list = new List<object>();
+
+            foreach (var account in accounts)
+            {
+                if (!Address.IsValidAddress(account))
+                {
+                    return new ErrorResult { error = "invalid address" };
+                }
+
+                var address = Address.FromText(account);
+
+                AccountResult result;
+
+                try
+                {
+                    result = FillAccount(address);
+                }
+                catch (Exception e)
+                {
+                    return new ErrorResult { error = e.Message };
+                }
+            }
+
+            return new ArrayResult() { values = list.ToArray() };
+        }
+
+        private AccountResult FillAccount(Address address)
+        {
+            var result = new AccountResult();
             result.address = address.Text;
             result.name = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, address);
 
