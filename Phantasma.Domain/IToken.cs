@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -207,6 +207,22 @@ namespace Phantasma.Domain
         public static Address GetContractAddress(string symbol)
         {
             return SmartContract.GetAddressForName(symbol);
+        }
+
+        public static IEnumerable<ContractMethod> GetTriggersForABI(Dictionary<string, int> labels)
+        {
+            var triggers = new Dictionary<TokenTrigger, int>();
+            foreach (var entry in labels)
+            {
+                TokenTrigger kind;
+
+                if (Enum.TryParse<TokenTrigger>(entry.Key, true, out kind))
+                {
+                    triggers[kind] = entry.Value;
+                }
+            }
+
+            return GetTriggersForABI(triggers);
         }
 
         public static IEnumerable<ContractMethod> GetTriggersForABI(IEnumerable<TokenTrigger> triggers)
