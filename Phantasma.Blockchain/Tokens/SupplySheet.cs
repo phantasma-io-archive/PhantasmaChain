@@ -21,7 +21,7 @@ namespace Phantasma.Blockchain.Tokens
             var parentName = nexus.GetParentChainByName(chain.Name);
             this._parentName = parentName;
             this._localName = chain.Name;
-            this._prefix = Encoding.ASCII.GetBytes(symbol);
+            this._prefix = Encoding.UTF8.GetBytes(symbol);
         }
 
         private byte[] GetKeyForChain(string name)

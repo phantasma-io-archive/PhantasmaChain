@@ -15,12 +15,12 @@ namespace Phantasma.Blockchain.Tokens
         public OwnershipSheet(string symbol)
         {
             this._prefixItems = MakePrefix(symbol);
-            this._prefixOwner = Encoding.ASCII.GetBytes($".ownership.{symbol}");
+            this._prefixOwner = Encoding.UTF8.GetBytes($".ownership.{symbol}");
         }
 
         public static byte[] MakePrefix(string symbol)
         {
-            return Encoding.ASCII.GetBytes($".ids.{symbol}");
+            return Encoding.UTF8.GetBytes($".ids.{symbol}");
         }
 
         private byte[] GetKeyForMap(Address address)

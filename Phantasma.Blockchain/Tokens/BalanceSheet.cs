@@ -40,7 +40,7 @@ namespace Phantasma.Blockchain.Tokens
         public static byte[] MakePrefix(string symbol)
         {
             var key = $".balances.{symbol}";
-            return Encoding.ASCII.GetBytes(key);
+            return Encoding.UTF8.GetBytes(key);
         }
 
         private byte[] GetKeyForAddress(Address address)
