@@ -17,6 +17,7 @@ using Phantasma.Domain;
 using static Phantasma.Blockchain.Contracts.StakeContract;
 using static Phantasma.Domain.DomainSettings;
 using static Phantasma.Numerics.UnitConversion;
+using System.Collections.Generic;
 
 namespace Phantasma.Tests
 {
@@ -2490,6 +2491,59 @@ namespace Phantasma.Tests
             balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, infiToken, user.Address);
             Assert.IsTrue(balance == infiAmount);
         }
+
+        [TestMethod]
+        public void MapClearBug()
+        {
+            var scriptString = new string[]
+            {
+                $"@clearMe: nop",
+
+                $"load r0 \"world\"",
+                $"push r0",
+                $"load r0 \"hello\"",
+                $"push r0",
+                $"load r0 \"dummy\"",
+                $"push r0",
+                $"load r0 \"Map.Set\"",
+                $"extcall r0",
+
+                $"load r0 \"dummy\"",
+                $"push r0",
+                $"load r0 \"Map.Clear\"",
+                $"extcall r0",
+                $"ret"
+            };
+
+
+            Dictionary<string, int> labels;
+            DebugInfo debugInfo;
+            var script = AssemblerUtils.BuildScript(scriptString, "test", out debugInfo, out labels);
+
+            var methods = new ContractMethod[] { new ContractMethod("clearMe", VMType.None, 0, new ContractParameter[0]) };
+            var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
+
+
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal, () =>
+                ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .CallInterop("Runtime.DeployContract", owner.Address, "test", script, abi.ToByteArray())
+                    .SpendGas(owner.Address).EndScript());
+            simulator.EndBlock().First();
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .CallContract("test", "clearMe")
+                    .SpendGas(owner.Address).EndScript());
+            var block = simulator.EndBlock().First();
+        }
+
     }
 }
 
