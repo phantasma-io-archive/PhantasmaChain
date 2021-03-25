@@ -125,17 +125,41 @@ namespace Phantasma.Storage.Context
         public override void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
             ulong count = 0;
+            // only used to track findings, to not overwrite them
+            var found = new Dictionary<byte[], byte[]>();
+            
+            foreach (var entry in _entries)
+            {
+                var entryPrefix = entry.Key.keyData.Take(prefix.Length);
+                if (count <= searchCount && entryPrefix.SequenceEqual(prefix))
+                {
+                    found.Add(entry.Key.keyData, null);
+                    visitor(entry.Key.keyData, entry.Value.newValue);
+                    count++;
+                }
+
+                if (count > searchCount)
+                {
+                    return;
+                }
+            }
+
             baseContext.Visit((key, value) =>
             {
                 var entryPrefix = key.Take(prefix.Length);
                 if (count <= searchCount && entryPrefix.SequenceEqual(prefix))
                 {
-                    visitor(key, value);
-                    count++;
+                    if (!found.ContainsKey(key))
+                    {
+                      visitor(key, value);
+                      count++;
+                    }
                 }
 
                 if (count > searchCount)
+                {
                     return;
+                }
 
             }, searchCount, prefix);
         }
