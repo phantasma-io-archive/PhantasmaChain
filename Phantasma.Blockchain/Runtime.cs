@@ -11,6 +11,8 @@ using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Storage;
 using System.Linq;
+using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -46,7 +48,9 @@ namespace Phantasma.Blockchain
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
-        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Address validator, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, ITask currentTask, bool readOnlyMode, bool delayPayment = false, string contextName = null) : base(script, offset, contextName)
+        private readonly RuntimeVM _parentMachine;
+
+        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Address validator, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, ITask currentTask, bool readOnlyMode, bool delayPayment = false, string contextName = null, RuntimeVM parentMachine = null) : base(script, offset, contextName)
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
@@ -64,6 +68,7 @@ namespace Phantasma.Blockchain
             this.CurrentTask = currentTask;
             this.DelayPayment = delayPayment;
             this.Validator = validator;
+            this._parentMachine = parentMachine;
 
             this._randomSeed = 0;
 
@@ -375,6 +380,16 @@ namespace Phantasma.Blockchain
 
         public override ExecutionState ConsumeGas(BigInteger gasCost)
         {
+            if (_parentMachine != null)
+            {
+                if (_parentMachine.CurrentContext.Name == "gas")
+                {
+                    return ExecutionState.Running;
+                }
+
+                return _parentMachine.ConsumeGas(gasCost);
+            }
+
             if (gasCost == 0)
             {
                 return ExecutionState.Running;
@@ -474,6 +489,18 @@ namespace Phantasma.Blockchain
             return value;
         }
 
+        private HashSet<string> _triggerGuards = new HashSet<string>();
+
+        internal void ValidateTriggerGuard(string triggerName)
+        {
+            if (_triggerGuards.Contains(triggerName))
+            {
+                throw new ChainException("trigger loop detected: " + triggerName);
+            }
+
+            _triggerGuards.Add(triggerName);
+        }
+
         #region TRIGGERS
         public TriggerResult InvokeTriggerOnAccount(bool allowThrow, Address address, AccountTrigger trigger, params object[] args)
         {
@@ -481,6 +508,13 @@ namespace Phantasma.Blockchain
             {
                 return TriggerResult.Failure;
             }
+
+            if (!IsTrigger)
+            {
+                _triggerGuards.Clear();
+            }
+
+            var triggerName = trigger.ToString();
 
             if (address.IsUser)
             {
@@ -490,7 +524,9 @@ namespace Phantasma.Blockchain
                 var accountScript = accountABI != null ? OptimizedAddressScriptLookup(address) : null;
 
                 //Expect(accountScript.SequenceEqual(accountScript2), "different account scripts");
-                return this.InvokeTrigger(allowThrow, accountScript, NativeContractKind.Account, accountABI, trigger.ToString(), args);
+
+                ValidateTriggerGuard($"{address.Text}.{triggerName}");
+                return this.InvokeTrigger(allowThrow, accountScript, address.Text, accountABI, triggerName, args);
             }
 
             if (address.IsSystem)
@@ -498,18 +534,20 @@ namespace Phantasma.Blockchain
                 var contract = Chain.GetContractByAddress(this.Storage, address);
                 if (contract != null)
                 {
-                    var triggerName = trigger.ToString();
                     if (contract.ABI.HasMethod(triggerName))
                     {
                         var customContract = contract as CustomContract;
                         if (customContract != null)
                         {
+                            ValidateTriggerGuard($"{contract.Name}.{triggerName}");
                             return InvokeTrigger(allowThrow, customContract.Script, contract.Name, contract.ABI, triggerName, args);
                         }
 
                         var native = contract as NativeContract;
                         if (native != null)
                         {
+                            ValidateTriggerGuard($"{contract.Name}.{triggerName}");
+
                             try
                             {                                
                                 this.CallNativeContext(native.Kind,  triggerName, args);
@@ -584,8 +622,7 @@ namespace Phantasma.Blockchain
                 return TriggerResult.Missing;
             }
 
-            var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
-            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Validator, this.Time, this.Transaction, this.changeSet, this.Oracle, ChainTask.Null, false, true, contextName);
+            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Validator, this.Time, this.Transaction, this.changeSet, this.Oracle, ChainTask.Null, false, true, contextName, this);
             
             for (int i = args.Length - 1; i >= 0; i--)
             {
@@ -607,10 +644,6 @@ namespace Phantasma.Blockchain
 
 				state = ExecutionState.Fault;
 			}
-
-			// propagate gas consumption
-			// TODO this should happen not here but in real time during previous execution, to prevent gas attacks
-			this.ConsumeGas(runtime.UsedGas);
 
             if (state == ExecutionState.Halt)
             {
@@ -709,8 +742,18 @@ namespace Phantasma.Blockchain
             else
             if (address.IsUser && Nexus.HasGenesis && OptimizedHasAddressScript(RootStorage, address))
             {
+                 TriggerResult triggerResult;
                 using (var m = new ProfileMarker("InvokeTriggerOnAccount"))
-                    accountResult = InvokeTriggerOnAccount(false, address, AccountTrigger.OnWitness, address) != TriggerResult.Failure;
+                    triggerResult = InvokeTriggerOnAccount(false, address, AccountTrigger.OnWitness, address);
+
+                if (triggerResult == TriggerResult.Missing)
+                {
+                    accountResult = this.Transaction.IsSignedBy(address);
+                }
+                else
+                {
+                    accountResult = triggerResult == TriggerResult.Success;
+                }
             }
             else
             {
@@ -1300,7 +1343,6 @@ namespace Phantasma.Blockchain
         {
             var Runtime = this;
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-            Runtime.Expect(IsWitness(target), "invalid witness");
 
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
             var token = Runtime.GetToken(symbol);
@@ -1385,13 +1427,11 @@ namespace Phantasma.Blockchain
             var token = Runtime.GetToken(symbol);
 
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-            Runtime.Expect(IsWitness(source), "invalid witness");
-            Runtime.Expect(!Runtime.IsTrigger, "not allowed inside a trigger");
 
             if (destination.IsInterop)
             {
                 Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
-                Runtime.CallNativeContext(NativeContractKind.Interop, "WithdrawTokens", source, destination, symbol, amount);
+                Runtime.CallNativeContext(NativeContractKind.Interop, nameof(InteropContract.WithdrawTokens), source, destination, symbol, amount);
                 return;
             }
 
@@ -1700,6 +1740,7 @@ namespace Phantasma.Blockchain
             return this.Chain.GetContractOwner(this.Storage, address);
         }
 
+        #region TASKS
         public ITask StartTask(Address from, string contractName, ContractMethod method, uint frequency, uint delay, TaskFrequencyMode mode, BigInteger gasLimit)
         {
             var vm = this;
@@ -1763,6 +1804,115 @@ namespace Phantasma.Blockchain
 
             return this.Chain.GetTask(this.Storage, taskID);
         }
+        #endregion
+
+        #region ALLOWANCE
+        public struct AllowanceEntry
+        {
+            public readonly string Symbol;
+            public readonly BigInteger Amount;
+
+            public AllowanceEntry(string symbol, BigInteger amount)
+            {
+                Symbol = symbol;
+                Amount = amount;
+            }
+        }
+
+        // TODO make this a Dictionary<Address, List<AllowanceEntry>> in order to support multiple allowances per address at once
+        private Dictionary<Address, AllowanceEntry> _allowances = new Dictionary<Address, AllowanceEntry>();
+
+        public void AddAllowance(Address destination, string symbol, BigInteger amount)
+        {
+            if (amount < 0)
+            {
+                throw new ChainException("Invalid negative allowance");
+            }
+
+            if (_parentMachine != null)
+            {
+                _parentMachine.AddAllowance(destination, symbol, amount);
+                return;
+            }
+
+            if (_allowances.ContainsKey(destination))
+            {
+                var prev = _allowances[destination];
+                if (prev.Symbol != symbol)
+                {
+                    throw new ChainException($"multiple allowances not allowed yet: {prev.Symbol} + {symbol}");
+                }
+
+                _allowances[destination] = new AllowanceEntry(symbol, amount + prev.Amount);
+
+            }
+            else
+            {
+                _allowances[destination] = new AllowanceEntry(symbol, amount);
+            }
+        }
+
+        public void RemoveAllowance(Address destination, string symbol)
+        {
+            if (_parentMachine != null)
+            {
+                _parentMachine.RemoveAllowance(destination, symbol);
+                return;
+            }
+
+            if (_allowances.ContainsKey(destination))
+            {
+                var prev = _allowances[destination];
+                if (prev.Symbol == symbol)
+                {
+                    _allowances.Remove(destination);
+                }
+            }
+        }
+
+        public bool SubtractAllowance(Address destination, string symbol, BigInteger amount)
+        {
+            if (amount < 0)
+            {
+                return false;
+            }
+
+            if (_parentMachine != null)
+            {
+                return _parentMachine.SubtractAllowance(destination, symbol, amount);
+            }
+
+            if (_allowances.ContainsKey(destination))
+            {
+                var prev = _allowances[destination];
+                if (prev.Symbol != symbol)
+                {
+                    return false;
+                }
+
+                if (prev.Amount < amount)
+                {
+                    return false;
+                }
+
+                if (prev.Amount == amount)
+                {
+                    _allowances.Remove(destination);
+                }
+                else
+                {
+                    _allowances[destination] = new AllowanceEntry(symbol, prev.Amount - amount);
+                }
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        #endregion
 
         public bool HasGenesis => Nexus.HasGenesis;
         public string NexusName => Nexus.Name;

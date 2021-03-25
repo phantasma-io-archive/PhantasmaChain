@@ -16,7 +16,7 @@ namespace Phantasma.VM.Utils
         private BinaryWriter writer;
 
         private Dictionary<int, string> _jumpLocations = new Dictionary<int, string>();
-        private Dictionary<string, int> _labelLocations = new Dictionary<string, int>();
+        private Dictionary<string, int> _labelLocations = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         public int CurrentSize => (int)writer.BaseStream.Position;
 
@@ -236,12 +236,18 @@ namespace Phantasma.VM.Utils
         {
             var script = stream.ToArray();
 
-            labels = new Dictionary<string, int>();
+            labels = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             // resolve jump offsets
             foreach (var entry in _jumpLocations)
             {
                 var label = entry.Value;
+
+                if (!_labelLocations.ContainsKey(label))
+                {
+                    throw new Exception("Could not find label: " + label);
+                }
+
                 var labelOffset = (ushort)_labelLocations[label];
                 var bytes = BitConverter.GetBytes(labelOffset);
                 var targetOffset = entry.Key;

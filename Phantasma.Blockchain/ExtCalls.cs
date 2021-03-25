@@ -1348,6 +1348,8 @@ namespace Phantasma.Blockchain
 
             vm.Expect(oldContract != null, "could not fetch previous contract");
             vm.Expect(abi.Implements(oldContract.ABI), "new abi does not implement all methods of previous abi");
+            vm.ValidateTriggerGuard($"{contractName}.{AccountTrigger.OnUpgrade.ToString()}");
+
             vm.Expect(vm.InvokeTrigger(false, script, contractName, abi, AccountTrigger.OnUpgrade.ToString(), from) == TriggerResult.Success, "OnUpgrade trigger failed");
 
             if (isToken)
