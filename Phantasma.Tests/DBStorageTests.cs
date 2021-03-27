@@ -113,7 +113,20 @@ namespace Phantasma.Tests
             Assert.IsTrue(testMap.Count() == 0);
             testMap.Clear();
             Assert.IsTrue(testMap.Count() == 0);
+        }
 
+        [TestMethod]
+        public void TestDBChangeSetStorageMap22()
+        {
+            var storage = (StorageContext)new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+            var changeSet = new StorageChangeSetContext(storage);
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+            var testMap = new StorageMap(testMapKey, changeSet);
+
+            testMap.Set(1,1);
+            Assert.IsTrue(testMap.Count() == 1);
+            testMap.Clear();
+            Assert.IsTrue(testMap.Count() == 0);
         }
 
         [TestMethod]
