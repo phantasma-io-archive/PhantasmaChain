@@ -600,6 +600,8 @@ namespace Phantasma.Network.P2P
                 }
             }
 
+            Logger.Debug($"Got {msg.Opcode} message from {peerKey}");
+
             switch (msg.Opcode)
             {
                 case Opcode.EVENT:
