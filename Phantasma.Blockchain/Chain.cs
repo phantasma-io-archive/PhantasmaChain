@@ -222,6 +222,9 @@ namespace Phantasma.Blockchain
                 {
                     e = e.ExpandInnerExceptions();
 
+                    // log original exception, throwing it again kills the call stack!
+                    Log.Error($"Exception while transactions of block {block.Height}: " + e);
+
                     if (tx == null)
                     {
                         throw new BlockGenerationException(e.Message);

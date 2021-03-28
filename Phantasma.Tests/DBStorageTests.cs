@@ -252,6 +252,27 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestDBStorageAllValuesEmpty()
+        {
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+
+            var testMap = new StorageMap(testMapKey, storage);
+
+            Assert.IsTrue(testMap.AllValues<BigInteger>().Length == 0);
+
+            testMap.Set(1, 1);
+            testMap.Clear();
+            Assert.IsTrue(testMap.AllValues<BigInteger>().Length == 0);
+
+            testMap.Set(1, 1);
+            testMap.Set(2, 2);
+            testMap.Set(3, 2);
+            Assert.IsTrue(testMap.AllValues<BigInteger>().Length == 3);
+        }
+
+        [TestMethod]
         public void TestDBStorageAllValues()
         {
             var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));

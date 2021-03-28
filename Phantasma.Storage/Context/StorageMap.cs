@@ -240,6 +240,11 @@ namespace Phantasma.Storage.Context
             var found = false;
             var countKeyRun = false;
 
+            if (map.Count() == 0)
+            {
+                return values.ToArray();
+            }
+
             map.Context.Visit((key, value) =>
             {
                 if (!found && key.SequenceEqual(countKey))

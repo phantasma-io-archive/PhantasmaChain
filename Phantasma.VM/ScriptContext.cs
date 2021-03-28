@@ -992,6 +992,7 @@ namespace Phantasma.VM
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Exception during execution in vm: " + ex);
                 ex = ex.ExpandInnerExceptions();
 
                 Trace.WriteLine(ex.ToString());

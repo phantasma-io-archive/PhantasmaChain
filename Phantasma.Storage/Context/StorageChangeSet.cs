@@ -127,7 +127,12 @@ namespace Phantasma.Storage.Context
             ulong count = 0;
             // only used to track findings, to not overwrite them
             var found = new Dictionary<byte[], byte[]>();
-            
+
+            if (searchCount == 0)
+            {
+                return;
+            }
+
             foreach (var entry in _entries)
             {
                 var entryPrefix = entry.Key.keyData.Take(prefix.Length);
