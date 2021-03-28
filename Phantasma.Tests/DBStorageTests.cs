@@ -254,7 +254,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestDBStorageAllValuesEmpty()
         {
-            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test3"));
 
             var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
 
@@ -275,7 +275,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestDBStorageAllValues()
         {
-            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test4"));
 
             var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
             var testMapKey2 = Encoding.UTF8.GetBytes($".test2._valueMap");
