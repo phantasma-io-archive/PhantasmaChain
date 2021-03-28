@@ -723,7 +723,11 @@ namespace Phantasma.Network.P2P
 
                                     lock (_knownHeights)
                                     {
-                                        _knownHeights[chain.Name] = entry.height;
+                                        BigInteger lastKnowHeight = _knownHeights.ContainsKey(chain.Name) ? _knownHeights[chain.Name] : 0;
+                                        if (entry.height > lastKnowHeight)
+                                        {
+                                            _knownHeights[chain.Name] = entry.height;
+                                        }
                                     }
                                 }
                             }
