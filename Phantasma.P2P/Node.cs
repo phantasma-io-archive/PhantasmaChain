@@ -759,7 +759,9 @@ namespace Phantasma.Network.P2P
                                         transactions.Add(tx);
                                     }
 
-                                    if (block.Height > chain.Height)
+                                    var maxPendingHeightExpected = chain.Height + ListMessage.MaxBlocks;
+
+                                    if (block.Height > chain.Height && block.Height <= maxPendingHeightExpected)
                                     {
                                         var key = $"{chain.Name}.{block.Height}";
                                         lock (_pendingBlocks)
