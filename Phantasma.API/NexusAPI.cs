@@ -199,9 +199,17 @@ namespace Phantasma.API
 
             bool cacheHit = false;
 
+            var proxyURL = _api.ProxyURL;
+
+            if (string.IsNullOrEmpty(proxyURL) && _api.Node != null && !_api.Node.IsFullySynced)
+            {
+                // NOTE this is a temporary hack until we improve this
+                proxyURL = _api.Node.ProxyURL;
+            }
+
             lock (string.Intern(methodName))
             {
-                if (_cache != null || _api.ProxyURL != null)
+                if (_cache != null || proxyURL != null)
                 {
                     var sb = new StringBuilder();
                     foreach (var arg in input)
@@ -259,10 +267,10 @@ namespace Phantasma.API
                         throw new APIException("invalid parameter type: " + Parameters[i].Name);
                     }
 
-                    if (_api.ProxyURL != null)
+                    if (proxyURL != null)
                     {
                         methodName = char.ToLower(methodName[0]) + methodName.Substring(1);
-                        var url = $"{_api.ProxyURL}/{methodName}";
+                        var url = $"{proxyURL}/{methodName}";
                         if (!string.IsNullOrEmpty(key))
                         {
                             url = $"{url}{key}";

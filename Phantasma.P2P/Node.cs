@@ -95,6 +95,10 @@ namespace Phantasma.Network.P2P
 
         private DateTime _lastRequestTime = DateTime.UtcNow;
 
+        public bool IsFullySynced { get; private set; }
+
+        public string ProxyURL = null;
+
         public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, string publicHost, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
             if (mempool != null)
@@ -145,6 +149,13 @@ namespace Phantasma.Network.P2P
                 var bindAddress = IPAddress.Any;
 
                 listener = new TcpListener(bindAddress, port);
+
+                if (seeds.Any())
+                {
+                    // temporary HACK
+                    var baseURL = "http:" + seeds.First().Split(':')[1];
+                    ProxyURL = baseURL + ":7078/api"; 
+                }
             }
         }
 
@@ -533,6 +544,11 @@ namespace Phantasma.Network.P2P
                 {
                     Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name} ...{percent}%");
                 }
+
+                if (expectedHeight == chain.Height)
+                {
+                    IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
+                }
             }
         }
 
@@ -712,6 +728,7 @@ namespace Phantasma.Network.P2P
                                         if (entry.height > lastKnowHeight)
                                         {
                                             _knownHeights[chain.Name] = entry.height;
+                                            IsFullySynced = false;
                                         }
                                     }
                                 }
