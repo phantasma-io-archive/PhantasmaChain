@@ -509,22 +509,7 @@ namespace Phantasma.Network.P2P
                 }
                 else
                 {
-                    var keys = _pendingBlocks.Keys;
-
-                    foreach (var key in keys)
-                    {
-                        var temp = key.Split('.');
-                        var chainName = temp[0];
-                        var height = BigInteger.Parse(temp[1]);
-
-                        var blockChain = Nexus.GetChainByName(chainName);
-
-                        if (blockChain.Height > height)
-                        {
-                            _pendingBlocks.Remove(key);
-                        }
-                    }
-
+                    _pendingBlocks.Clear();
                     break;
                 }
 
