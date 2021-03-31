@@ -67,7 +67,7 @@ namespace Phantasma.Network.P2P.Messages
         public const int MaxPeers = 255;
         public const int MaxChains = 128;
         public const int MaxTransactions = 1024; // for mempool
-        public const int MaxBlocks = 1024;
+        public const int MaxBlocks = 512;
 
         // here the dictionary key is the chain name
         private Dictionary<string, BlockRange> _blockRanges;

@@ -24,7 +24,7 @@ namespace Phantasma.VM
         LOAD,
         CAST,
         CAT,
-        SUBSTR, //TODO: needs to be implemented
+        RANGE,
         LEFT,
         RIGHT,
         SIZE,

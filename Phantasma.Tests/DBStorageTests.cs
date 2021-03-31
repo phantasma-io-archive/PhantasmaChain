@@ -6,7 +6,6 @@ using Phantasma.Core;
 using Phantasma.RocksDB;
 using Phantasma.Storage;
 using System.Threading;
-using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
 using System.Text;
 using Phantasma.Storage.Context;
 using Phantasma.Numerics;
@@ -103,6 +102,104 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestDBChangeSetStorageMapClearEmpty()
+        {
+            var storage = (StorageContext)new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+            var changeSet = new StorageChangeSetContext(storage);
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+            var testMap = new StorageMap(testMapKey, changeSet);
+
+            changeSet.Execute();
+            Assert.IsTrue(testMap.Count() == 0);
+            testMap.Clear();
+            Assert.IsTrue(testMap.Count() == 0);
+        }
+
+        [TestMethod]
+        public void TestDBChangeSetStorageMap22()
+        {
+            var storage = (StorageContext)new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+            var changeSet = new StorageChangeSetContext(storage);
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+            var testMap = new StorageMap(testMapKey, changeSet);
+
+            testMap.Set(1,1);
+            Assert.IsTrue(testMap.Count() == 1);
+            testMap.Clear();
+            Assert.IsTrue(testMap.Count() == 0);
+        }
+
+        [TestMethod]
+        public void TestDBStorageMapClearEmpty()
+        {
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+
+            var testMap = new StorageMap(testMapKey, storage);
+
+            Assert.IsTrue(testMap.Count() == 0);
+            testMap.Clear();
+            Assert.IsTrue(testMap.Count() == 0);
+
+        }
+
+        [TestMethod]
+        public void TestDBChangeSetStorageMapClear()
+        {
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+            var changeSet = new StorageChangeSetContext(storage);
+
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+            var testMapKey2 = Encoding.UTF8.GetBytes($".test2._valueMap");
+
+            var testMap = new StorageMap(testMapKey, changeSet);
+            var testMap2 = new StorageMap(testMapKey2, changeSet);
+
+            testMap.Set("test1", "Value1");
+            testMap.Set("test2", "Value2");
+            testMap.Set("test3", "Value3");
+            testMap.Set("test4", "Value4");
+            Assert.IsTrue(testMap.Count() == 4);
+
+            testMap2.Set<BigInteger, string>(new BigInteger(1), "Value21");
+            testMap2.Set<BigInteger, string>(new BigInteger(2), "Value22");
+            testMap2.Set<BigInteger, string>(new BigInteger(3), "Value23");
+            testMap2.Set<BigInteger, string>(new BigInteger(4), "Value24");
+            Assert.IsTrue(testMap2.Count() == 4);
+
+            changeSet.Execute();
+            var count = 0;
+            testMap.Visit<string, string>((key, value) => {
+                count++;
+            });
+
+            testMap2.Visit<BigInteger, string>((key, value) => {
+                count++;
+
+            });
+
+            Console.WriteLine($"visit: {count} count: {(int)testMap.Count() + testMap2.Count()}");
+            Assert.AreEqual(count, (int)testMap.Count() + testMap2.Count());
+
+            testMap.Clear();
+            testMap2.Clear();
+
+            Assert.IsTrue(testMap.Count() == 0);
+            Assert.IsTrue(testMap2.Count() == 0);
+
+            Assert.IsNull(testMap.Get<string,string>("test1"));
+            Assert.IsNull(testMap.Get<string,string>("test2"));
+            Assert.IsNull(testMap.Get<string,string>("test3"));
+            Assert.IsNull(testMap.Get<string,string>("test4"));
+
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(1)));
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(2)));
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(3)));
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(4)));
+        }
+
+        [TestMethod]
         public void TestDBStorageMapClear()
         {
             var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
@@ -155,9 +252,30 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestDBStorageAllValuesEmpty()
+        {
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test3"));
+
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+
+            var testMap = new StorageMap(testMapKey, storage);
+
+            Assert.IsTrue(testMap.AllValues<BigInteger>().Length == 0);
+
+            testMap.Set(1, 1);
+            testMap.Clear();
+            Assert.IsTrue(testMap.AllValues<BigInteger>().Length == 0);
+
+            testMap.Set(1, 1);
+            testMap.Set(2, 2);
+            testMap.Set(3, 2);
+            Assert.IsTrue(testMap.AllValues<BigInteger>().Length == 3);
+        }
+
+        [TestMethod]
         public void TestDBStorageAllValues()
         {
-            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test4"));
 
             var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
             var testMapKey2 = Encoding.UTF8.GetBytes($".test2._valueMap");

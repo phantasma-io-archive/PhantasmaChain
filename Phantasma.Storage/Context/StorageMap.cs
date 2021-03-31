@@ -80,6 +80,11 @@ namespace Phantasma.Storage.Context
                 var oldList = map.Get<K, StorageList>(sourceKey);
                 var newList = map.Get<K, StorageList>(destKey);
 
+                if (oldList.Count() == 0)
+                {
+                    return;
+                }
+
                 Throw.If(newList.Count() != 0, "target list already exists");
 
                 var count = oldList.Count();
@@ -234,6 +239,11 @@ namespace Phantasma.Storage.Context
             var countKey = CountKey(map.BaseKey);
             var found = false;
             var countKeyRun = false;
+
+            if (map.Count() == 0)
+            {
+                return values.ToArray();
+            }
 
             map.Context.Visit((key, value) =>
             {

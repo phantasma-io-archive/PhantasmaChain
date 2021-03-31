@@ -115,9 +115,12 @@ namespace Phantasma.VM
         }
         #endregion
 
-        private void Expect(bool assertion, string error)
+        private void Expect(bool condition, string error)
         {
-            Throw.If(!assertion, $"Script execution failed: {error} @ {opcode} : {InstructionPointer}");
+            if (!condition)
+            {
+                throw new Exception($"Script execution failed: {error} @ {opcode} : {InstructionPointer}");
+            }            
         }
 
         private void SetState(ExecutionState state)
@@ -404,9 +407,37 @@ namespace Phantasma.VM
                             break;
                         }
 
-                    case Opcode.SUBSTR:
+                    // args: byte src_reg, byte dest_reg, var index, var length
+                    case Opcode.RANGE:
                         {
-                            throw new NotImplementedException();
+                            var src = Read8();
+                            var dst = Read8();
+                            var index = (int)ReadVar(0xFFFF);
+                            var len = (int)ReadVar(0xFFFF);
+
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
+
+                            var src_type = frame.Registers[src].Type;
+                            var src_array = frame.Registers[src].AsByteArray();
+                            Expect(len <= src_array.Length, "invalid length");
+
+                            Expect(index >= 0, "invalid negative index");
+                            
+                            var end = index + len;
+                            if (end > src_array.Length)
+                            {
+                                len = src_array.Length - index;
+
+                                Expect(len > 0, "empty range");
+                            }
+
+                            var result = new byte[len];
+
+                            Array.Copy(src_array, index, result, 0, len);
+
+                            frame.Registers[dst].SetValue(result, src_type);
+                            break;
                         }
 
                     // args: byte src_reg, byte dest_reg, var length
@@ -961,6 +992,7 @@ namespace Phantasma.VM
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Exception during execution in vm: " + ex);
                 ex = ex.ExpandInnerExceptions();
 
                 Trace.WriteLine(ex.ToString());

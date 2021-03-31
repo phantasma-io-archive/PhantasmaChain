@@ -15,6 +15,7 @@ using Phantasma.Storage.Context;
 using Phantasma.VM.Utils;
 using Phantasma.Domain;
 using Phantasma.Storage;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Tests
 {
@@ -319,125 +320,103 @@ namespace Phantasma.Tests
             Assert.IsTrue(balance == 1000);
         }
 
-        //[TestMethod]
-        //public void AccountTriggers()
-        //{
-        //    string[] scriptString;
+        [TestMethod]
+        public void AccountTriggersAllowance()
+        {
+            string[] scriptString;
 
-        //    var owner = PhantasmaKeys.Generate();
-        //    var target = PhantasmaKeys.Generate();
-        //    var symbol = "TEST";
-        //    var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-        //    var nexus = new Nexus("simnet", null, null);
-        //    nexus.SetOracleReader(new OracleSimulator(nexus));
-        //    var simulator = new NexusSimulator(nexus, owner, 1234);
-        //    var addressStr = Base16.Encode(target.Address.ToByteArray());
-        //    var isTrue = true;
-        //    string message = "customEvent";
+            var owner = PhantasmaKeys.Generate();
+            var target = PhantasmaKeys.Generate();
+            var other = PhantasmaKeys.Generate();
 
-        //    scriptString = new string[]
-        //    {
-        //        $"alias r1, $triggerSend",
-        //        $"alias r2, $triggerReceive",
-        //        $"alias r3, $triggerBurn",
-        //        $"alias r4, $triggerMint",
-        //        $"alias r5, $currentTrigger",
-        //        $"alias r6, $comparisonResult",
-        //        $"alias r7, $triggerWitness",
-        //        $"alias r8, $currentAddress",
-        //        $"alias r9, $sourceAddress",
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
-        //        $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
-        //        $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
-        //        $@"load $triggerBurn, ""{AccountTrigger.OnBurn}""",
-        //        $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
-        //        $@"load $triggerWitness, ""{AccountTrigger.OnWitness}""",
-        //        $"pop $currentTrigger",
-        //        $"pop $currentAddress",
+            var symbol = "SOUL";
+            var addressStr = Base16.Encode(other.Address.ToByteArray());
 
-        //        $"equal $triggerWitness, $currentTrigger, $comparisonResult",
-        //        $"jmpif $comparisonResult, @witnessHandler",
+            scriptString = new string[]
+            {
+                $"alias r1, $temp",
+                $"alias r2, $from",
+                $"alias r3, $to",
+                $"alias r4, $symbol",
+                $"alias r5, $amount",
 
-        //        $"equal $triggerSend, $currentTrigger, $comparisonResult",
-        //        $"jmpif $comparisonResult, @sendHandler",
+                $"jmp @end",
 
-        //        $"equal $triggerReceive, $currentTrigger, $comparisonResult",
-        //        $"jmpif $comparisonResult, @receiveHandler",
+                $"@OnReceive: nop",
+                $"pop $from",
+                $"pop $to",
+                $"pop $symbol",
+                $"pop $amount",
 
-        //        $"equal $triggerBurn, $currentTrigger, $comparisonResult",
-        //        $"jmpif $comparisonResult, @burnHandler",
+                $@"load r1 ""{symbol}""",
+                $@"equal r1, $symbol, $temp",
+                $"jmpnot $temp, @end",
 
-        //        $"equal $triggerMint, $currentTrigger, $comparisonResult",
-        //        $"jmpif $comparisonResult, @mintHandler",
+                $"load $temp 2",
+                $"div $amount $temp $temp",
 
-        //        $"jmp @end",
+                $"push $temp",
+                $"push $symbol",
+                $"load r11 0x{addressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"push $to",
 
-        //        $"@witnessHandler: ",
-        //        $"load r11 0x{addressStr}",
-        //        $"push r11",
-        //        "extcall \"Address()\"",
-        //        $"pop $sourceAddress",
-        //        $"equal $sourceAddress, $currentAddress, $comparisonResult",
-        //        "jmpif $comparisonResult, @endWitness",
-        //        $"load r1 \"test witnesshandler exception\"",
-        //        $"throw r1",
-        //        
-        //        "jmp @end",
+                $"load r0 \"Runtime.TransferTokens\"",
+                $"extcall r0",
+                $"jmp @end",
 
-        //        $"@sendHandler: jmp @end",
+                $"@end: ret"
+            };
 
-        //        $"@receiveHandler: jmp @end",
 
-        //        $"@burnHandler: jmp @end",
+            Dictionary<string, int> labels;
+            DebugInfo debugInfo;
+            var script = AssemblerUtils.BuildScript(scriptString, "test", out debugInfo, out labels);
 
-        //        $"@mintHandler: load r11 0x{addressStr}",
-        //        $"push r11",
-        //        $@"extcall ""Address()""",
-        //        $"pop r11",
+            var methods = TokenUtils.GetTriggersForABI(labels);
+            var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
 
-        //        $"@endWitness: ret",
-        //        $"load r11 {isTrue}",
-        //        $"push r11",
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", UnitConversion.GetUnitValue(DomainSettings.FuelTokenDecimals));
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "SOUL", UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals));
+            simulator.GenerateCustomTransaction(target, ProofOfWork.None,
+                () => ScriptUtils.BeginScript()
+                        .AllowGas(target.Address, Address.Null, 1, 9999)
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.Stake), target.Address, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals))
+                        .SpendGas(target.Address)
+                    .EndScript());
+            simulator.EndBlock();
 
-        //        $"@end: ret"
-        //    };
 
-        //    var script = AssemblerUtils.BuildScript(scriptString);
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(target, ProofOfWork.None,
+                () => ScriptUtils.BeginScript()
+                        .AllowGas(target.Address, Address.Null, 1, 9999)
+                    .CallContract(NativeContractKind.Account, nameof(AccountContract.RegisterScript), target.Address, script, abi.ToByteArray())
+                        .SpendGas(target.Address)
+                    .EndScript());
+            simulator.EndBlock();
 
-        //    simulator.BeginBlock();
-        //    simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
-        //    simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "SOUL", UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals));
-        //    simulator.GenerateCustomTransaction(target, ProofOfWork.None,
-        //        () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
-        //            .CallContract("stake", "Stake", target.Address, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals))
-        //            .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
-        //            .EndScript());
-        //    simulator.EndBlock();
+            var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, target.Address);
 
-        //    simulator.BeginBlock();
-        //    simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags);
-        //    simulator.EndBlock();
+            var amount = UnitConversion.ToBigInteger(5, DomainSettings.StakingTokenDecimals);
 
-        //    Assert.IsTrue(simulator.Nexus.TokenExists(simulator.Nexus.RootStorage, symbol));
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, amount * 2);
+            simulator.EndBlock();
 
-        //    simulator.BeginBlock();
-        //    var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);
-        //    simulator.EndBlock();
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, target.Address);
+            var expectedBalance = initialBalance + amount;
+            Assert.IsTrue(balance == expectedBalance);
 
-        //    var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
-        //    var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
-        //    Assert.IsTrue(balance == 1000);
-
-        //    Assert.ThrowsException<VMException>(() =>
-        //    {
-        //        simulator.BeginBlock();
-        //        simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
-        //        simulator.EndBlock();
-        //    });
-
-        //    balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
-        //    Assert.IsTrue(balance == 1000);
-        //}
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, other.Address);
+            Assert.IsTrue(balance == amount);
+        }
 
         [TestMethod]
         [Ignore]
@@ -2561,6 +2540,37 @@ namespace Phantasma.Tests
             }
 
             throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
+        }
+
+        [TestMethod]
+        public void Range()
+        {
+                //TODO: missing tests with byte data
+
+            string r1 = "Hello funny world";
+            int index = 6;
+            int len = 5;
+            string target = "funny";
+
+            var scriptString = new string[1];
+
+            scriptString = new string[]
+            {
+                $"load r1, \"{r1}\"",
+                $"range r1, r2, {index}, {len}",
+                @"push r2",
+                @"ret"
+            };
+
+
+            var vm = ExecuteScriptIsolated(scriptString);
+
+            Assert.IsTrue(vm.Stack.Count == 1);
+
+            var resultBytes = vm.Stack.Pop().AsByteArray();
+            var result = Encoding.UTF8.GetString(resultBytes);
+
+            Assert.IsTrue(result == target);
         }
 
         [TestMethod]

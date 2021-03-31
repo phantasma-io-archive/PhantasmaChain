@@ -206,10 +206,10 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockByTransaction(Transaction tx)
         {
-            return FindBlockByHash(tx.Hash);
+            return FindBlockByTransactionHash(tx.Hash);
         }
 
-        public Block FindBlockByHash(Hash hash)
+        public Block FindBlockByTransactionHash(Hash hash)
         {
             var chainNames = this.GetChains(RootStorage);
             foreach (var chainName in chainNames)
@@ -772,6 +772,15 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(amount > 0, "invalid amount");
 
+            var allowed = Runtime.IsWitness(source);
+
+            if (!allowed)
+            {
+                allowed = Runtime.SubtractAllowance(source, token.Symbol, amount);
+            }
+
+            Runtime.Expect(allowed, "invalid witness or allowance");
+
             var isSettlement = targetChain != Runtime.Chain.Name;
 
             var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
@@ -920,15 +929,28 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(destName != ValidationUtils.ANONYMOUS_NAME, "anonymous system address as destination");
             }
 
+            var allowed = Runtime.IsWitness(source);
+
+            if (!allowed)
+            {
+                allowed = Runtime.SubtractAllowance(source, token.Symbol, amount);
+            }
+
+            Runtime.Expect(allowed, "invalid witness or allowance");
+
             var balances = new BalanceSheet(token.Symbol);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), $"{token.Symbol} balance add failed to {destination.Text}");
+
+            Runtime.AddAllowance(destination, token.Symbol, amount);
 
             Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnSend, source, destination, token.Symbol, amount) != TriggerResult.Failure, "token onSend trigger failed");
             Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnReceive, source, destination, token.Symbol, amount) != TriggerResult.Failure, "token onReceive trigger failed");
 
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, source, AccountTrigger.OnSend, source, destination, token.Symbol, amount) != TriggerResult.Failure, "account onSend trigger failed");
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, AccountTrigger.OnReceive, source, destination, token.Symbol, amount) != TriggerResult.Failure, "account onReceive trigger failed");
+
+            Runtime.RemoveAllowance(destination, token.Symbol);
 
             if (destination.IsSystem && (destination == Runtime.CurrentContext.Address || isInfusion))
             {
@@ -1150,6 +1172,9 @@ namespace Phantasma.Blockchain
             foreach (var asset in tokenContent.Infusion)
             {
                 var assetInfo = this.GetTokenInfo(Runtime.RootStorage, asset.Symbol);
+
+                Runtime.AddAllowance(infusionAddress, asset.Symbol, asset.Value);
+                
                 if (assetInfo.IsFungible())
                 {
                     this.TransferTokens(Runtime, assetInfo, infusionAddress, target, asset.Value, true);
@@ -1158,6 +1183,8 @@ namespace Phantasma.Blockchain
                 {
                     this.TransferToken(Runtime, assetInfo, infusionAddress, target, asset.Value, true);
                 }
+
+                Runtime.RemoveAllowance(infusionAddress, asset.Symbol);
             }
 
             var token = Runtime.GetToken(symbol);

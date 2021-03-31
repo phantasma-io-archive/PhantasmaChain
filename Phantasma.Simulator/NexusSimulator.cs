@@ -150,6 +150,15 @@ namespace Phantasma.Simulator
                 var communitySupply = 100000;
                 GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
                 MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
+
+                GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                {
+                    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                    CallContract(NativeContractKind.Sale, nameof(SaleContract.CreateSale), _owner.Address, "Mankini sale", SaleFlags.None, (Timestamp)(this.CurrentTime + TimeSpan.FromHours(5)), (Timestamp)(this.CurrentTime + TimeSpan.FromDays(5)), "MKNI", DomainSettings.StakingTokenSymbol, 7, 0, 1000, 1, 100).
+                    SpendGas(_owner.Address).
+                    EndScript();
+                });
+
                 EndBlock();
 
                 //TODO add SOUL/KCAL on ethereum, removed for now because hash is not fixed yet

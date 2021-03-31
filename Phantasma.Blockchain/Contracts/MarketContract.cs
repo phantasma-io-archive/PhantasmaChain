@@ -540,6 +540,22 @@ namespace Phantasma.Blockchain.Contracts
             }
             return auctions;
         }
+
+        public bool IsSeller(Address target)
+        {
+            var ids = _auctionIds.AllValues<string>();
+            for (int i = 0; i < ids.Length; i++)
+            {
+                var auction = _auctionMap.Get<string, MarketAuction>(ids[i]);
+
+                if (auction.Creator == target)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public bool HasAuction(string symbol, BigInteger tokenID)
         {
             var auctionID = symbol + "." + tokenID;

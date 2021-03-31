@@ -95,6 +95,10 @@ namespace Phantasma.Network.P2P
 
         private DateTime _lastRequestTime = DateTime.UtcNow;
 
+        public bool IsFullySynced { get; private set; }
+
+        public string ProxyURL = null;
+
         public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, string publicHost, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
             if (mempool != null)
@@ -137,12 +141,22 @@ namespace Phantasma.Network.P2P
 
             this.PublicEndpoint = $"tcp:{publicHost}:{port}";
 
-            QueueEndpoints(seeds);
+            if (this.Capabilities.HasFlag(PeerCaps.Sync))
+            {
+                QueueEndpoints(seeds);
 
-            // TODO this is a security issue, later change this to be configurable and default to localhost
-            var bindAddress = IPAddress.Any;
+                // TODO this is a security issue, later change this to be configurable and default to localhost
+                var bindAddress = IPAddress.Any;
 
-            listener = new TcpListener(bindAddress, port);
+                listener = new TcpListener(bindAddress, port);
+
+                if (seeds.Any())
+                {
+                    // temporary HACK
+                    var baseURL = "http:" + seeds.First().Split(':')[1];
+                    ProxyURL = baseURL + ":7078/api"; 
+                }
+            }
         }
 
         private void QueueEndpoints(IEnumerable<string> hosts)
@@ -289,9 +303,16 @@ namespace Phantasma.Network.P2P
 
         protected override void OnStart()
         {
-            Logger.Message($"Phantasma node listening on port {Port}, using address: {Address}");
+            if (this.Capabilities.HasFlag(PeerCaps.Sync))
+            {
+                Logger.Message($"Phantasma node listening on port {Port}, using address: {Address}");
 
-            listener.Start();
+                listener.Start();
+            }
+            else
+            {
+                Logger.Warning($"Since sync not enabled, this node won't accept connections from other nodes.");
+            }
         }
 
         protected override void OnStop()
@@ -429,6 +450,9 @@ namespace Phantasma.Network.P2P
             var request = new RequestMessage(this.Address, this.PublicEndpoint, requestKind, Nexus.Name);
             var active = SendMessage(peer, request);
 
+            string ip = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString();
+            Logger.Debug($"Incoming connection from " + ip);
+
             while (active)
             {
                 var msg = peer.Receive();
@@ -496,6 +520,7 @@ namespace Phantasma.Network.P2P
                 }
                 else
                 {
+                    _pendingBlocks.Clear();
                     break;
                 }
 
@@ -518,6 +543,11 @@ namespace Phantasma.Network.P2P
                 else
                 {
                     Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name} ...{percent}%");
+                }
+
+                if (expectedHeight == chain.Height)
+                {
+                    IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
                 }
             }
         }
@@ -586,6 +616,8 @@ namespace Phantasma.Network.P2P
                     _peers[peerKey] = peer;
                 }
             }
+
+            Logger.Debug($"Got {msg.Opcode} message from {peerKey}");
 
             switch (msg.Opcode)
             {
@@ -692,7 +724,12 @@ namespace Phantasma.Network.P2P
 
                                     lock (_knownHeights)
                                     {
-                                        _knownHeights[chain.Name] = entry.height;
+                                        BigInteger lastKnowHeight = _knownHeights.ContainsKey(chain.Name) ? _knownHeights[chain.Name] : 0;
+                                        if (entry.height > lastKnowHeight)
+                                        {
+                                            _knownHeights[chain.Name] = entry.height;
+                                            IsFullySynced = false;
+                                        }
                                     }
                                 }
                             }
@@ -739,7 +776,9 @@ namespace Phantasma.Network.P2P
                                         transactions.Add(tx);
                                     }
 
-                                    if (block.Height > chain.Height)
+                                    var maxPendingHeightExpected = chain.Height + ListMessage.MaxBlocks;
+
+                                    if (block.Height > chain.Height && block.Height <= maxPendingHeightExpected)
                                     {
                                         var key = $"{chain.Name}.{block.Height}";
                                         lock (_pendingBlocks)

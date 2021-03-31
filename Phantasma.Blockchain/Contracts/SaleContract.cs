@@ -5,6 +5,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using System;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -22,8 +23,10 @@ namespace Phantasma.Blockchain.Contracts
         HardCap,
         AddedToWhitelist,
         RemovedFromWhitelist,
-        Completion,
-        Refund
+        Distribution,
+        Refund,
+        PriceChange,
+        Participation,
     }
 
     public struct SaleEventData
@@ -43,9 +46,10 @@ namespace Phantasma.Blockchain.Contracts
         public string SellSymbol;
         public string ReceiveSymbol;
         public BigInteger Price;
-        public BigInteger SoftCap;
-        public BigInteger HardCap;
-        public BigInteger UserLimit;
+        public BigInteger GlobalSoftCap;
+        public BigInteger GlobalHardCap;
+        public BigInteger UserSoftCap;
+        public BigInteger UserHardCap;
     }
 
     public sealed class SaleContract : NativeContract
@@ -59,16 +63,36 @@ namespace Phantasma.Blockchain.Contracts
         internal StorageList _saleList; //List<Hash>
         internal StorageMap _saleSupply; //Map<Hash, BigInteger>
 
-
         public SaleContract() : base()
         {
         }
 
-        public Hash CreateSale(Address from, string name, SaleFlags flags, Timestamp startDate, Timestamp endDate, string sellSymbol, string receiveSymbol, BigInteger price, BigInteger softCap, BigInteger hardCap, BigInteger userLimit)
+        public SaleInfo[] GetSales()
+        {
+            var hashes = _saleList.All<Hash>();
+            var sales = hashes.Select(x => GetSale(x)).ToArray();
+            return sales;
+        }
+
+        public bool IsSeller(Address target)
+        {
+            var hashes = _saleList.All<Hash>();
+
+            foreach (var hash in hashes)
+            {
+                var sale = GetSale(hash);
+                if (sale.Creator == target && IsSaleActive(hash))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public Hash CreateSale(Address from, string name, SaleFlags flags, Timestamp startDate, Timestamp endDate, string sellSymbol, string receiveSymbol, BigInteger price, BigInteger globalSoftCap, BigInteger globalHardCap, BigInteger userSoftCap, BigInteger userHardCap)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
-            var minPrice = UnitConversion.ToBigInteger(0.001m, DomainSettings.FiatTokenDecimals);
 
             Runtime.Expect(Runtime.TokenExists(sellSymbol), "token must exist: " + sellSymbol);
 
@@ -76,19 +100,20 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(token.IsFungible(), "token must be fungible: " + sellSymbol);
             Runtime.Expect(token.IsTransferable(), "token must be transferable: " + sellSymbol);
 
-            Runtime.Expect(price >= minPrice, "invalid price");
-            Runtime.Expect(softCap >= 0, "invalid softcap");
-            Runtime.Expect(hardCap > 0, "invalid hard cap");
-            Runtime.Expect(hardCap >= softCap, "hard cap must be larger or equal to soft capt");
-            Runtime.Expect(userLimit >= 0, "invalid user limit");
+            Runtime.Expect(price >= 1, "invalid price");
+            Runtime.Expect(globalSoftCap >= 0, "invalid softcap");
+            Runtime.Expect(globalHardCap > 0, "invalid hard cap");
+            Runtime.Expect(globalHardCap >= globalSoftCap, "hard cap must be larger or equal to soft capt");
+            Runtime.Expect(userSoftCap >= 0, "invalid user soft cap");
+            Runtime.Expect(userHardCap >= userSoftCap, "invalid user hard cap");
 
             Runtime.Expect(receiveSymbol != sellSymbol, "invalid receive token symbol: " + receiveSymbol);
 
 
             // TODO remove this later when Cosmic Swaps 2.0 are released
-            Runtime.Expect(receiveSymbol == DomainSettings.StakingTokenSymbol, "invalid receive token symbol: " + receiveSymbol); 
+            Runtime.Expect(receiveSymbol == DomainSettings.StakingTokenSymbol, "invalid receive token symbol: " + receiveSymbol);
 
-            Runtime.TransferTokens(sellSymbol, from, this.Address, hardCap);
+            Runtime.TransferTokens(sellSymbol, from, this.Address, globalHardCap);
 
             var sale = new SaleInfo()
             {
@@ -100,9 +125,10 @@ namespace Phantasma.Blockchain.Contracts
                 SellSymbol = sellSymbol,
                 ReceiveSymbol = receiveSymbol,
                 Price = price,
-                SoftCap = softCap,
-                HardCap = hardCap,
-                UserLimit = userLimit
+                GlobalSoftCap = globalSoftCap,
+                GlobalHardCap = globalHardCap,
+                UserSoftCap = userSoftCap,
+                UserHardCap = userHardCap,
             };
 
             var bytes = Serialization.Serialize(sale);
@@ -110,9 +136,9 @@ namespace Phantasma.Blockchain.Contracts
 
             _saleList.Add(hash);
             _saleMap.Set(hash, sale);
-            _saleSupply.Set(hash, 0);
+            _saleSupply.Set<Hash, BigInteger>(hash, 0);
 
-            Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.Creation, saleHash = hash });
+            Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.Creation, saleHash = hash });
 
             return hash;
         }
@@ -139,63 +165,68 @@ namespace Phantasma.Blockchain.Contracts
             return false;
         }
 
-        public SaleInfo[] GetSales()
+        public SaleInfo GetSale(Hash saleHash)
         {
-            return _saleList.All<SaleInfo>();
+            return _saleMap.Get<Hash, SaleInfo>(saleHash);
         }
 
         public Address[] GetSaleParticipants(Hash saleHash)
         {
-            var addressMap = _buyerAddresses.Get<Hash, StorageSet>(saleHash);
-            return addressMap.AllValues<Address>();
+            var addressMap = _buyerAddresses.Get<Hash, StorageList>(saleHash);
+            return addressMap.All<Address>();
         }
 
         public Address[] GetSaleWhitelists(Hash saleHash)
         {
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
-            return addressMap.AllValues<Address>();
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
+            return addressMap.All<Address>();
         }
 
         public bool IsWhitelisted(Hash saleHash, Address address)
         {
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
 
             return addressMap.Contains<Address>(address);
         }
 
         public void AddToWhitelist(Hash saleHash, Address target)
         {
-            Runtime.Expect(IsSaleActive(saleHash), "sale not active or does not exist");
+            Runtime.Expect(_saleMap.ContainsKey<Hash>(saleHash), "sale does not exist");
 
             var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
+
             Runtime.Expect(sale.Flags.HasFlag(SaleFlags.Whitelist), "this sale is not using whitelists");
 
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
+            Runtime.Expect(target != sale.Creator, "sale creator can't be whitelisted");
 
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
 
             if (!addressMap.Contains<Address>(target))
             {
                 addressMap.Add<Address>(target);
-                Runtime.Notify(EventKind.SaleMilestone, target, new SaleEventData() { kind = SaleEventKind.AddedToWhitelist, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, target, new SaleEventData() { kind = SaleEventKind.AddedToWhitelist, saleHash = saleHash });
             }
         }
 
         public void RemoveFromWhitelist(Hash saleHash, Address target)
         {
-            Runtime.Expect(IsSaleActive(saleHash), "sale not active or does not exist");
+            Runtime.Expect(_saleMap.ContainsKey<Hash>(saleHash), "sale does not exist");
 
             var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
+
             Runtime.Expect(sale.Flags.HasFlag(SaleFlags.Whitelist), "this sale is not using whitelists");
 
             Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
 
-            var addressMap = _whitelistedAddresses.Get<Hash, StorageSet>(saleHash);
+            var addressMap = _whitelistedAddresses.Get<Hash, StorageList>(saleHash);
 
             if (addressMap.Contains<Address>(target))
             {
                 addressMap.Remove<Address>(target);
-                Runtime.Notify(EventKind.SaleMilestone, target, new SaleEventData() { kind = SaleEventKind.RemovedFromWhitelist, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, target, new SaleEventData() { kind = SaleEventKind.RemovedFromWhitelist, saleHash = saleHash });
             }
         }
 
@@ -206,15 +237,28 @@ namespace Phantasma.Blockchain.Contracts
             return totalAmount;
         }
 
+        public BigInteger GetSoldAmount(Hash saleHash)
+        {
+            var total = _saleSupply.Get<Hash, BigInteger>(saleHash);
+            return total;
+        }
+
         public void Purchase(Address from, Hash saleHash, string quoteSymbol, BigInteger quoteAmount)
         {
+            //For now, prevent purchases with other tokens 
+            Runtime.Expect(quoteSymbol == DomainSettings.StakingTokenSymbol, "invalid receive token symbol: " + quoteSymbol + ". SOUL token must be used for purchase");
+
             Runtime.Expect(Runtime.TokenExists(quoteSymbol), "token must exist: " + quoteSymbol);
             var quoteToken = Runtime.GetToken(quoteSymbol);
 
-            Runtime.Expect(IsSaleActive(saleHash), "sale not active or does not exist");
-
+            Runtime.Expect(_saleMap.ContainsKey<Hash>(saleHash), "sale does not exist");
             var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+
+            Runtime.Expect(Runtime.Time >= sale.StartDate, "sale has not started");
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
+
             Runtime.Expect(quoteSymbol != sale.SellSymbol, "cannot participate in the sale using " + quoteSymbol);
+            Runtime.Expect(from != sale.Creator, "sale creator can't participate");
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             if (sale.Flags.HasFlag(SaleFlags.Whitelist))
@@ -223,7 +267,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var saleToken = Runtime.GetToken(sale.SellSymbol);
-            var convertedAmount = Runtime.ConvertQuoteToBase(quoteAmount, sale.Price, saleToken, quoteToken);
+            var convertedAmount = Runtime.ConvertQuoteToBase(quoteAmount, UnitConversion.GetUnitValue(quoteToken.Decimals), saleToken, quoteToken) * sale.Price;
 
             var temp = UnitConversion.ToDecimal(convertedAmount, saleToken.Decimals);
             Runtime.Expect(temp >= 1, "cannot purchase very tiny amount");
@@ -232,25 +276,28 @@ namespace Phantasma.Blockchain.Contracts
             var nextSupply = previousSupply + convertedAmount;
 
             //Runtime.Expect(nextSupply <= sale.HardCap, "hard cap reached");
-            if (nextSupply > sale.HardCap)
+            if (nextSupply > sale.GlobalHardCap)
             {
-                convertedAmount = sale.HardCap - previousSupply;
+                convertedAmount = sale.GlobalHardCap - previousSupply;
                 Runtime.Expect(convertedAmount > 0, "hard cap reached");
                 quoteAmount = Runtime.ConvertBaseToQuote(convertedAmount, sale.Price, saleToken, quoteToken);
                 nextSupply = 0;
             }
 
+            Runtime.TransferTokens(quoteSymbol, from, this.Address, quoteAmount);
+            Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.Participation, saleHash = saleHash });
+
+            _saleSupply.Set<Hash, BigInteger>(saleHash, nextSupply);
+
             if (nextSupply == 0)
             {
-                Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.HardCap, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.HardCap, saleHash = saleHash });
             }
             else
-            if (previousSupply < sale.SoftCap && nextSupply >= sale.SoftCap)
+            if (previousSupply < sale.GlobalSoftCap && nextSupply >= sale.GlobalSoftCap)
             {
-                Runtime.Notify(EventKind.SaleMilestone, from, new SaleEventData() { kind = SaleEventKind.SoftCap, saleHash = saleHash });
+                Runtime.Notify(EventKind.Crowdsale, from, new SaleEventData() { kind = SaleEventKind.SoftCap, saleHash = saleHash });
             }
-
-            Runtime.TransferTokens(quoteSymbol, from, this.Address, quoteAmount);
 
             if (quoteSymbol != sale.ReceiveSymbol)
             {
@@ -260,20 +307,31 @@ namespace Phantasma.Blockchain.Contracts
             var amountMap = _buyerAmounts.Get<Hash, StorageMap>(saleHash);
             var totalAmount = amountMap.Get<Address, BigInteger>(from);
 
-            if (sale.UserLimit > 0)
+            var newAmount = totalAmount + convertedAmount;
+
+            if (sale.UserSoftCap > 0)
             {
-                Runtime.Expect(totalAmount + convertedAmount <= sale.UserLimit, "user purchase limit exceeded");
+                Runtime.Expect(newAmount >= sale.UserSoftCap, "user purchase minimum limit not reached");
             }
 
-            var addressMap = _buyerAddresses.Get<Hash, StorageSet>(saleHash);
-            addressMap.Add<Address>(from);
+            if (sale.UserHardCap > 0)
+            {
+                Runtime.Expect(newAmount <= sale.UserHardCap, "user purchase maximum limit exceeded");
+            }
+
+            var addressMap = _buyerAddresses.Get<Hash, StorageList>(saleHash);
+            if (!addressMap.Contains<Address>(from))
+            {
+                addressMap.Add<Address>(from);
+            }
+
+            amountMap.Set<Address, BigInteger>(from, newAmount);
         }
 
         // anyone can call this, not only manager, in order to be able to trigger refunds
         public void CloseSale(Address from, Hash saleHash)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
 
             Runtime.Expect(_saleMap.ContainsKey(saleHash), "sale does not exist or already closed");
 
@@ -289,16 +347,31 @@ namespace Phantasma.Blockchain.Contracts
             var saleToken = Runtime.GetToken(sale.SellSymbol);
             var receiveToken = Runtime.GetToken(sale.ReceiveSymbol);
 
-            if (soldSupply >= sale.SoftCap) // if at least soft cap reached, send tokens to buyers and funds to sellers
+            if (soldSupply >= sale.GlobalSoftCap) // if at least soft cap reached, send tokens to buyers and funds to sellers
             {
-                foreach (var buyer in buyerAddresses)
+                foreach (var addr in buyerAddresses)
                 {
+                    var buyer = addr;
                     var amount = amountMap.Get<Address, BigInteger>(buyer);
+
+                    Runtime.Notify(EventKind.Crowdsale, buyer, new SaleEventData() { kind = SaleEventKind.Distribution, saleHash = saleHash });
+
+                    if (Runtime.ProtocolVersion <= 5)
+                    {
+                        buyer = sale.Creator;
+                    }
+
                     Runtime.TransferTokens(sale.SellSymbol, this.Address, buyer, amount);
                 }
 
-                var fundsAmount = Runtime.ConvertBaseToQuote(soldSupply, sale.Price, saleToken, receiveToken);
+                var fundsAmount = Runtime.ConvertBaseToQuote(soldSupply, UnitConversion.GetUnitValue(receiveToken.Decimals), saleToken, receiveToken);
+                fundsAmount /= sale.Price;
+
+                Runtime.Notify(EventKind.Crowdsale, sale.Creator, new SaleEventData() { kind = SaleEventKind.Distribution, saleHash = saleHash });
                 Runtime.TransferTokens(sale.ReceiveSymbol, this.Address, sale.Creator, fundsAmount);
+
+                var leftovers = sale.GlobalHardCap - soldSupply;
+                Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, leftovers);
             }
             else // otherwise return funds to buyers and return tokens to sellers
             {
@@ -307,11 +380,51 @@ namespace Phantasma.Blockchain.Contracts
                     var amount = amountMap.Get<Address, BigInteger>(buyer);
 
                     amount = Runtime.ConvertBaseToQuote(amount, sale.Price, saleToken, receiveToken);
+                    Runtime.Notify(EventKind.Crowdsale, buyer, new SaleEventData() { kind = SaleEventKind.Refund, saleHash = saleHash });
                     Runtime.TransferTokens(sale.ReceiveSymbol, this.Address, buyer, amount);
                 }
 
-                Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, sale.HardCap);
+                Runtime.Notify(EventKind.Crowdsale, sale.Creator, new SaleEventData() { kind = SaleEventKind.Refund, saleHash = saleHash });
+                Runtime.TransferTokens(sale.SellSymbol, this.Address, sale.Creator, sale.GlobalHardCap);
             }
+        }
+
+        public Hash GetLatestSaleHash()
+        {
+            var count = (int)_saleList.Count();
+
+            if (count <= 0)
+            {
+                return Hash.Null;
+            }
+
+            var index = count - 1;
+            var firstHash = _saleList.Get<Hash>(index);
+            return firstHash;
+        }
+
+        public void EditSalePrice(Hash saleHash, BigInteger price)
+        {
+            Runtime.Expect(_saleMap.ContainsKey(saleHash), "sale does not exist or already closed");
+
+            var sale = _saleMap.Get<Hash, SaleInfo>(saleHash);
+
+            Runtime.Expect(Runtime.IsWitness(sale.Creator), "invalid witness");
+
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale has reached end date");
+
+            Runtime.Expect(price > 0, "invalid price");
+            Runtime.Expect(price != sale.Price, "price must be different");
+
+            var soldSupply = _saleSupply.Get<Hash, BigInteger>(saleHash);
+            Runtime.Expect(soldSupply == 0, "sale already started");
+
+            Runtime.Expect(Runtime.Time < sale.EndDate, "sale already reached end date");
+
+            sale.Price = price;
+            _saleMap.Set<Hash, SaleInfo>(saleHash, sale);
+
+            Runtime.Notify(EventKind.Crowdsale, sale.Creator, new SaleEventData() { kind = SaleEventKind.PriceChange, saleHash = saleHash });
         }
     }
 }

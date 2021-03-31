@@ -39,11 +39,14 @@ namespace Phantasma.Domain
         ITransaction GetTransaction(Hash hash);
 
         string[] GetTokens();
-        string[] GetContracts();
         string[] GetChains();
         string[] GetPlatforms();
         string[] GetFeeds();
         string[] GetOrganizations();
+        
+        // returns contracts deployed on current chain
+        IContract[] GetContracts();
+
 
         IToken GetToken(string symbol);
         Hash GetTokenPlatformHash(string symbol, IPlatform platform);

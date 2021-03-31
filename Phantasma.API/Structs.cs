@@ -40,6 +40,24 @@ namespace Phantasma.API
         public string[] members;
     }
 
+    // TODO add APIDescription tags
+    public struct CrowdsaleResult : IAPIResult
+    {
+        public string hash;
+        public string name;
+        public string creator;
+        public string flags;
+        public uint startDate;
+        public uint endDate;
+        public string sellSymbol;
+        public string receiveSymbol;
+        public uint price;
+        public string globalSoftCap;
+        public string globalHardCap;
+        public string userSoftCap;
+        public string userHardCap;
+    }
+
     public struct NexusResult : IAPIResult
     {
         [APIDescription("Name of the nexus")]
@@ -272,6 +290,15 @@ namespace Phantasma.API
         public OracleResult[] oracles;
     }
 
+    public struct TokenExternalResult: IAPIResult
+    {
+        [APIDescription("Platform name")]
+        public string platform;
+
+        [APIDescription("External hash")]
+        public string hash;
+    }
+
     public struct TokenResult : IAPIResult
     {
         [APIDescription("Ticker symbol for the token")]
@@ -304,6 +331,9 @@ namespace Phantasma.API
 
         [APIDescription("Series info. NFT only")]
         public TokenSeriesResult[] series;
+
+        [APIDescription("External platforms info")]
+        public TokenExternalResult[] external;
     }
 
     public struct TokenSeriesResult : IAPIResult

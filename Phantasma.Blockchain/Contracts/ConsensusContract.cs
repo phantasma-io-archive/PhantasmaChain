@@ -66,7 +66,7 @@ namespace Phantasma.Blockchain.Contracts
     {
         public override NativeContractKind Kind => NativeContractKind.Consensus;
 
-        private StorageMap _pollMap; //<Address> 
+        private StorageMap _pollMap; //<string, Poll> 
         private StorageList _pollList; 
         private StorageMap _presences; // address, List<PollPresence>
 
@@ -79,6 +79,15 @@ namespace Phantasma.Blockchain.Contracts
 
         public ConsensusContract() : base()
         {
+        }
+
+        public void Migrate(Address from, Address target)
+        {
+            Runtime.Expect(Runtime.PreviousContext.Name == "account", "invalid context");
+
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            _presences.Migrate<Address, StorageList>(from, target);
         }
 
         private ConsensusPoll FetchPoll(string subject)
