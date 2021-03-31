@@ -138,7 +138,16 @@ namespace Phantasma.Blockchain.Contracts
 
                 var rewardFuel = _rewardAccum / rewardList.Count;
 
-                var stakeAmount = UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals);
+                BigInteger stakeAmount;
+
+                if (Runtime.ProtocolVersion >= 5)
+                {
+                    stakeAmount = UnitConversion.ToBigInteger(2, DomainSettings.StakingTokenDecimals);
+                }
+                else
+                {
+                    stakeAmount = UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals);
+                }
 
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, this.Address, rewardAmount);
 
