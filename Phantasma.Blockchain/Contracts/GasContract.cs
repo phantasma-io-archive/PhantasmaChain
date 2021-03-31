@@ -140,7 +140,7 @@ namespace Phantasma.Blockchain.Contracts
 
                 BigInteger stakeAmount;
 
-                if (Runtime.ProtocolVersion >= 5)
+                if (Runtime.ProtocolVersion > 5)
                 {
                     stakeAmount = UnitConversion.ToBigInteger(2, DomainSettings.StakingTokenDecimals);
                 }
