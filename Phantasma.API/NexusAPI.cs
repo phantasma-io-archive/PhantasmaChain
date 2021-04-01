@@ -461,11 +461,11 @@ namespace Phantasma.API
                             seriesID = (uint)ID,
                             currentSupply = series.MintCount.ToString(),
                             maxSupply = series.MaxSupply.ToString(),
-                            burnedSupply = "0", // TODO
+                            burnedSupply = Nexus.GetBurnedTokenSupplyForSeries(Nexus.RootStorage, tokenSymbol, ID).ToString(),
                             mode = series.Mode,
                             script = Base16.Encode(series.Script),
                             methods = extended ? FillMethods(series.ABI.Methods) : new ABIMethodResult[0]
-                        });
+                        }); ;
                     }
                 }
             }
