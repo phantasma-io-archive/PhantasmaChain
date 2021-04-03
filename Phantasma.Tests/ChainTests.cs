@@ -1087,10 +1087,16 @@ namespace Phantasma.Tests
 
             var testUser = PhantasmaKeys.Generate();
 
+            BigInteger seriesID = 123;
+
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable, null, null, null, (uint)seriesID);
             simulator.EndBlock();
+
+            var series = nexus.GetTokenSeries(nexus.RootStorage, symbol, seriesID);
+
+            Assert.IsTrue(series.MintCount == 0, "nothing should be minted yet");
 
             // Send some KCAL and SOUL to the test user (required for gas used in "burn" transaction)
             simulator.BeginBlock();
@@ -1111,7 +1117,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken to test address
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
+            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, seriesID);
             simulator.EndBlock();
 
             // obtain tokenID
@@ -1168,6 +1174,11 @@ namespace Phantasma.Tests
             curBalance = nexus.RootChain.GetTokenBalance(nexus.RootChain.Storage, infuseSymbol, testUser.Address);
             Assert.IsTrue(curBalance == prevBalance + infusedBalance); // should match
 
+            var burnedSupply = nexus.GetBurnedTokenSupply(nexus.RootStorage, symbol);
+            Assert.IsTrue(burnedSupply == 1);
+
+            var burnedSeriesSupply = nexus.GetBurnedTokenSupplyForSeries(nexus.RootStorage, symbol, seriesID);
+            Assert.IsTrue(burnedSeriesSupply == 1);
         }
 
         [TestMethod]
