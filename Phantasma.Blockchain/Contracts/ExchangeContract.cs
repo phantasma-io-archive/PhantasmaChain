@@ -388,6 +388,11 @@ namespace Phantasma.Blockchain.Contracts
             OpenOrder(from, provider, baseSymbol, quoteSymbol, side, IoC ? ImmediateOrCancel : Limit, orderSize, price);
         }
 
+        public void OpenOTCOrder(Address from, Address provider, string baseSymbol, string quoteSymbol, BigInteger ammount, BigInteger price)
+        {
+            OpenOrder(from, provider, baseSymbol, quoteSymbol, ExchangeOrderSide.Sell, ExchangeOrderType.OTC, ammount, price);
+        }
+
         public void CancelOrder(BigInteger uid)
         {
             Runtime.Expect(_orderMap.ContainsKey<BigInteger>(uid), "order not found");
