@@ -165,8 +165,6 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            Runtime.Expect(Runtime.GasTarget == provider, "invalid gas target");
-
             Runtime.Expect(baseSymbol != quoteSymbol, "invalid base/quote pair");
 
             Runtime.Expect(Runtime.TokenExists(baseSymbol), "invalid base token");
@@ -183,6 +181,8 @@ namespace Phantasma.Blockchain.Contracts
                 CreateOTC(from, baseSymbol, quoteSymbol, orderSize, price);
                 return;
             }
+
+            Runtime.Expect(Runtime.GasTarget == provider, "invalid gas target");
 
             if (orderType != Market)
             {
