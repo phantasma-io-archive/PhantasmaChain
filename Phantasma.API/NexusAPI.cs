@@ -424,13 +424,20 @@ namespace Phantasma.API
 
         #region UTILS
 
-        private static string ExternalHashToString(string platform, Hash hash)
+        private static string ExternalHashToString(string platform, Hash hash, string symbol)
         {
             var result = hash.ToString();
 
             switch (platform)
             {
                 case "neo":
+                    if (symbol == "NEO" || symbol == "GAS")
+                    {
+                        return result;
+                    }
+                    result = result.Substring(0, 40);
+                    break;
+
                 case "ethereum":
                     result = result.Substring(0, 40);
                     break;
@@ -482,7 +489,7 @@ namespace Phantasma.API
                     {
                         external.Add(new TokenExternalResult()
                         {   
-                            hash = ExternalHashToString(platform, extHash),
+                            hash = ExternalHashToString(platform, extHash, tokenSymbol),
                             platform = platform,
                         });
                     }
