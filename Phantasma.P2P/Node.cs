@@ -528,25 +528,39 @@ namespace Phantasma.Network.P2P
 
             if (count > 0)
             {
-                BigInteger expectedHeight;
+                BigInteger expectedHeight = 0;
                 lock (_knownHeights)
                 {
-                    expectedHeight = _knownHeights[chain.Name];
+                    if (_knownHeights.TryGetValue(chain.Name, out expectedHeight))
+                    {
+                        if (last <= expectedHeight)
+                        {
+                            int percent = (int)((last * 100) / expectedHeight);
+                            if (start == last)
+                            {
+                                Logger.Message($"{this.Version}: Added block #{start} to {chain.Name} ...{percent}%");
+                            }
+                            else
+                            {
+                                Logger.Message($"{this.Version}: Added blocks #{start} to #{last} to {chain.Name} ...{percent}%");
+                            }
+
+                            if (expectedHeight == chain.Height)
+                            {
+                                IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
+                            }
+                        }
+                        else
+                        {
+                            Logger.Message($"{this.Version}: Added block #{start} to {chain.Name}");
+                            IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
+                        }
+                    }
                 }
 
-                int percent = (int)((last * 100) / expectedHeight);
-
-                if (start == last)
+                if (expectedHeight == 0) 
                 {
-                    Logger.Message($"{this.Version}: Added block #{start} in {chain.Name} ...{percent}%");
-                }
-                else
-                {
-                    Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name} ...{percent}%");
-                }
-
-                if (expectedHeight == chain.Height)
-                {
+                    Logger.Message($"{this.Version}: Added block #{start} to {chain.Name}");
                     IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
                 }
             }
@@ -709,27 +723,35 @@ namespace Phantasma.Network.P2P
                             {
                                 var chain = Nexus.GetChainByName(entry.name);
                                 // NOTE if we dont find this chain then it is too soon for ask for blocks from that chain
-                                if (chain != null && chain.Height < entry.height)
+                                if (chain != null)
                                 {
-                                    var start = chain.Height + 1;
-                                    var end = entry.height;
-                                    var limit = start + ListMessage.MaxBlocks - 1;
-
-                                    if (end > limit)
+                                    if (chain.Height < entry.height)
                                     {
-                                        end = limit;
+                                        var start = chain.Height + 1;
+                                        var end = entry.height;
+                                        var limit = start + ListMessage.MaxBlocks - 1;
+
+                                        if (end > limit)
+                                        {
+                                            end = limit;
+                                        }
+
+                                        blockFetches[entry.name] = new RequestRange(start, end);
+
+                                        lock (_knownHeights)
+                                        {
+                                            BigInteger lastKnowHeight = _knownHeights.ContainsKey(chain.Name) ? _knownHeights[chain.Name] : 0;
+                                            if (entry.height > lastKnowHeight)
+                                            {
+                                                _knownHeights[chain.Name] = entry.height;
+                                                IsFullySynced = false;
+                                            }
+                                        }
                                     }
 
-                                    blockFetches[entry.name] = new RequestRange(start, end);
-
-                                    lock (_knownHeights)
+                                    if (chain.Height == entry.height)
                                     {
-                                        BigInteger lastKnowHeight = _knownHeights.ContainsKey(chain.Name) ? _knownHeights[chain.Name] : 0;
-                                        if (entry.height > lastKnowHeight)
-                                        {
-                                            _knownHeights[chain.Name] = entry.height;
-                                            IsFullySynced = false;
-                                        }
+                                        IsFullySynced = true;
                                     }
                                 }
                             }
