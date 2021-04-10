@@ -213,10 +213,23 @@ namespace Phantasma.API
                 proxyURL = _api.Node.ProxyURL;
             }
 
-            if (IsRelayed && _api.Node != null && string.IsNullOrEmpty(proxyURL))
+            if (IsRelayed && _api.Node != null)
             {
+                if (methodName == "GetTransaction")
+                {
+                    // TEMP quick and dirty getTransaction hack, if the transaction is available in local storage, we 
+                    // return it immediately, if not, we proxy the call to the BP.
+                    
+                    var apiResult = _api.GetTransaction((string)input[0]);
+                    if (!(apiResult is ErrorResult))
+                    {
+                        // convert to json string
+                        var node = Domain.APIUtils.FromAPIResult(apiResult);
+                        return JSONWriter.WriteToString(node);
+                    }
+                }
                 // If the method is marked as a relay method, we always proxy it
-                proxyURL = _api.Node.ProxyURL;
+                proxyURL = _api.ProxyURL;
             }
 
             if (!IsRelayed && _api.Node != null && _api.Node.IsFullySynced)
@@ -1388,7 +1401,7 @@ namespace Phantasma.API
             return new ScriptResult { results = resultArray, result = resultArray.FirstOrDefault(), events = evts, oracles = oracleReads };
         }
 
-        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.", false, -1)]
+        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.", false, -1, true)]
         [APIFailCase("hash is invalid", "43242342")]
         public IAPIResult GetTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
