@@ -1879,7 +1879,7 @@ namespace Phantasma.API
             };
         }
 
-        [APIInfo(typeof(ArchiveResult), "Returns info about a specific archive.", false, 300)]
+        [APIInfo(typeof(ArchiveResult), "Returns info about a specific archive.", false, 300, true)]
         public IAPIResult GetArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             Hash hash;
@@ -1935,7 +1935,7 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(string), "Reads given archive block.", false)]
+        [APIInfo(typeof(string), "Reads given archive block.", false, 0, true)]
         public IAPIResult ReadArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex)
         {
             Hash hash;
