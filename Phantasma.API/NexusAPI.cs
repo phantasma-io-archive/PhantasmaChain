@@ -215,6 +215,11 @@ namespace Phantasma.API
 
             if (IsRelayed && _api.Node != null)
             {
+                if (methodName == "WriteArchive" || methodName == "ReadArchive")
+                {
+                    throw new APIException($"Method {methodName} only available through BP for now!");
+                }
+
                 if (methodName == "GetTransaction")
                 {
                     // TEMP quick and dirty getTransaction hack, if the transaction is available in local storage, we 
