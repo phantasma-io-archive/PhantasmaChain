@@ -454,7 +454,7 @@ namespace Phantasma.Simulator
         }
 
         public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, BigInteger totalSupply,
-                int decimals, TokenFlags flags, byte[] tokenScript = null, Dictionary<string, int> labels = null, IEnumerable<ContractMethod> customMethods = null)
+                int decimals, TokenFlags flags, byte[] tokenScript = null, Dictionary<string, int> labels = null, IEnumerable<ContractMethod> customMethods = null, uint seriesID = 0)
         {
             var version = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
             if (labels == null)
@@ -553,7 +553,7 @@ namespace Phantasma.Simulator
                 ContractInterface nftABI;
                 byte[] nftScript;
                 NFTUtils.GenerateNFTDummyScript(symbol, name, name, "http://simulator/nft/*", "http://simulator/img/*", out nftScript, out nftABI);
-                sb.CallInterop("Nexus.CreateTokenSeries", owner.Address, symbol, new BigInteger(0), totalSupply, TokenSeriesMode.Unique, nftScript, nftABI.ToByteArray());
+                sb.CallInterop("Nexus.CreateTokenSeries", owner.Address, symbol, new BigInteger(seriesID), totalSupply, TokenSeriesMode.Unique, nftScript, nftABI.ToByteArray());
             }
 
             sb.SpendGas(owner.Address);

@@ -1087,10 +1087,16 @@ namespace Phantasma.Tests
 
             var testUser = PhantasmaKeys.Generate();
 
+            BigInteger seriesID = 123;
+
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable, null, null, null, (uint)seriesID);
             simulator.EndBlock();
+
+            var series = nexus.GetTokenSeries(nexus.RootStorage, symbol, seriesID);
+
+            Assert.IsTrue(series.MintCount == 0, "nothing should be minted yet");
 
             // Send some KCAL and SOUL to the test user (required for gas used in "burn" transaction)
             simulator.BeginBlock();
@@ -1111,7 +1117,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken to test address
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
+            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, seriesID);
             simulator.EndBlock();
 
             // obtain tokenID
@@ -1168,6 +1174,11 @@ namespace Phantasma.Tests
             curBalance = nexus.RootChain.GetTokenBalance(nexus.RootChain.Storage, infuseSymbol, testUser.Address);
             Assert.IsTrue(curBalance == prevBalance + infusedBalance); // should match
 
+            var burnedSupply = nexus.GetBurnedTokenSupply(nexus.RootStorage, symbol);
+            Assert.IsTrue(burnedSupply == 1);
+
+            var burnedSeriesSupply = nexus.GetBurnedTokenSupplyForSeries(nexus.RootStorage, symbol, seriesID);
+            Assert.IsTrue(burnedSeriesSupply == 1);
         }
 
         [TestMethod]
@@ -1296,6 +1307,8 @@ namespace Phantasma.Tests
 
             var nftCount = 1000;
 
+            var initialKCAL = nexus.RootChain.GetTokenBalance(nexus.RootStorage, DomainSettings.FuelTokenSymbol, owner.Address);
+
             // Mint several nfts to test limit per tx
             simulator.BeginBlock();
             for (int i=1; i<=nftCount; i++)
@@ -1311,6 +1324,14 @@ namespace Phantasma.Tests
             ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             var ownedTotal = ownedTokenList.Count();
             Assert.IsTrue(ownedTotal == nftCount);
+
+            var currentKCAL = nexus.RootChain.GetTokenBalance(nexus.RootStorage, DomainSettings.FuelTokenSymbol, owner.Address);
+
+            var fee = initialKCAL - currentKCAL;
+
+            var convertedFee = UnitConversion.ToDecimal(fee, DomainSettings.FuelTokenDecimals);
+
+            Assert.IsTrue(fee > 0);
         }
 
         [TestMethod]
