@@ -2006,7 +2006,15 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No node available" };
             }
 
-            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
+            IEnumerable<Peer> allPeers = Node.Peers;
+
+            if (Nexus.Name == DomainSettings.NexusMainnet)
+            {
+                // exclude fom the list all peers that did not configure external host properly
+                allPeers = allPeers.Where(x => !x.Endpoint.Host.Contains("localhost"));
+            }
+
+            var peers = allPeers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
 
             peers.Add(new PeerResult() { url = $"{Node.PublicEndpoint}", version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
 
