@@ -69,11 +69,14 @@ namespace Phantasma.Cryptography
             {
                 if (string.IsNullOrEmpty(_text))
                 {
-                    if (_keyToTextCache.ContainsKey(_bytes))
-                    {
-                        _text = _keyToTextCache[_bytes];
+                    lock (_keyToTextCache) {
+                        if (_keyToTextCache.ContainsKey(_bytes))
+                        {
+                            _text = _keyToTextCache[_bytes];
+                        }
                     }
-                    else
+
+                    if (string.IsNullOrEmpty(_text))
                     {
                         char prefix;
 
@@ -85,7 +88,9 @@ namespace Phantasma.Cryptography
 
                         }
                         _text = prefix + Base58.Encode(_bytes);
-                        _keyToTextCache[_bytes] = _text;
+                        lock (_keyToTextCache) {
+                            _keyToTextCache[_bytes] = _text;
+                        }
                     }
                 }
 
