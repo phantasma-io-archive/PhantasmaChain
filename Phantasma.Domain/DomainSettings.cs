@@ -30,6 +30,7 @@ namespace Phantasma.Domain
         OnInfuse, // address, symbol, amount
         OnUpgrade, // address
         OnSeries, // address
+        OnWrite, // address, data
     }
 
     public enum OrganizationTrigger

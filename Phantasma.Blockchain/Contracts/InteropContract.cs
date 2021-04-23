@@ -203,7 +203,7 @@ namespace Phantasma.Blockchain.Contracts
                                     var ram = Serialization.Serialize(externalNft);
 
                                     var localNft = Runtime.ReadToken(transfer.Symbol, transfer.Value);
-                                    Runtime.WriteToken(transfer.Symbol, transfer.Value, ram);
+                                    Runtime.WriteToken(from, transfer.Symbol, transfer.Value, ram); // TODO "from" here might fail due to contract triggers, review this later
                                 }
 
                                 var settleHash = Runtime.Transaction.Hash;

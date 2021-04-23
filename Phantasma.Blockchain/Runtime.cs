@@ -1544,9 +1544,18 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
+        public void WriteToken(Address from, string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
             var nft = ReadToken(tokenSymbol, tokenID);
+
+            var Runtime = this;
+            var token = Runtime.GetToken(tokenSymbol);
+
+            if (Runtime.ProtocolVersion >= 6)
+            {
+                Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnWrite, from, ram, tokenID) != TriggerResult.Failure, "token write trigger failed");
+            }
+
             Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Timestamp, nft.Infusion, true);
         }
 

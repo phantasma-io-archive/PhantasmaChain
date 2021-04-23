@@ -1090,21 +1090,24 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_WriteToken(RuntimeVM vm)
         {
-            vm.ExpectStackSize(3);
+            vm.ExpectStackSize(vm.ProtocolVersion >= 6 ? 4 : 3);
 
-            VMObject temp;
+            Address from;
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            if (vm.ProtocolVersion >= 6)
+            {
+                from = vm.PopAddress();
+            }
+            else
+            {
+                from = Address.Null;
+            }
 
+            var symbol = vm.PopString("symbol");
             var tokenID = vm.PopNumber("token ID");
+            var ram = vm.PopBytes("ram");
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
-            var ram = temp.AsByteArray();
-
-            vm.WriteToken(symbol, tokenID, ram);
+            vm.WriteToken(from, symbol, tokenID, ram);
 
             return ExecutionState.Running;
         }
