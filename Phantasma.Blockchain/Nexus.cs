@@ -691,7 +691,7 @@ namespace Phantasma.Blockchain
             var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
             Runtime.Expect(supply.Mint(Runtime.Storage, amount, token.MaxSupply), "mint supply failed");
 
-            var balances = new BalanceSheet(token.Symbol);
+            var balances = new BalanceSheet(token);
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), "balance add failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
@@ -805,7 +805,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(supply.Burn(Runtime.Storage, amount), $"{token.Symbol} burn failed");
 
-            var balances = new BalanceSheet(token.Symbol);
+            var balances = new BalanceSheet(token);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
 
             Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, destination, token.Symbol, amount) != TriggerResult.Failure, "token trigger failed");
@@ -957,7 +957,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(allowed, "invalid witness or allowance");
 
-            var balances = new BalanceSheet(token.Symbol);
+            var balances = new BalanceSheet(token);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), $"{token.Symbol} balance add failed to {destination.Text}");
 

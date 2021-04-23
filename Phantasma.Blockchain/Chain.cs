@@ -459,7 +459,7 @@ namespace Phantasma.Blockchain
         {
             if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
-                var balances = new BalanceSheet(token.Symbol);
+                var balances = new BalanceSheet(token);
                 return balances.Get(storage, address);
             }
             else
@@ -1278,7 +1278,9 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var balance = new BalanceSheet(DomainSettings.FuelTokenSymbol);
+            var tokenStorage = this.Name == DomainSettings.RootChainName ? storage : Nexus.RootStorage;
+            var token = this.Nexus.GetTokenInfo(tokenStorage, DomainSettings.FuelTokenSymbol);
+            var balance = new BalanceSheet(token);
             var blockAddress = Address.FromHash("block");
             var totalAvailable = balance.Get(storage, blockAddress);
 

@@ -464,7 +464,7 @@ namespace Phantasma.Blockchain.Contracts
                     if (combinedFees > balance)
                     {
                         var diff = combinedFees - balance;
-                        throw new BalanceException(quoteToken.Symbol, from, diff);
+                        throw new BalanceException(quoteToken, from, diff);
                     }
 
                     Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);
