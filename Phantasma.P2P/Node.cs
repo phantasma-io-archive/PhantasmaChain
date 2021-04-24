@@ -38,6 +38,24 @@ namespace Phantasma.Network.P2P
             this.pingDelay = 32;
             this.status = EndpointStatus.Waiting;
         }
+
+        protected bool Equals(EndpointEntry other)
+        {
+            return this.endpoint.Equals(other.endpoint);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((EndpointEntry) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return this.endpoint.GetHashCode();
+        }
     }
 
     public struct PendingBlock
@@ -183,7 +201,10 @@ namespace Phantasma.Network.P2P
                     }
 
                     var entry = new EndpointEntry(endpoint);
-                    _knownEndpoints.Add(entry);
+                    if (!_knownEndpoints.Contains(entry))
+                    {
+                        _knownEndpoints.Add(entry);
+                    }
                 }
             }
         }
@@ -698,9 +719,9 @@ namespace Phantasma.Network.P2P
                                 newPeers = listMsg.Peers.Where(x => !_peers.ContainsKey(x));
                             }
 
-                            foreach (var entry in listMsg.Peers)
+                            foreach (var entry in newPeers)
                             {
-                                Logger.Message("New peer: " + entry.ToString());
+                                Logger.Message("New peer: " + entry);
                             }
                             QueueEndpoints(newPeers);
                         }
