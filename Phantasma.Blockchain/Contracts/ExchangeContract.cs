@@ -388,9 +388,9 @@ namespace Phantasma.Blockchain.Contracts
             OpenOrder(from, provider, baseSymbol, quoteSymbol, side, IoC ? ImmediateOrCancel : Limit, orderSize, price);
         }
 
-        public void OpenOTCOrder(Address from, Address provider, string baseSymbol, string quoteSymbol, BigInteger ammount, BigInteger price)
+        public void OpenOTCOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger ammount, BigInteger price)
         {
-            OpenOrder(from, provider, baseSymbol, quoteSymbol, ExchangeOrderSide.Sell, ExchangeOrderType.OTC, ammount, price);
+            OpenOrder(from, Address.Null, baseSymbol, quoteSymbol, ExchangeOrderSide.Sell, ExchangeOrderType.OTC, ammount, price);
         }
 
         public void CancelOrder(BigInteger uid)
@@ -531,6 +531,22 @@ namespace Phantasma.Blockchain.Contracts
         {
             var uid = Runtime.GenerateUID();
 
+            var count = _otcBook.Count();
+            ExchangeOrder lockUpOrder;
+            for (int i = 0; i < count; i++)
+            {
+                lockUpOrder = _otcBook.Get<ExchangeOrder>(i);
+                if(lockUpOrder.Creator == from)
+                {
+                    throw new Exception("Already have an offer created");
+                    return;
+                }
+            }
+
+            var baseBalance = Runtime.GetBalance(baseSymbol, from);
+            Runtime.Expect(baseBalance >= amount, "invalid seller amount");
+            Runtime.TransferTokens(baseSymbol, from, this.Address, price);
+
             var order = new ExchangeOrder(uid, Runtime.Time, from, this.Address, amount, baseSymbol, price, quoteSymbol, ExchangeOrderSide.Sell, ExchangeOrderType.OTC);
             _otcBook.Add<ExchangeOrder>(order);
         }
@@ -545,13 +561,44 @@ namespace Phantasma.Blockchain.Contracts
                 var order = _otcBook.Get<ExchangeOrder>(i);
                 if (order.Uid == uid)
                 {
-                    throw new NotImplementedException();
+                    var baseBalance = Runtime.GetBalance(order.BaseSymbol, this.Address);
+                    Runtime.Expect(baseBalance >= order.Price, "invalid seller amount");
 
+                    var quoteBalance = Runtime.GetBalance(order.QuoteSymbol, from);
+                    Runtime.Expect(quoteBalance >= order.Amount, "invalid buyer amount");
+
+                    Runtime.TransferTokens(order.BaseSymbol, this.Address, from, order.Price);
+                    Runtime.TransferTokens(order.QuoteSymbol, from, order.Creator, order.Amount);
+                    _otcBook.RemoveAt(i);
                     return;
                 }
             }
 
             Runtime.Expect(false, "order not found");
+        }
+
+        public void CancelOTCOrder(Address from, BigInteger uid)
+        {
+            var count = _otcBook.Count();
+            ExchangeOrder order;
+            for (int i = 0; i < count; i++)
+            {
+                order = _otcBook.Get<ExchangeOrder>(i);
+                if (order.Uid == uid)
+                {
+                    Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+                    Runtime.Expect(Runtime.IsWitness(order.Creator), "invalid witness");
+                    Runtime.Expect(from == order.Creator, "invalid owner");
+                    _otcBook.RemoveAt(i);
+
+                    Runtime.TransferTokens(order.BaseSymbol, this.Address, order.Creator, order.Price);
+                    Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData(order.BaseSymbol, order.Amount, Runtime.Chain.Name));
+                    return;
+                }
+            }
+
+            // if it reaches here, it means it not found nothing in previous part
+            throw new Exception("order not found");            
         }
 
         /*public void SwapTokens(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger amount, BigInteger price, byte[] signature)
