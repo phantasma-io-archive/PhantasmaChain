@@ -196,6 +196,12 @@ namespace Phantasma.Blockchain.Contracts
             var relayBalance = Runtime.CallNativeContext(NativeContractKind.Relay, nameof(RelayContract.GetBalance), from).AsNumber();
             Runtime.Expect(relayBalance == 0, "relay channel can't be open");
 
+            var unclaimed = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), from).AsNumber();
+            if (unclaimed > 0)
+            {
+                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Claim), from, from);
+            }
+
             var symbols = Runtime.GetTokens();
             foreach (var symbol in symbols)
             {
@@ -230,12 +236,6 @@ namespace Phantasma.Blockchain.Contracts
 
             _scriptMap.Migrate<Address, byte[]>(from, target);
             _abiMap.Migrate<Address, byte[]>(from, target);
-
-            var unclaimed = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), from).AsNumber();
-            if (unclaimed > 0)
-            {
-                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Claim), from, from);
-            }
 
             var stake = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetStake), from).AsNumber();
             if (stake > 0)
