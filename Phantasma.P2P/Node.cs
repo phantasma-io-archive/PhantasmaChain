@@ -354,7 +354,6 @@ namespace Phantasma.Network.P2P
             lock (_knownEndpoints)
             {
                 _knownEndpoints.RemoveAll(x => x.endpoint.Protocol != PeerProtocol.TCP);
-
                 var possibleTargets = new List<int>();
                 for (int i = 0; i < _knownEndpoints.Count; i++)
                 {
@@ -367,7 +366,7 @@ namespace Phantasma.Network.P2P
                 if (possibleTargets.Count > 0)
                 {
                     // adds a bit of pseudo randomness to connection order
-                    var idx = Environment.TickCount % possibleTargets.Count;
+                    var idx = Math.Abs(Environment.TickCount) % possibleTargets.Count;
                     idx = possibleTargets[idx];
                     var target = _knownEndpoints[idx];
 
