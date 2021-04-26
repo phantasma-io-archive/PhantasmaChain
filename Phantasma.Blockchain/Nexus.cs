@@ -624,10 +624,10 @@ namespace Phantasma.Blockchain
             if (symbol == "TTRS")  // support for 22series tokens with a dummy script that conforms to the standard
             {
                 byte[] nftScript;
-                ContractInterface nftABI = NFTUtils.GetNFTStandard();
+                ContractInterface nftABI = Tokens.TokenUtils.GetNFTStandard();
 
                 var url = "https://www.22series.com/part_info?id=*";
-                NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"{symbol} #*", url, url, out nftScript, out nftABI);
+                Tokens.TokenUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"{symbol} #*", url, url, out nftScript, out nftABI);
 
                 CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
             }
@@ -635,11 +635,11 @@ namespace Phantasma.Blockchain
             if (symbol == DomainSettings.RewardTokenSymbol)  
             {
                 byte[] nftScript;
-                ContractInterface nftABI = NFTUtils.GetNFTStandard();
+                ContractInterface nftABI = Tokens.TokenUtils.GetNFTStandard();
 
                 var jsonUrl = "https://phantasma.io/img/crown/*";
                 var imgUrl = "https://phantasma.io/img/crown.png";
-                NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"Phantasma Reward", jsonUrl, imgUrl, out nftScript, out nftABI);
+                Tokens.TokenUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"Phantasma Reward", jsonUrl, imgUrl, out nftScript, out nftABI);
 
                 CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
             }
@@ -675,7 +675,8 @@ namespace Phantasma.Blockchain
             if (storage.Has(key))
             {
                 var bytes = storage.Get(key);
-                return Serialization.Unserialize<TokenInfo>(bytes);
+                var token = Serialization.Unserialize<TokenInfo>(bytes);
+                return token;
             }
 
             throw new ChainException($"Token does not exist ({symbol})");
@@ -1078,7 +1079,7 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"Token series supply must be 1 or more");
             }
 
-            var nftStandard = NFTUtils.GetNFTStandard();
+            var nftStandard = Tokens.TokenUtils.GetNFTStandard();
 
             if (!abi.Implements(nftStandard))
             {
