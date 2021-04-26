@@ -465,6 +465,40 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void GenesisMigration()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+
+            var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
+            var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+            {
+                return ScriptUtils.BeginScript().
+                     AllowGas(owner.Address, Address.Null, 400, 9999).
+                     CallContract("account", "Migrate", owner.Address, testUserA.Address).
+                     SpendGas(owner.Address).
+                     EndScript();
+            });
+            simulator.EndBlock();
+
+            simulator.BeginBlock(testUserA); // here we change the validator keys in simulator
+            simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+        }
+
+        [TestMethod]
         public void SystemAddressTransfer()
         {
             var owner = PhantasmaKeys.Generate();
