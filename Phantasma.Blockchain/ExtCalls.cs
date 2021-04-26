@@ -11,6 +11,7 @@ using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using System.Collections.Generic;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -1418,13 +1419,23 @@ namespace Phantasma.Blockchain
         {
             vm.ExpectStackSize(7);
 
-            var owner = vm.PopAddress();
+            Address owner = Address.Null;
+            string symbol = null;
+            string name = null;
+            BigInteger maxSupply = -1;
+            int decimals = -1;
+            TokenFlags flags = TokenFlags.None;
 
-            var symbol = vm.PopString("symbol");
-            var name = vm.PopString("name");
-            var maxSupply = vm.PopNumber("maxSupply");
-            var decimals = (int)vm.PopNumber("decimals");
-            var flags = vm.PopEnum<TokenFlags>("flags");
+            if (vm.ProtocolVersion < 6)
+            {
+                owner = vm.PopAddress();
+                symbol = vm.PopString("symbol");
+                name = vm.PopString("name");
+                maxSupply = vm.PopNumber("maxSupply");
+                decimals = (int)vm.PopNumber("decimals");
+                flags = vm.PopEnum<TokenFlags>("flags");
+            }
+
             var script = vm.PopBytes("script");
 
             ContractInterface abi;
@@ -1438,6 +1449,60 @@ namespace Phantasma.Blockchain
             {
                 abi = new ContractInterface();
             }
+
+            if (vm.ProtocolVersion >= 6)
+            {
+                var rootChain = (Chain) vm.GetRootChain(); // this cast is not the best, but works for now...
+
+                TokenUtils.FetchProperty(rootChain, "getOwner", script, abi, (prop, value) =>
+                {
+                    owner = value.AsAddress();
+                });
+
+                TokenUtils.FetchProperty(rootChain, "getSymbol", script, abi, (prop, value) =>
+                {
+                    symbol = value.AsString();
+                });
+
+                TokenUtils.FetchProperty(rootChain, "getName", script, abi, (prop, value) =>
+                {
+                    name = value.AsString();
+                });
+
+                TokenUtils.FetchProperty(rootChain, "getMaxSupply", script, abi, (prop, value) =>
+                {
+                    maxSupply = value.AsNumber();
+                });
+
+                TokenUtils.FetchProperty(rootChain, "getDecimals", script, abi, (prop, value) =>
+                {
+                    decimals = (int)value.AsNumber();
+                });
+
+                var possibleFlags = Enum.GetValues(typeof(TokenFlags)).Cast<TokenFlags>().ToArray();
+                foreach (var entry in possibleFlags)
+                {
+                    var flag = entry; // this line necessary for lambda closure to catch the correct value
+                    var propName = $"is{flag}";
+
+                    // for each flag, if the property exists and returns true, we set the flag
+                    TokenUtils.FetchProperty(rootChain, propName, script, abi, (prop, value) =>
+                    {
+                        var isSet = value.AsBool();
+                        if (isSet)
+                        {
+                            flags |= flag;  
+                        }
+                    });
+                }
+            }
+
+            vm.Expect(!owner.IsNull, "missing or invalid token owner");
+            vm.Expect(ValidationUtils.IsValidTicker(symbol), "missing or invalid token symbol");
+            vm.Expect(!string.IsNullOrEmpty(name), "missing or invalid token name");
+            vm.Expect(maxSupply >= 0, "missing or invalid token supply");
+            vm.Expect(decimals >= 0, "missing or invalid token decimals");
+            vm.Expect(flags != TokenFlags.None, "missing or invalid token flags");
 
             vm.CreateToken(owner, symbol, name, maxSupply, decimals, flags, script, abi);
 

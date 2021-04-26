@@ -236,9 +236,14 @@ namespace Phantasma.Blockchain.Tokens
 
         public static void FetchProperty(Chain chain, string methodName, IToken token, Action<string, VMObject> callback)
         {
-            if (token.ABI.HasMethod(methodName))
+            FetchProperty(chain, methodName, token.Script, token.ABI, callback);
+        }
+
+        public static void FetchProperty(Chain chain, string methodName, byte[] script, ContractInterface abi, Action<string, VMObject> callback)
+        {
+            if (abi.HasMethod(methodName))
             {
-                var result = ExecuteScript(chain, token.Script, token.ABI, methodName);
+                var result = ExecuteScript(chain, script, abi, methodName);
 
                 string propName = methodName;
 
