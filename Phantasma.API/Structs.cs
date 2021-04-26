@@ -63,6 +63,9 @@ namespace Phantasma.API
         [APIDescription("Name of the nexus")]
         public string name;
 
+        [APIDescription("Network protocol version")]
+        public uint protocol;
+
         [APIDescription("List of platforms")]
         public PlatformResult[] platforms;
 

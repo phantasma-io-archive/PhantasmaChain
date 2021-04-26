@@ -1541,6 +1541,7 @@ namespace Phantasma.API
             return new NexusResult()
             {
                 name = Nexus.Name,
+                protocol = Nexus.GetProtocolVersion(Nexus.RootStorage),
                 tokens = tokenList.ToArray(),
                 platforms = platformList.ToArray(),
                 chains = chainList.ToArray(),
