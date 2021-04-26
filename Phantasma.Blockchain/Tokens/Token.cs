@@ -75,7 +75,7 @@ namespace Phantasma.Blockchain.Tokens
     {
         public string Symbol { get; private set; }
         public string Name { get; private set; }
-        public Address Owner { get; private set; }
+        public Address Owner { get; internal set; }
         public TokenFlags Flags { get; internal set; }
         public BigInteger MaxSupply { get; private set; }    
         public int Decimals { get; private set; }
