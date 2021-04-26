@@ -1417,8 +1417,6 @@ namespace Phantasma.Blockchain
         
         private static ExecutionState Nexus_CreateToken(RuntimeVM vm)
         {
-            vm.ExpectStackSize(7);
-
             Address owner = Address.Null;
             string symbol = null;
             string name = null;
@@ -1428,12 +1426,18 @@ namespace Phantasma.Blockchain
 
             if (vm.ProtocolVersion < 6)
             {
+                vm.ExpectStackSize(7);
+
                 owner = vm.PopAddress();
                 symbol = vm.PopString("symbol");
                 name = vm.PopString("name");
                 maxSupply = vm.PopNumber("maxSupply");
                 decimals = (int)vm.PopNumber("decimals");
                 flags = vm.PopEnum<TokenFlags>("flags");
+            }
+            else
+            {
+                vm.ExpectStackSize(2);
             }
 
             var script = vm.PopBytes("script");
