@@ -6,7 +6,7 @@
     <OldToolsVersion>Current</OldToolsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="LunarLabs.Parser" Version="1.3.1" />
+    <PackageReference Include="LunarLabs.Parser" Version="1.3.7" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />

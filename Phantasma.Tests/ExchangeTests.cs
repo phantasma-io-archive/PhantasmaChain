@@ -16,27 +16,28 @@ using Phantasma.Blockchain;
 namespace Phantasma.Tests
 {
     [TestClass]
-    [Ignore]
+    
     public class ExchangeTests
     {
         private static PhantasmaKeys simulatorOwner = PhantasmaKeys.Generate();
-        private static NexusSimulator simulator;
+        private static NexusSimulator simulatorOld;
         private static Nexus nexus;
 
         private const string maxDivTokenSymbol = "MADT";        //divisible token with maximum decimal count
         private const string minDivTokenSymbol = "MIDT";        //divisible token with minimum decimal count
         private const string nonDivisibleTokenSymbol = "NDT";
 
+        [Ignore]
         [TestMethod]
         public void TestIoCLimitMinimumQuantity()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -44,8 +45,8 @@ namespace Phantasma.Tests
             //-----------------------------------------
             //test order amount and prices at the limit
 
-            var minimumBaseToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.baseToken).AsNumber(), buyer.baseToken.Decimals);
-            var minimumQuoteToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.quoteToken).AsNumber(), buyer.baseToken.Decimals);
+            var minimumBaseToken = UnitConversion.ToDecimal(simulatorOld.Nexus.RootChain.InvokeContract(simulatorOld.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.baseToken).AsNumber(), buyer.baseToken.Decimals);
+            var minimumQuoteToken = UnitConversion.ToDecimal(simulatorOld.Nexus.RootChain.InvokeContract(simulatorOld.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.quoteToken).AsNumber(), buyer.baseToken.Decimals);
 
             buyer.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Buy, IoC: true);
             seller.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Sell, IoC: true);
@@ -55,16 +56,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(seller.OpenLimitOrder(1m + (minimumBaseToken*.99m), 1m, Sell) == 1m, "Used leftover under minimum quantity");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestIoCLimitOrderUnmatched()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -77,16 +79,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(seller.OpenLimitOrder(0.123m, 0.3m, Sell, IoC: true) == 0, "Shouldn't have filled any part of the order");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestIoCLimitOrderCompleteFulfilment()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -100,16 +103,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenLimitOrder(0.1m, 1m, Buy, IoC: true) == 0.1m, "Unexpected amount of tokens received");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestIoCLimitOrderPartialFulfilment()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -123,16 +127,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenLimitOrder(0.1m, 1m, Buy, IoC: true) == 0.05m, "Unexpected amount of tokens received");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestIoCLimitOrderMultipleFulfilsPerOrder()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -145,7 +150,9 @@ namespace Phantasma.Tests
             buyer.OpenLimitOrder(0.05m, 0.5m, Buy, IoC: false);
             Assert.IsTrue(seller.OpenLimitOrder(0.15m, 1m, Sell, IoC: true) == 0.3m, "Unexpected amount of tokens received");
 
-            InitExchange();
+            core = new CoreClass();
+            buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
 
@@ -158,16 +165,17 @@ namespace Phantasma.Tests
             //TODO: test multiple IoC orders against each other on the same block!
         }
 
+        [Ignore]
         [TestMethod]
         public void TestFailedIOC()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -191,16 +199,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(seller.OpenLimitOrder(0.123m, 0.3m, Sell, IoC: true) == 0, "Shouldn't have filled any part of the order");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestLimitMinimumQuantity()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -208,23 +217,24 @@ namespace Phantasma.Tests
             //-----------------------------------------
             //test order amount and prices at the limit
 
-            var minimumBaseToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.baseToken).AsNumber(), buyer.baseToken.Decimals);
-            var minimumQuoteToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.quoteToken).AsNumber(), buyer.baseToken.Decimals);
+            var minimumBaseToken = UnitConversion.ToDecimal(simulatorOld.Nexus.RootChain.InvokeContract(simulatorOld.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.baseToken).AsNumber(), buyer.baseToken.Decimals);
+            var minimumQuoteToken = UnitConversion.ToDecimal(simulatorOld.Nexus.RootChain.InvokeContract(simulatorOld.Nexus.RootStorage, "exchange", "GetMinimumTokenQuantity", buyer.quoteToken).AsNumber(), buyer.baseToken.Decimals);
 
             buyer.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Buy);
             seller.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Sell);
         }
 
+        [Ignore]
         [TestMethod]
         public void TestLimitOrderUnmatched()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -237,16 +247,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(seller.OpenLimitOrder(0.123m, 0.3m, Sell, IoC: true) == 0, "Shouldn't have filled any part of the order");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestLimitOrderCompleteFulfilment()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -260,16 +271,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenLimitOrder(0.1m, 1m, Buy, IoC: true) == 0.1m, "Unexpected amount of tokens received");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestLimitOrderPartialFulfilment()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -283,16 +295,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenLimitOrder(0.1m, 1m, Buy, IoC: true) == 0.05m, "Unexpected amount of tokens received");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestLimitOrderMultipleFulfilsPerOrder()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -318,16 +331,17 @@ namespace Phantasma.Tests
             //TODO: test multiple IoC orders against each other on the same block!
         }
 
+        [Ignore]
         [TestMethod]
         public void TestFailedRegular()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -348,16 +362,17 @@ namespace Phantasma.Tests
             catch (Exception e) { }
         }
 
+        [Ignore]
         [TestMethod]
         public void TestEmptyBookMarketOrder()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -365,16 +380,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenMarketOrder(1, Buy) == 0, "Should not have bought anything");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestMarketOrderPartialFill()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -383,16 +399,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenMarketOrder(0.3m, Buy) == 0.2m, "");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestMarketOrderCompleteFulfilment()
         {
-            InitExchange();
+            CoreClass core = new CoreClass();
 
             var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
-            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
-            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
@@ -402,6 +419,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenMarketOrder(0.3m, Buy) == 0.2m, "");
         }
 
+        [Ignore]
         [TestMethod]
         public void TestMarketOrderTotalFillNoOrderbookWipe()
         {
@@ -421,13 +439,183 @@ namespace Phantasma.Tests
             Assert.IsTrue(buyer.OpenMarketOrder(0.25m, Buy) == 0.175m, "");
         }
 
+        [TestMethod]
+        public void TestOpenOTCOrder()
+        {
+            CoreClass core = new CoreClass();
+
+            // Setup symbols
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
+            var quoteSymbol = DomainSettings.FuelTokenSymbol;
+
+            // Create users
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
+
+            // Give Users tokens
+            seller.FundUser(soul: 5000m, kcal: 5000m);
+
+            // Get Initial Balance
+            var initialBalance = seller.GetBalance(baseSymbol);
+
+            // Verify my Funds
+            Assert.IsTrue(initialBalance == UnitConversion.ToBigInteger(5000m, GetDecimals(baseSymbol)));
+
+            // Create OTC Offer
+            var txValue = seller.OpenOTCOrder(baseSymbol, quoteSymbol, 10m, 20m);
+
+            // Test if the seller lost money.
+            var finalBalance = seller.GetBalance(baseSymbol);
+
+            Assert.IsFalse(initialBalance == finalBalance);
+
+            // Test if lost the quantity used
+            var subtractSpendToken = initialBalance - UnitConversion.ToBigInteger(20m, GetDecimals(baseSymbol));
+            Assert.IsTrue(subtractSpendToken == finalBalance);
+        }
+
+        [TestMethod]
+        public void TestGetOTC()
+        {
+            CoreClass core = new CoreClass();
+
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
+            var quoteSymbol = DomainSettings.FuelTokenSymbol;
+
+            // Create users
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
+
+            // Give Users tokens
+            buyer.FundUser(soul: 5000m, kcal: 5000m);
+            seller.FundUser(soul: 5000m, kcal: 5000m);
+
+            // Test Empty OTC
+            var initialOTC = seller.GetOTC();
+
+            var empytOTC = new ExchangeOrder[0];
+
+            Assert.IsTrue(initialOTC.Length == 0);
+
+            // Create an Order
+            seller.OpenOTCOrder(baseSymbol, quoteSymbol, 1m, 1m);
+
+            // Test if theres an order
+            var finallOTC = seller.GetOTC();
+
+            Assert.IsTrue(initialOTC != finallOTC);
+        }
+
+
+        [TestMethod]
+        public void TestTakeOTCOrder()
+        {
+            CoreClass core = new CoreClass();
+
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
+            var quoteSymbol = DomainSettings.FuelTokenSymbol;
+
+            // Create users
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol, core);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
+
+            // Give Users tokens
+            buyer.FundUser(soul: 5000m, kcal: 5000m);
+            seller.FundUser(soul: 5000m, kcal: 5000m);
+
+            // Get Initial Balance
+            var initialBuyer_B = buyer.GetBalance(baseSymbol);
+            var initialBuyer_Q = buyer.GetBalance(quoteSymbol);
+            var initialSeller_B = seller.GetBalance(baseSymbol);
+            var initialSeller_Q = seller.GetBalance(quoteSymbol);
+
+            // Create Order
+            var sellerTXFees = seller.OpenOTCOrder(baseSymbol, quoteSymbol, 5m, 10m);
+
+            // Test if Seller lost balance
+            var finalSeller_B = seller.GetBalance(baseSymbol);
+
+            Assert.IsFalse(initialSeller_B == finalSeller_B);
+
+            // Test if lost the quantity used
+            Assert.IsTrue((initialSeller_B - UnitConversion.ToBigInteger(10m, GetDecimals(baseSymbol))) == finalSeller_B);
+
+            // Take an Order
+            // Get Order UID
+            var orderUID = seller.GetOTC().First<ExchangeOrder>().Uid;
+            var buyerTXFees = buyer.TakeOTCOrder(orderUID);
+
+            // Check if the order is taken
+            var finalSeller_Q = seller.GetBalance(quoteSymbol);
+            var finalBuyer_B = buyer.GetBalance(baseSymbol);
+            var finalBuyer_Q = buyer.GetBalance(quoteSymbol);
+
+            // Consider Transactions Fees
+
+            // Test seller received
+            Assert.IsTrue((initialSeller_Q + UnitConversion.ToBigInteger(5m, GetDecimals(quoteSymbol)) - sellerTXFees) == finalSeller_Q);
+
+            // Test Buyer spend and receibed
+            Assert.IsTrue((initialBuyer_B + UnitConversion.ToBigInteger(10m, GetDecimals(baseSymbol))) == finalBuyer_B);
+            Assert.IsTrue((initialBuyer_Q - UnitConversion.ToBigInteger(5m, GetDecimals(quoteSymbol)) - buyerTXFees) == finalBuyer_Q);
+
+        }
+
+        [TestMethod]
+        public void TestCancelOTCOrder()
+        {
+            CoreClass core = new CoreClass();
+
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
+            var quoteSymbol = DomainSettings.FuelTokenSymbol;
+
+            // Create users
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol, core);
+
+            // Give Users tokens
+            seller.FundUser(soul: 5000m, kcal: 5000m);
+
+            // Get Initial Balance
+            var initialBalance = seller.GetBalance(baseSymbol);
+
+            // Create OTC Offer
+            seller.OpenOTCOrder(baseSymbol, quoteSymbol, 10m, 50m);
+
+            // Test if the seller lost money.
+            var finalBalance = seller.GetBalance(baseSymbol);
+
+            Assert.IsFalse(initialBalance == finalBalance);
+
+            // Test if lost the quantity used
+            Assert.IsTrue((initialBalance - UnitConversion.ToBigInteger(50m, GetDecimals(baseSymbol))) == finalBalance);
+
+            // Cancel Order
+            // Get Order UID
+            var orderUID = seller.GetOTC().First<ExchangeOrder>().Uid;
+            seller.CancelOTCOrder(orderUID);
+
+            // Test if the token is back;
+            var atualBalance = seller.GetBalance(baseSymbol);
+
+            Assert.IsTrue(initialBalance == atualBalance);
+        }
+
         #region AuxFunctions
+
+        private static int GetDecimals(string symbol)
+        {
+            switch (symbol)
+            {
+                case "SOUL": return 8;
+                case "KCAL": return 10;
+                default: throw new System.Exception("Unknown decimals for " + symbol);
+            }
+        }
 
         private void CreateTokens()
         {
             string[] tokenList = { maxDivTokenSymbol, nonDivisibleTokenSymbol };
 
-            simulator.BeginBlock();
+            simulatorOld.BeginBlock();
 
             foreach (var symbol in tokenList)
             {
@@ -456,11 +644,11 @@ namespace Phantasma.Tests
                         break;
                 }
 
-                simulator.GenerateToken(simulatorOwner, symbol, $"{symbol}Token", supply, decimals, flags);
-                simulator.MintTokens(simulatorOwner, simulatorOwner.Address, symbol, supply);
+                simulatorOld.GenerateToken(simulatorOwner, symbol, $"{symbol}Token", supply, decimals, flags);
+                simulatorOld.MintTokens(simulatorOwner, simulatorOwner.Address, symbol, supply);
             }
 
-            simulator.EndBlock();
+            simulatorOld.EndBlock();
         }
 
         private void InitExchange()
@@ -468,8 +656,28 @@ namespace Phantasma.Tests
             simulatorOwner = PhantasmaKeys.Generate();
             nexus = new Nexus("simnet", null, null);
             nexus.SetOracleReader(new OracleSimulator(nexus));
-            simulator = new NexusSimulator(nexus, simulatorOwner, 1234);
-            CreateTokens();
+            simulatorOld = new NexusSimulator(nexus, simulatorOwner, 1234);
+            //CreateTokens();
+        }
+
+        class CoreClass
+        {
+            public PhantasmaKeys owner;
+            public NexusSimulator simulator;
+            public Nexus nexus;
+
+            public CoreClass()
+            {
+                InitExchange();
+            }
+
+            private void InitExchange()
+            {
+                owner = PhantasmaKeys.Generate();
+                nexus = new Nexus("simnet", null, null);
+                nexus.SetOracleReader(new OracleSimulator(nexus));
+                simulator = new NexusSimulator(nexus, owner, 1234);
+            }
         }
 
         class ExchangeUser
@@ -477,12 +685,20 @@ namespace Phantasma.Tests
             private readonly PhantasmaKeys user;
             public IToken baseToken;
             public IToken quoteToken;
-
+            public PhantasmaKeys userKeys;
+            public CoreClass core;
+            public NexusSimulator simulator;
+            public Nexus nexus;
+            
             public enum TokenType { Base, Quote}
 
-            public ExchangeUser(string baseSymbol, string quoteSymbol)
+            public ExchangeUser(string baseSymbol, string quoteSymbol,  CoreClass core = null)
             {
                 user = PhantasmaKeys.Generate();
+                userKeys = user;
+                this.core = core;
+                simulator = core.simulator;
+                nexus = core.nexus;
                 baseToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, baseSymbol);
                 quoteToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, quoteSymbol);
             }
@@ -939,6 +1155,66 @@ namespace Phantasma.Tests
                 return side == Buy ? UnitConversion.ToDecimal(baseTokensReceived, baseToken.Decimals) : UnitConversion.ToDecimal(quoteTokensReceived, quoteToken.Decimals);
             }
 
+            #region OTC
+            public BigInteger OpenOTCOrder(string baseSymbol, string quoteSymbol, decimal amount, decimal price)
+            {
+                var amountBigint = UnitConversion.ToBigInteger(amount, GetDecimals(quoteSymbol));
+                var priceBigint = UnitConversion.ToBigInteger(price, GetDecimals(baseSymbol));
+
+                // Create OTC Order
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(user, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(user.Address, Address.Null, 1, 9999)
+                        .CallContract("exchange", "OpenOTCOrder", user.Address, baseSymbol, quoteSymbol, amountBigint, priceBigint).
+                        SpendGas(user.Address).EndScript());
+                simulator.EndBlock();
+
+                // Get Tx Cost
+                var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+                return txCost;
+            }
+
+            public BigInteger TakeOTCOrder(BigInteger uid)
+            {
+                // Take an Order
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(user, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(user.Address, Address.Null, 1, 9999)
+                        .CallContract("exchange", "TakeOrder", user.Address, uid).
+                        SpendGas(user.Address).EndScript());
+                simulator.EndBlock();
+
+                var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+                return txCost;
+            }
+
+            public void CancelOTCOrder(BigInteger uid)
+            {
+                // Take an Order
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(user, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().AllowGas(user.Address, Address.Null, 1, 9999)
+                        .CallContract("exchange", "CancelOTCOrder", user.Address, uid).
+                        SpendGas(user.Address).EndScript());
+                simulator.EndBlock();
+            }
+
+            // Get OTC Orders
+            public ExchangeOrder[] GetOTC()
+            {
+                return (ExchangeOrder[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "exchange", "GetOTC").ToObject();
+            }
+            #endregion
+
+            public void FundUser(decimal soul, decimal kcal)
+            {
+                simulator.BeginBlock();
+                var txA = simulator.GenerateTransfer(core.owner, user.Address, simulator.Nexus.RootChain, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(soul, DomainSettings.StakingTokenDecimals));
+                var txB = simulator.GenerateTransfer(core.owner, user.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(kcal, DomainSettings.FuelTokenDecimals));
+                simulator.EndBlock();
+            }
+
+
             public void FundBaseToken(decimal quantity, bool fundFuel = false) => FundUser(true, quantity, fundFuel);
             public void FundQuoteToken(decimal quantity, bool fundFuel = false) => FundUser(false, quantity, fundFuel);
 
@@ -950,12 +1226,18 @@ namespace Phantasma.Tests
                 var token = fundBase ? baseToken : quoteToken;
 
                 simulator.BeginBlock();
-                simulator.GenerateTransfer(simulatorOwner, user.Address, nexus.RootChain, token.Symbol, UnitConversion.ToBigInteger(quantity, token.Decimals));
+                simulator.GenerateTransfer(core.owner, user.Address, nexus.RootChain, token.Symbol, UnitConversion.ToBigInteger(quantity, GetDecimals(token.Symbol)));
 
                 if (fundFuel)
-                    simulator.GenerateTransfer(simulatorOwner, user.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 500000);
+                    simulator.GenerateTransfer(core.owner, user.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 500000);
 
                 simulator.EndBlock();
+            }
+
+            public BigInteger GetBalance(string symbol)
+            {
+                var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
+                return nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, user.Address);
             }
         }
 
