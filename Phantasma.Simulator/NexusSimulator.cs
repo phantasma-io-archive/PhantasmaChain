@@ -253,6 +253,8 @@ namespace Phantasma.Simulator
 
             this.blockValidator = validator;
 
+            _owner = validator;
+
             transactions.Clear();
             txChainMap.Clear();
             txHashMap.Clear();
