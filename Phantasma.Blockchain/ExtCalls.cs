@@ -1483,21 +1483,30 @@ namespace Phantasma.Blockchain
                     decimals = (int)value.AsNumber();
                 });
 
-                var possibleFlags = Enum.GetValues(typeof(TokenFlags)).Cast<TokenFlags>().ToArray();
-                foreach (var entry in possibleFlags)
+                TokenUtils.FetchProperty(rootChain, "getTokenFlags", script, abi, (prop, value) =>
                 {
-                    var flag = entry; // this line necessary for lambda closure to catch the correct value
-                    var propName = $"is{flag}";
+                    flags = value.AsEnum<TokenFlags>();
+                });
 
-                    // for each flag, if the property exists and returns true, we set the flag
-                    TokenUtils.FetchProperty(rootChain, propName, script, abi, (prop, value) =>
+                // we offer two ways to describe the flags, either individually or via getTokenFlags
+                if (flags == TokenFlags.None)
+                {
+                    var possibleFlags = Enum.GetValues(typeof(TokenFlags)).Cast<TokenFlags>().ToArray();
+                    foreach (var entry in possibleFlags)
                     {
-                        var isSet = value.AsBool();
-                        if (isSet)
+                        var flag = entry; // this line necessary for lambda closure to catch the correct value
+                        var propName = $"is{flag}";
+
+                        // for each flag, if the property exists and returns true, we set the flag
+                        TokenUtils.FetchProperty(rootChain, propName, script, abi, (prop, value) =>
                         {
-                            flags |= flag;  
-                        }
-                    });
+                            var isSet = value.AsBool();
+                            if (isSet)
+                            {
+                                flags |= flag;
+                            }
+                        });
+                    }
                 }
             }
 

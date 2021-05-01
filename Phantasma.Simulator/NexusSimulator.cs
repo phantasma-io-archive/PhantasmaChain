@@ -485,6 +485,36 @@ namespace Phantasma.Simulator
                     $"load r0 \"invalid witness\"",
                     $"throw r0",
 
+                    $"@getOwner: nop",
+                    $"load $owner 0x{addressStr}",
+                    "push $owner",
+                    $"jmp @end",
+
+                    $"@getSymbol: nop",
+                    $"load r0 \""+symbol+"\"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getName: nop",
+                    $"load r0 \""+name+"\"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getMaxSupply: nop",
+                    $"load r0 "+totalSupply+"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getDecimals: nop",
+                    $"load r0 "+decimals+"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getTokenFlags: nop",
+                    $"load r0 "+(int)flags+"",
+                    "push r0",
+                    $"jmp @end",
+
                     $"@end: ret"
                     };
                 }
@@ -535,6 +565,18 @@ namespace Phantasma.Simulator
 
                 var methods = AccountContract.GetTriggersForABI(triggerMap);
 
+                if (version >= 6)
+                {
+                    methods = methods.Concat(new ContractMethod[] {
+                        new ContractMethod("getOwner", VMType.Object, labels, new ContractParameter[0]),
+                        new ContractMethod("getSymbol", VMType.String, labels, new ContractParameter[0]),
+                        new ContractMethod("getName", VMType.String, labels, new ContractParameter[0]),
+                        new ContractMethod("getDecimals", VMType.Number, labels, new ContractParameter[0]),
+                        new ContractMethod("getMaxSupply", VMType.Number, labels, new ContractParameter[0]),
+                        new ContractMethod("getTokenFlags", VMType.Enum, labels, new ContractParameter[0]),
+                    }) ;
+                }
+
                 if (customMethods != null)
                 {
                     methods = methods.Concat(customMethods);
@@ -543,7 +585,18 @@ namespace Phantasma.Simulator
                 var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
                 var abiBytes = abi.ToByteArray();
 
-                sb.CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript, abiBytes);
+                object[] args;
+
+                if (version >= 6)
+                {
+                    args = new object[] { tokenScript, abiBytes };
+                }
+                else
+                {
+                    args = new object[] { owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript, abiBytes };
+                }
+
+                sb.CallInterop("Nexus.CreateToken", args);
             }
             else
             {
