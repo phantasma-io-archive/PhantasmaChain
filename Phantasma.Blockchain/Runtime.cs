@@ -1111,7 +1111,6 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(decimals == 0, "indivisible token can't have decimals");
             }
 
-            Runtime.Expect(owner.IsUser, "owner address must be user address");
             Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
             Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
 
@@ -1133,19 +1132,18 @@ namespace Phantasma.Blockchain
                 Runtime.CallContext(symbol, constructor, owner);
             }
 
-            //var getName = abi.FindMethod("getName");
-            //if (getName != null)
-            //{
-            //    Runtime.Expect(getName.returnType == VMType.String, "name property should be string");
-            //    Runtime.Expect(getName.parameters.Length == 0, "name property can't have parameters");
+            if (this.ProtocolVersion >= 6)
+            {
+                var rootChain = (Chain)this.GetRootChain();
+                TokenUtils.FetchProperty(rootChain, "getOwner", script, abi, (prop, value) =>
+                {
+                    owner = value.AsAddress();
+                });
 
-            //    string fetchedName = string.Empty;
-            //    NFTUtils.FetchProperty(Chain, this, getName.name, token, (key, result) => { fetchedName = result.AsString();  });
+                Expect(!owner.IsNull, "missing or invalid token owner");
+            }
 
-            //    Runtime.Expect(fetchedName == token.Name, "name property should return: " + token.Name);
-            //}
-
-            // TODO validate other properties
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
 
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }

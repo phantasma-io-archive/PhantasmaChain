@@ -1434,6 +1434,8 @@ namespace Phantasma.Blockchain
                 maxSupply = vm.PopNumber("maxSupply");
                 decimals = (int)vm.PopNumber("decimals");
                 flags = vm.PopEnum<TokenFlags>("flags");
+
+                vm.Expect(!owner.IsNull, "missing or invalid token owner");
             }
             else
             {
@@ -1454,15 +1456,10 @@ namespace Phantasma.Blockchain
                 abi = new ContractInterface();
             }
 
+            var rootChain = (Chain)vm.GetRootChain(); // this cast is not the best, but works for now...
+
             if (vm.ProtocolVersion >= 6)
             {
-                var rootChain = (Chain) vm.GetRootChain(); // this cast is not the best, but works for now...
-
-                TokenUtils.FetchProperty(rootChain, "getOwner", script, abi, (prop, value) =>
-                {
-                    owner = value.AsAddress();
-                });
-
                 TokenUtils.FetchProperty(rootChain, "getSymbol", script, abi, (prop, value) =>
                 {
                     symbol = value.AsString();
@@ -1510,7 +1507,6 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            vm.Expect(!owner.IsNull, "missing or invalid token owner");
             vm.Expect(ValidationUtils.IsValidTicker(symbol), "missing or invalid token symbol");
             vm.Expect(!string.IsNullOrEmpty(name), "missing or invalid token name");
             vm.Expect(maxSupply >= 0, "missing or invalid token supply");
