@@ -19,6 +19,7 @@ namespace Phantasma.Domain
         OnReceive, // address, symbol, amount
         OnWitness, // address
         OnUpgrade, // address
+        OnMigrate, // from, to
     }
 
     public enum TokenTrigger
@@ -31,6 +32,7 @@ namespace Phantasma.Domain
         OnUpgrade, // address
         OnSeries, // address
         OnWrite, // address, data
+        OnMigrate, // from, to
     }
 
     public enum OrganizationTrigger
