@@ -409,7 +409,7 @@ namespace Phantasma.VM
         public VMObject SetValue(byte[] val, VMType type)
         {
             this.Type = type;
-            this._localSize = val.Length;
+            this._localSize = val != null ? val.Length : 0;
 
             switch (type)
             {
