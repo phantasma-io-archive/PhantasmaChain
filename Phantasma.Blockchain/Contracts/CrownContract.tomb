@@ -1,0 +1,49 @@
+struct crownStruct 
+{
+	staker:address;
+	date:timestamp;
+}
+
+token CROWN {
+	import Runtime;
+	import Time;
+	import NFT;
+	
+	global _owner:address;
+
+	property name:string = "Phantasma Reward";
+	property isTransferable:bool = true;
+	property isBurnable:bool = true;
+    property isFinite:bool = false;
+    property maxSupply:number = 0;
+	property owner:address = _owner;
+
+	nft crownNFT<crownStruct, number> {
+		property name:string {
+			return "Crown #" + _mintID;
+		}
+
+		property description:string {
+			return "Reward obtained by " + _ROM.staker;
+		}
+
+		property imageURL:string {
+			return "https://phantasma.io/img/crown.png";
+		}
+
+		property infoURL:string {
+			return "https://phantasma.io/crown/" + _tokenID;
+		}
+	}
+
+	constructor(owner:address)	{
+		_owner:= owner;
+		NFT.createSeries(owner, $THIS_SYMBOL, 0, 0, TokenSeries.Unique, crownNFT);
+	}
+	
+	trigger onMigrate(from:address, to:address) {
+		if (from == _owner) {
+			_owner := to;
+		}
+	}
+}
