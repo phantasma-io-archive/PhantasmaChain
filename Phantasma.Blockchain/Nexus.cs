@@ -618,6 +618,13 @@ namespace Phantasma.Blockchain
             Throw.IfNull(script, nameof(script));
             Throw.IfNull(abi, nameof(abi));
 
+            if (symbol == DomainSettings.RewardTokenSymbol)
+            {
+                script = Base16.Decode("000D0104105068616E7461736D61205265776172640301081B00000B000D010601010301082800000B000D010601010301083500000B000D010601000301084200000B000D010301000301084F00000B000D010408446174612E4765740D02040543524F574E0D000302080003000D0004065F6F776E6572030003020701040303030D000409416464726573732829070004030203010301089C00000B00040203020D000409416464726573732829070004020202030203010D04026C04076765744E616D6504000000000107746F6B656E4944030E6765744465736372697074696F6E04630000000107746F6B656E4944030B676574496D61676555524C04DD0000000107746F6B656E4944030A676574496E666F55524C040D0100000107746F6B656E4944030003040D0402FD44010004010D0004066D696E744944030003010D00040543524F574E03000D00041152756E74696D652E52656164546F6B656E070004023202020D0004066D696E744944300203000D01040743726F776E20230203020E020204230102040304086200000B0004010D000403524F4D030003010D00040543524F574E03000D00041152756E74696D652E52656164546F6B656E070004023202020D000403524F4D300203003203030D010413526577617264206F627461696E6564206279200203020D0404067374616B6572300202040E02020423010204030408DC00000B0004010D01042268747470733A2F2F7068616E7461736D612E696F2F696D672F63726F776E2E706E670301080C01000B0004010201020D01041B68747470733A2F2F7068616E7461736D612E696F2F63726F776E2F0202030E030304230103040304084301000B03040D0407040000000003040D0403010003040D0403010003040D04040543524F574E030402020403040D0304174E657875732E437265617465546F6B656E5365726965730703000D020408446174612E53657403010D0004065F6F776E6572030007020B000D010408446174612E4765740D02040543524F574E0D000302080003000D0004065F6F776E6572030003020701040303030D00040941646472657373282907000403040103010D00040941646472657373282907000401040203020D00040941646472657373282907000402020104020305190405060A065C0302020402040300000D010408446174612E53657403030D0004065F6F776E6572030007010B");
+                byte[] abiBytes = Base16.Decode("08076765744E616D650400000000000E69735472616E7366657261626C65061C000000000A69734275726E61626C6506290000000008697346696E6974650636000000000C6765744D6178537570706C79034300000000086765744F776E65720850000000000A496E697469616C697A65009D00000001056F776E657208096F6E4D69677261746500DA020000020466726F6D0802746F0800");
+                abi = ContractInterface.FromBytes(abiBytes);
+            }
+
             var tokenInfo = new TokenInfo(symbol, name, owner, maxSupply, decimals, flags, script, abi);
             EditToken(storage, symbol, tokenInfo);
 
@@ -631,18 +638,19 @@ namespace Phantasma.Blockchain
 
                 CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
             }
-            else
+            /*else
             if (symbol == DomainSettings.RewardTokenSymbol)  
             {
-                byte[] nftScript;
-                ContractInterface nftABI = Tokens.TokenUtils.GetNFTStandard();
+                byte[] nftScript = Base16.Decode("0004010D0004066D696E744944030003010D00040543524F574E03000D00041152756E74696D652E52656164546F6B656E070004023202020D0004066D696E744944300203000D01040743726F776E20230203020E020204230102040304086200000B0004010D000403524F4D030003010D00040543524F574E03000D00041152756E74696D652E52656164546F6B656E070004023202020D000403524F4D300203003203030D010413526577617264206F627461696E6564206279200203020D0404067374616B6572300202040E02020423010204030408DC00000B0004010D01042268747470733A2F2F7068616E7461736D612E696F2F696D672F63726F776E2E706E670301080C01000B0004010201020D01041B68747470733A2F2F7068616E7461736D612E696F2F63726F776E2F0202030E030304230103040304084301000B");
+                byte[] nftAbiBytes = Base16.Decode("04076765744E616D6504000000000107746F6B656E4944030E6765744465736372697074696F6E04630000000107746F6B656E4944030B676574496D61676555524C04DD0000000107746F6B656E4944030A676574496E666F55524C040D0100000107746F6B656E49440300");
 
-                var jsonUrl = "https://phantasma.io/img/crown/*";
-                var imgUrl = "https://phantasma.io/img/crown.png";
-                Tokens.TokenUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"Phantasma Reward", jsonUrl, imgUrl, out nftScript, out nftABI);
+                ContractInterface nftStandard = Tokens.TokenUtils.GetNFTStandard();
+                var nftABI = ContractInterface.FromBytes(nftAbiBytes);
+
+                Throw.If(!nftABI.Implements(nftStandard), "Crown contract does not implement NFT standard");
 
                 CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
-            }
+            }*/
 
             // add to persistent list of tokens
             var tokenList = this.GetSystemList(TokenTag, storage);
@@ -1319,7 +1327,7 @@ namespace Phantasma.Blockchain
         private Transaction BeginNexusCreateTx(PhantasmaKeys owner)
         {
             var sb = ScriptUtils.BeginScript();
-            sb.CallInterop("Nexus.Init", owner.Address);
+            sb.CallInterop("Nexus.BeginInit", owner.Address);
 
             var deployInterop = "Runtime.DeployContract";
             sb.CallInterop(deployInterop, owner.Address, ValidatorContractName);
@@ -1350,6 +1358,8 @@ namespace Phantasma.Blockchain
             // requires staking token to be created previously
             sb.CallContract(NativeContractKind.Stake, nameof(StakeContract.Stake), owner.Address, StakeContract.DefaultMasterThreshold);
             sb.CallContract(NativeContractKind.Stake, nameof(StakeContract.Claim), owner.Address, owner.Address);
+
+            sb.CallInterop("Nexus.EndInit", owner.Address);
 
             sb.Emit(VM.Opcode.RET);
 
@@ -1420,7 +1430,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public void Initialize(Address owner)
+        internal void BeginInitialize(RuntimeVM vm, Address owner)
         {
             var storage = RootStorage;
 
@@ -1446,6 +1456,24 @@ namespace Phantasma.Blockchain
             SetPlatformTokenHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
             SetPlatformTokenHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
             //SetPlatformTokenHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
+        }
+
+        internal void FinishInitialize(RuntimeVM vm, Address owner)
+        {
+            var storage = RootStorage;
+
+            var symbols = GetTokens(storage);
+            foreach (var symbol in symbols)
+            {
+                var token = GetTokenInfo(storage, symbol);
+
+                var constructor = token.ABI.FindMethod(SmartContract.ConstructorName);
+
+                if (constructor != null)
+                {
+                    vm.CallContext(symbol, constructor, owner);
+                }
+            }
         }
 
         public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp, int version)

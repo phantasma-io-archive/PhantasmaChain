@@ -55,7 +55,9 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.AESDecrypt", Runtime_AESDecrypt);
             vm.RegisterMethod("Runtime.AESEncrypt", Runtime_AESEncrypt);
 
-            vm.RegisterMethod("Nexus.Init", Nexus_Init);
+            vm.RegisterMethod("Nexus.BeginInit", Nexus_BeginInit);
+            vm.RegisterMethod("Nexus.EndInit", Nexus_EndInit);
+
             vm.RegisterMethod("Nexus.CreateToken", Nexus_CreateToken);
             vm.RegisterMethod("Nexus.CreateTokenSeries", Nexus_CreateTokenSeries);
             vm.RegisterMethod("Nexus.CreateChain", Nexus_CreateChain);
@@ -1232,10 +1234,10 @@ namespace Phantasma.Blockchain
             bool isNative = Nexus.IsNativeContract(contractName);
             if (isNative)
             {
-                if (contractName == "validator" && vm.GenesisAddress == Address.Null)
+                /*if (contractName == "validator" && vm.GenesisAddress == Address.Null)
                 {
-                    vm.Nexus.Initialize(from);
-                }
+                    vm.Nexus.BeginInitialize(vm, from);
+                }*/
 
                 script = new byte[] { (byte)Opcode.RET };
 
@@ -1402,7 +1404,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Nexus_Init(RuntimeVM vm)
+        private static ExecutionState Nexus_BeginInit(RuntimeVM vm)
         {
             vm.Expect(vm.Chain == null || vm.Chain.Height == 0, "nexus already initialized");
 
@@ -1410,11 +1412,24 @@ namespace Phantasma.Blockchain
 
             var owner = vm.PopAddress();
 
-            vm.Nexus.Initialize(owner);
+            vm.Nexus.BeginInitialize(vm, owner);
 
             return ExecutionState.Running;
         }
-        
+
+        private static ExecutionState Nexus_EndInit(RuntimeVM vm)
+        {
+            vm.Expect(vm.Chain == null || vm.Chain.Height == 0, "nexus already initialized");
+
+            vm.ExpectStackSize(1);
+
+            var owner = vm.PopAddress();
+
+            vm.Nexus.FinishInitialize(vm, owner);
+
+            return ExecutionState.Running;
+        }
+
         private static ExecutionState Nexus_CreateToken(RuntimeVM vm)
         {
             Address owner = Address.Null;
