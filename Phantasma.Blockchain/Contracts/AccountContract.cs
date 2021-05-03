@@ -276,6 +276,18 @@ namespace Phantasma.Blockchain.Contracts
                     Runtime.CallContext(contract.Name, migrateMethod, from, target);
                 }
             }
+
+            foreach (var symbol in symbols)
+            {
+                var token = Runtime.GetToken(symbol);
+
+                var abi = token.ABI;
+
+                if (abi.Implements(migrateMethod))
+                {
+                    Runtime.CallContext(symbol, migrateMethod, from, target);
+                }
+            }
         }
 
 
