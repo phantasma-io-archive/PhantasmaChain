@@ -555,7 +555,7 @@ namespace Phantasma.Blockchain
         {
             if (!IsContractDeployed(storage, contract.Address))
             {
-                throw new ChainException($"contract {contract.Name} not deployed on {Name} chain");
+                throw new ChainException($"contract '{contract.Name}' not deployed on '{Name}' chain");
             }
 
             var context = new ChainExecutionContext(contract);
