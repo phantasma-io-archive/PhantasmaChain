@@ -273,7 +273,8 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (abi.Implements(migrateMethod))
                 {
-                    Runtime.CallContext(contract.Name, migrateMethod, from, target);
+                    var method = abi.FindMethod(migrateMethod.name);
+                    Runtime.CallContext(contract.Name, method, from, target);
                 }
             }
 
@@ -285,7 +286,8 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (abi.Implements(migrateMethod))
                 {
-                    Runtime.CallContext(symbol, migrateMethod, from, target);
+                    var method = abi.FindMethod(migrateMethod.name);
+                    Runtime.CallContext(symbol, method, from, target);
                 }
             }
         }
