@@ -150,7 +150,9 @@ namespace Phantasma.Simulator
                 var communitySupply = 100000;
                 GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
                 MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
+                EndBlock();
 
+                BeginBlock();
                 GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 {
                     return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).

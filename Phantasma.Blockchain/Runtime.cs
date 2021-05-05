@@ -1111,18 +1111,6 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(decimals == 0, "indivisible token can't have decimals");
             }
 
-            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
-
-            if (Runtime.ProtocolVersion >= 4)
-            {
-                var fuelCost = Runtime.GetGovernanceValue(Nexus.FuelPerTokenDeployTag);
-                // governance value is in usd fiat, here convert from fiat to fuel amount
-                fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
-                // burn the "cost" tokens
-                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, owner, fuelCost);
-            }
-
             var token = Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script, abi);
 
             var constructor = abi.FindMethod(SmartContract.ConstructorName);
@@ -1144,6 +1132,18 @@ namespace Phantasma.Blockchain
             }
 
             Runtime.Expect(owner.IsUser, "owner address must be user address");
+
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                var fuelCost = Runtime.GetGovernanceValue(Nexus.FuelPerTokenDeployTag);
+                // governance value is in usd fiat, here convert from fiat to fuel amount
+                fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
+                // burn the "cost" tokens
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, owner, fuelCost);
+            }
 
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
