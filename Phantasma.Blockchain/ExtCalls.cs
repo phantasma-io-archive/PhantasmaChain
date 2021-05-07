@@ -516,10 +516,11 @@ namespace Phantasma.Blockchain
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
-            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
             var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
+
+            vm.Expect(vm.ContractDeployed(contractName), $"contract '{contractName}' is not deployed when trying to fetch field '{field}'");
 
             var obj = vm.Stack.Pop();
             var valBytes = obj.AsByteArray();
