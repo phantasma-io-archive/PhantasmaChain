@@ -1595,17 +1595,7 @@ namespace Phantasma.Blockchain
 
         public IToken GetToken(string symbol)
         {
-            var token = (TokenInfo) Nexus.GetTokenInfo(RootStorage, symbol);
-
-            var method = token.ABI.FindMethod("getOwner");
-            if (method != null)
-            {
-                var temp = this.CallContext(symbol, method);
-                token.Owner = temp.AsAddress();
-            }
-            
-
-            return token;
+            return Nexus.GetTokenInfo(RootStorage, symbol);
         }
 
         public IFeed GetFeed(string name)
