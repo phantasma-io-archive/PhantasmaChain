@@ -182,7 +182,7 @@ namespace Phantasma.Blockchain.Tokens
             abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
         }
 
-        private static VMObject ExecuteScript(Chain chain, byte[] script, ContractInterface abi, string methodName, params object[] args)
+        private static VMObject ExecuteScript(StorageContext storage, Chain chain, byte[] script, ContractInterface abi, string methodName, params object[] args)
         {
             var method = abi.FindMethod(methodName);
 
@@ -191,7 +191,13 @@ namespace Phantasma.Blockchain.Tokens
                 throw new Exception("ABI is missing: " + method.name);
             }
 
-            var changeSet = new StorageChangeSetContext(chain.Storage);
+            var changeSet = storage as StorageChangeSetContext;
+
+            if (changeSet == null)
+            {
+                changeSet = new StorageChangeSetContext(storage);
+            }
+
             var oracle = chain.Nexus.GetOracleReader();
             var vm = new RuntimeVM(-1, script, (uint)method.offset, chain, Address.Null, Timestamp.Now, null, changeSet, oracle, ChainTask.Null, true);
 
@@ -212,11 +218,11 @@ namespace Phantasma.Blockchain.Tokens
             throw new Exception("Script execution failed for: " + method.name);
         }
 
-        public static void FetchProperty(Chain chain, string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
+        public static void FetchProperty(StorageContext storage, Chain chain, string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
         {
             if (series.ABI.HasMethod(methodName))
             {
-                var result = ExecuteScript(chain, series.Script, series.ABI, methodName, tokenID);
+                var result = ExecuteScript(storage, chain, series.Script, series.ABI, methodName, tokenID);
 
                 string propName = methodName;
 
@@ -234,16 +240,16 @@ namespace Phantasma.Blockchain.Tokens
             }
         }
 
-        public static void FetchProperty(Chain chain, string methodName, IToken token, Action<string, VMObject> callback)
+        public static void FetchProperty(StorageContext storage, Chain chain, string methodName, IToken token, Action<string, VMObject> callback)
         {
-            FetchProperty(chain, methodName, token.Script, token.ABI, callback);
+            FetchProperty(storage, chain, methodName, token.Script, token.ABI, callback);
         }
 
-        public static void FetchProperty(Chain chain, string methodName, byte[] script, ContractInterface abi, Action<string, VMObject> callback)
+        public static void FetchProperty(StorageContext storage, Chain chain, string methodName, byte[] script, ContractInterface abi, Action<string, VMObject> callback)
         {
             if (abi.HasMethod(methodName))
             {
-                var result = ExecuteScript(chain, script, abi, methodName);
+                var result = ExecuteScript(storage, chain, script, abi, methodName);
 
                 string propName = methodName;
 

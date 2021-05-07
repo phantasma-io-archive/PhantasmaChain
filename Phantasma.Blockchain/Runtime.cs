@@ -45,6 +45,7 @@ namespace Phantasma.Blockchain
 
 
         private readonly StorageChangeSetContext changeSet;
+        private int _baseChangeSetCount;
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
@@ -54,6 +55,8 @@ namespace Phantasma.Blockchain
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
+
+            _baseChangeSetCount = changeSet.Count();
 
             // NOTE: block and transaction can be null, required for Chain.InvokeContract
             //Throw.IfNull(block, nameof(block));
@@ -138,7 +141,7 @@ namespace Phantasma.Blockchain
             {
                 if (readOnlyMode)
                 {
-                    if (changeSet.Any())
+                    if (changeSet.Count() != _baseChangeSetCount)
                     {
                         throw new VMException(this, "VM changeset modified in read-only mode");
                     }
@@ -1065,6 +1068,11 @@ namespace Phantasma.Blockchain
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
+
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
@@ -1123,18 +1131,15 @@ namespace Phantasma.Blockchain
             if (this.ProtocolVersion >= 6)
             {
                 var rootChain = (Chain)this.GetRootChain();
-                TokenUtils.FetchProperty(rootChain, "getOwner", script, abi, (prop, value) =>
+                var currentOwner = owner;
+                TokenUtils.FetchProperty(RootStorage, rootChain, "getOwner", script, abi, (prop, value) =>
                 {
-                    owner = value.AsAddress();
+                    currentOwner = value.AsAddress();
                 });
 
-                Expect(!owner.IsNull, "missing or invalid token owner");
+                Expect(!currentOwner.IsNull, "missing or invalid token owner");
+                Expect(currentOwner == owner, "token owner constructor failure");
             }
-
-            Runtime.Expect(owner.IsUser, "owner address must be user address");
-
-            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
 
             if (Runtime.ProtocolVersion >= 4)
             {
@@ -1590,7 +1595,17 @@ namespace Phantasma.Blockchain
 
         public IToken GetToken(string symbol)
         {
-            return Nexus.GetTokenInfo(RootStorage, symbol);
+            var token = (TokenInfo) Nexus.GetTokenInfo(RootStorage, symbol);
+
+            var method = token.ABI.FindMethod("getOwner");
+            if (method != null)
+            {
+                var temp = this.CallContext(symbol, method);
+                token.Owner = temp.AsAddress();
+            }
+            
+
+            return token;
         }
 
         public IFeed GetFeed(string name)

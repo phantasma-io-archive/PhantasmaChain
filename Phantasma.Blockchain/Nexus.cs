@@ -685,7 +685,7 @@ namespace Phantasma.Blockchain
                 var bytes = storage.Get(key);
                 var token = Serialization.Unserialize<TokenInfo>(bytes);
 
-                TokenUtils.FetchProperty(RootChain, "getOwner", token, (prop, value) =>
+                TokenUtils.FetchProperty(storage, RootChain, "getOwner", token, (prop, value) =>
                 {
                     token.Owner = value.AsAddress();
                 });

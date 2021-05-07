@@ -488,10 +488,11 @@ namespace Phantasma.Blockchain
             vm.ExpectStackSize(3);
 
             var contractName = vm.PopString("contract");
-            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
             var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
+
+            vm.Expect(vm.ContractDeployed(contractName), $"contract '{contractName}' is not deployed when trying to fetch field '{field}'");
 
             var type_obj = vm.Stack.Pop();
             var vmType = type_obj.AsEnum<VMType>();
@@ -1454,7 +1455,9 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                vm.ExpectStackSize(2);
+                vm.ExpectStackSize(3);
+
+                owner = vm.PopAddress();
             }
 
             var script = vm.PopBytes("script");
@@ -1472,30 +1475,21 @@ namespace Phantasma.Blockchain
             }
 
             var rootChain = (Chain)vm.GetRootChain(); // this cast is not the best, but works for now...
+            var storage = vm.RootStorage;
 
             if (vm.ProtocolVersion >= 6)
             {
-                TokenUtils.FetchProperty(rootChain, "getSymbol", script, abi, (prop, value) =>
+                TokenUtils.FetchProperty(storage, rootChain, "getSymbol", script, abi, (prop, value) =>
                 {
                     symbol = value.AsString();
                 });
 
-                TokenUtils.FetchProperty(rootChain, "getName", script, abi, (prop, value) =>
+                TokenUtils.FetchProperty(storage, rootChain, "getName", script, abi, (prop, value) =>
                 {
                     name = value.AsString();
                 });
 
-                TokenUtils.FetchProperty(rootChain, "getMaxSupply", script, abi, (prop, value) =>
-                {
-                    maxSupply = value.AsNumber();
-                });
-
-                TokenUtils.FetchProperty(rootChain, "getDecimals", script, abi, (prop, value) =>
-                {
-                    decimals = (int)value.AsNumber();
-                });
-
-                TokenUtils.FetchProperty(rootChain, "getTokenFlags", script, abi, (prop, value) =>
+                TokenUtils.FetchProperty(storage, rootChain, "getTokenFlags", script, abi, (prop, value) =>
                 {
                     flags = value.AsEnum<TokenFlags>();
                 });
@@ -1510,7 +1504,7 @@ namespace Phantasma.Blockchain
                         var propName = $"is{flag}";
 
                         // for each flag, if the property exists and returns true, we set the flag
-                        TokenUtils.FetchProperty(rootChain, propName, script, abi, (prop, value) =>
+                        TokenUtils.FetchProperty(storage, rootChain, propName, script, abi, (prop, value) =>
                         {
                             var isSet = value.AsBool();
                             if (isSet)
@@ -1519,6 +1513,30 @@ namespace Phantasma.Blockchain
                             }
                         });
                     }
+                }
+
+                if (flags.HasFlag(TokenFlags.Finite))
+                {
+                    TokenUtils.FetchProperty(storage, rootChain, "getMaxSupply", script, abi, (prop, value) =>
+                    {
+                        maxSupply = value.AsNumber();
+                    });
+                }
+                else
+                {
+                    maxSupply = 0;
+                }
+
+                if (flags.HasFlag(TokenFlags.Fungible))
+                {
+                    TokenUtils.FetchProperty(storage, rootChain, "getDecimals", script, abi, (prop, value) =>
+                    {
+                        decimals = (int)value.AsNumber();
+                    });
+                }
+                else
+                {
+                    decimals = 0;
                 }
             }
 
