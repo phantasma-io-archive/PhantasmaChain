@@ -94,6 +94,7 @@ namespace Phantasma.Domain
         void Expect(bool condition, string description);
         void Notify(EventKind kind, Address address, byte[] data);
         VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args);
+        VMObject CallInterop(string methodName, params object[] args);
 
         Address LookUpName(string name);
         bool HasAddressScript(Address from);

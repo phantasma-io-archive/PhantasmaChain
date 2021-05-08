@@ -133,6 +133,22 @@ namespace Phantasma.Blockchain
             return ExecutionState.Fault;
         }
 
+        public VMObject CallInterop(string methodName, params object[] args)
+        {
+            PushArgsIntoStack(args);
+            if (ExecuteInterop(methodName) == ExecutionState.Running)
+            {
+                if (this.Stack.Count == 0)
+                {
+                    return null;
+                }
+
+                return this.Stack.Pop();
+            }
+
+            return null;
+        }
+
         public override ExecutionState Execute()
         {
             var result = base.Execute();
@@ -196,6 +212,15 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private void PushArgsIntoStack(object[] args)
+        {
+            for (int i = args.Length - 1; i >= 0; i--)
+            {
+                var obj = VMObject.FromObject(args[i]);
+                this.Stack.Push(obj);
+            }
+        }
+
         public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)
         {
             var tempContext = this.PreviousContext;
@@ -204,11 +229,7 @@ namespace Phantasma.Blockchain
             var context = LoadContext(contextName);
             Expect(context != null, "could not call context: " + contextName);
 
-            for (int i = args.Length - 1; i >= 0; i--)
-            {
-                var obj = VMObject.FromObject(args[i]);
-                this.Stack.Push(obj);
-            }
+            PushArgsIntoStack(args);
 
             this.Stack.Push(VMObject.FromObject(methodName));
 
