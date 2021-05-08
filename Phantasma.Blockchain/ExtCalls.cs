@@ -57,6 +57,7 @@ namespace Phantasma.Blockchain
 
             vm.RegisterMethod("Nexus.BeginInit", Nexus_BeginInit);
             vm.RegisterMethod("Nexus.EndInit", Nexus_EndInit);
+            vm.RegisterMethod("Nexus.MigrateToken", Nexus_MigrateToken);
 
             vm.RegisterMethod("Nexus.CreateToken", Nexus_CreateToken);
             vm.RegisterMethod("Nexus.CreateTokenSeries", Nexus_CreateTokenSeries);
@@ -1428,6 +1429,20 @@ namespace Phantasma.Blockchain
             var owner = vm.PopAddress();
 
             vm.Nexus.FinishInitialize(vm, owner);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Nexus_MigrateToken(RuntimeVM vm)
+        {
+            vm.Expect(vm.CurrentContext.Name == "account", "Can only be called from account context");
+
+            vm.ExpectStackSize(2);
+
+            var from = vm.PopAddress();
+            var to = vm.PopAddress();
+
+            vm.Nexus.MigrateTokenOwner(vm.RootStorage, from, to);
 
             return ExecutionState.Running;
         }

@@ -2454,6 +2454,20 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+        internal void MigrateTokenOwner(StorageContext storage, Address oldOwner, Address newOwner)
+        {
+            var symbols = GetTokens(storage);
+            foreach (var symbol in symbols)
+            {
+                var token = (TokenInfo) GetTokenInfo(storage, symbol);
+                if (token.Owner == oldOwner)
+                {
+                    token.Owner = newOwner;
+                    EditToken(storage, symbol, token);
+                }
+            }
+        }
+
         internal void UpgradeTokenContract(StorageContext storage, string symbol, byte[] script, ContractInterface abi)
         {
             var key = GetTokenInfoKey(symbol);
