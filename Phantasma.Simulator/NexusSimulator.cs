@@ -591,7 +591,7 @@ namespace Phantasma.Simulator
 
                 if (version >= 6)
                 {
-                    args = new object[] { tokenScript, abiBytes };
+                    args = new object[] { owner.Address, tokenScript, abiBytes };
                 }
                 else
                 {
