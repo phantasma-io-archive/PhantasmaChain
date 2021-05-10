@@ -152,6 +152,8 @@ namespace Phantasma.Simulator
                 MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
                 EndBlock();
 
+                this.TimeSkipYears(1);
+
                 BeginBlock();
                 GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 {
@@ -162,6 +164,7 @@ namespace Phantasma.Simulator
                 });
 
                 EndBlock();
+
 
                 //TODO add SOUL/KCAL on ethereum, removed for now because hash is not fixed yet
                 //BeginBlock();
