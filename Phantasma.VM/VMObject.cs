@@ -1264,10 +1264,22 @@ namespace Phantasma.VM
                     this.Data = children;
                     break;
 
-                // NOTE object type information is lost during serialization, so we reconstruct it as byte array
                 case VMType.Object:
-                    this.Type = VMType.Bytes;
-                    this.Data = reader.ReadByteArray();
+                    var bytes  = reader.ReadByteArray();
+
+                    if (bytes.Length == 35)
+                    {
+                        var addr = Serialization.Unserialize<Address>(bytes);
+                        this.Data = addr;
+                        this.Type = VMType.Object;
+                    }
+                    else
+                    {
+                        // NOTE object type information is lost during serialization, so we reconstruct it as byte array
+                        this.Type = VMType.Bytes;
+                        this.Data = bytes;
+                    }
+
                     break;
 
                 case VMType.Enum:
