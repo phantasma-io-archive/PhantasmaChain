@@ -152,8 +152,6 @@ namespace Phantasma.Simulator
                 MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
                 EndBlock();
 
-                this.TimeSkipYears(1);
-
                 BeginBlock();
                 GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 {
