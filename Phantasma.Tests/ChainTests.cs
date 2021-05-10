@@ -467,35 +467,56 @@ namespace Phantasma.Tests
         [TestMethod]
         public void GenesisMigration()
         {
-            var owner = PhantasmaKeys.Generate();
+            var firstOwner = PhantasmaKeys.Generate();
             var nexus = new Nexus("simnet", null, null);
             nexus.SetOracleReader(new OracleSimulator(nexus));
-            var simulator = new NexusSimulator(nexus, owner, 1234);
+            var simulator = new NexusSimulator(nexus, firstOwner, 1234);
 
-            var testUserA = PhantasmaKeys.Generate();
-            var testUserB = PhantasmaKeys.Generate();
+            var secondOwner = PhantasmaKeys.Generate();
+            var testUser = PhantasmaKeys.Generate();
+            var anotherTestUser = PhantasmaKeys.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
             var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.GenerateTransfer(firstOwner, secondOwner.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.GenerateTransfer(firstOwner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, transferAmount);
             simulator.EndBlock();
 
+            var oldToken = nexus.GetTokenInfo(nexus.RootStorage, DomainSettings.RewardTokenSymbol);
+            Assert.IsTrue(oldToken.Owner == firstOwner.Address);
+
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+            simulator.GenerateCustomTransaction(firstOwner, ProofOfWork.None, () =>
             {
                 return ScriptUtils.BeginScript().
-                     AllowGas(owner.Address, Address.Null, 400, 9999).
-                     CallContract("account", "Migrate", owner.Address, testUserA.Address).
-                     SpendGas(owner.Address).
+                     AllowGas(firstOwner.Address, Address.Null, 400, 9999).
+                     CallContract("account", "Migrate", firstOwner.Address, secondOwner.Address).
+                     SpendGas(firstOwner.Address).
                      EndScript();
             });
             simulator.EndBlock();
 
-            simulator.BeginBlock(testUserA); // here we change the validator keys in simulator
-            simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            var newToken = nexus.GetTokenInfo(nexus.RootStorage, DomainSettings.RewardTokenSymbol);
+            Assert.IsTrue(newToken.Owner == secondOwner.Address);
+
+            simulator.BeginBlock(secondOwner); // here we change the validator keys in simulator
+            simulator.GenerateTransfer(secondOwner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
             simulator.EndBlock();
+
+            // inflation check
+            simulator.TimeSkipDays(91);
+            simulator.BeginBlock(); 
+            simulator.GenerateTransfer(testUser, anotherTestUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            var crownBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, DomainSettings.RewardTokenSymbol, firstOwner.Address);
+            Assert.IsTrue(crownBalance == 0);
+
+            crownBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, DomainSettings.RewardTokenSymbol, secondOwner.Address);
+            Assert.IsTrue(crownBalance == 1);
+
         }
 
         [TestMethod]
