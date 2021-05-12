@@ -67,12 +67,14 @@ namespace Phantasma.API
         public readonly Type ReturnType;
         public readonly bool Paginated;
         public readonly int CacheDuration;
+        public readonly bool Relay;
 
-        public APIInfoAttribute(Type returnType, string description, bool paginated = false, int cacheDuration = 0) : base(description)
+        public APIInfoAttribute(Type returnType, string description, bool paginated = false, int cacheDuration = 0, bool relay = false) : base(description)
         {
             ReturnType = returnType;
             Paginated = paginated;
             CacheDuration = cacheDuration;
+            Relay = relay;
         }
     }
 
@@ -105,6 +107,8 @@ namespace Phantasma.API
         public readonly string Description;
 
         public readonly bool IsPaginated;
+
+        public readonly bool IsRelayed;
 
         public readonly APIFailCaseAttribute[] FailCases;
 
@@ -168,6 +172,7 @@ namespace Phantasma.API
                 ReturnType = attr.ReturnType;
                 Description = attr.Description;
                 IsPaginated = attr.Paginated;
+                IsRelayed = attr.Relay;
 
                 if (attr.CacheDuration != 0 && api.UseCache)
                 {
@@ -179,6 +184,7 @@ namespace Phantasma.API
                 ReturnType = null;
                 Description = "TODO document me";
                 IsPaginated = false;
+                IsRelayed = false;
             }
         }
 
@@ -205,6 +211,36 @@ namespace Phantasma.API
             {
                 // NOTE this is a temporary hack until we improve this
                 proxyURL = _api.Node.ProxyURL;
+            }
+
+            if (IsRelayed && _api.Node != null)
+            {
+                if (methodName == "WriteArchive" || methodName == "ReadArchive")
+                {
+                    throw new APIException($"Method {methodName} only available through BP for now!");
+                }
+
+                if (methodName == "GetTransaction")
+                {
+                    // TEMP quick and dirty getTransaction hack, if the transaction is available in local storage, we 
+                    // return it immediately, if not, we proxy the call to the BP.
+                    
+                    var apiResult = _api.GetTransaction((string)input[0]);
+                    if (!(apiResult is ErrorResult))
+                    {
+                        // convert to json string
+                        var node = Domain.APIUtils.FromAPIResult(apiResult);
+                        return JSONWriter.WriteToString(node);
+                    }
+                }
+                // If the method is marked as a relay method, we always proxy it
+                proxyURL = _api.ProxyURL;
+            }
+
+            if (!IsRelayed && _api.Node != null && _api.Node.IsFullySynced)
+            {
+                // If the method is not relayed but the node is fully synced we query the nodes storage
+                proxyURL = null;
             }
 
             lock (string.Intern(methodName))
@@ -496,6 +532,22 @@ namespace Phantasma.API
                 }
             }
 
+            var prices = new List<TokenPriceResult>();
+
+            if (extended)
+            {
+                for (int i=0; i<30; i++)
+                {
+                    prices.Add(new TokenPriceResult()
+                    {
+                        Open = "0",
+                        Close = "0",
+                        High = "0",
+                        Low = "0",
+                    });
+                }
+            }
+
             return new TokenResult
             {
                 symbol = tokenInfo.Symbol,
@@ -510,6 +562,7 @@ namespace Phantasma.API
                 script = tokenInfo.Script.Encode(),
                 series = seriesList.ToArray(),
                 external = external.ToArray(),
+                price = prices.ToArray(),
             };
         }
 
@@ -528,7 +581,7 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            NFTUtils.FetchProperty(chain, method.name, series, ID, (propName, propValue) =>
+                            Blockchain.Tokens.TokenUtils.FetchProperty(Nexus.RootStorage, chain, method.name, series, ID, (propName, propValue) =>
                             {
                                 properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
                             });
@@ -1244,7 +1297,7 @@ namespace Phantasma.API
             return new SingleResult() { value = count };
         }
 
-        [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.")]
+        [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.", false, 0, true)]
         [APIFailCase("rejected by mempool", "0000")] // TODO not correct
         [APIFailCase("script is invalid", "")]
         [APIFailCase("failed to decoded transaction", "0000")]
@@ -1294,7 +1347,7 @@ namespace Phantasma.API
             return new SingleResult { value = tx.Hash.ToString() };
         }
 
-        [APIInfo(typeof(ScriptResult), "Allows to invoke script based on network state, without state changes.", false, 5)]
+        [APIInfo(typeof(ScriptResult), "Allows to invoke script based on network state, without state changes.", false, 5, true)]
         [APIFailCase("script is invalid", "")]
         [APIFailCase("failed to decoded script", "0000")]
         public IAPIResult InvokeRawScript([APIParameter("Address or name of chain", "root")] string chainInput, [APIParameter("Serialized script bytes, in hexadecimal format", "0000000000")] string scriptData)
@@ -1370,7 +1423,7 @@ namespace Phantasma.API
             return new ScriptResult { results = resultArray, result = resultArray.FirstOrDefault(), events = evts, oracles = oracleReads };
         }
 
-        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.", false, -1)]
+        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.", false, -1, true)]
         [APIFailCase("hash is invalid", "43242342")]
         public IAPIResult GetTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
@@ -1505,6 +1558,7 @@ namespace Phantasma.API
             return new NexusResult()
             {
                 name = Nexus.Name,
+                protocol = Nexus.GetProtocolVersion(Nexus.RootStorage),
                 tokens = tokenList.ToArray(),
                 platforms = platformList.ToArray(),
                 chains = chainList.ToArray(),
@@ -1848,7 +1902,7 @@ namespace Phantasma.API
             };
         }
 
-        [APIInfo(typeof(ArchiveResult), "Returns info about a specific archive.", false, 300)]
+        [APIInfo(typeof(ArchiveResult), "Returns info about a specific archive.", false, 300, true)]
         public IAPIResult GetArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             Hash hash;
@@ -1867,7 +1921,7 @@ namespace Phantasma.API
             return FillArchive(archive);
         }
 
-        [APIInfo(typeof(bool), "Writes the contents of an incomplete archive.", false)]
+        [APIInfo(typeof(bool), "Writes the contents of an incomplete archive.", false, 0, true)]
         public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex, [APIParameter("Block content bytes, in Base64", "QmFzZTY0IGVuY29kZWQgdGV4dA==")] string blockContent)
         {
             Hash hash;
@@ -1904,7 +1958,7 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(string), "Reads given archive block.", false)]
+        [APIInfo(typeof(string), "Reads given archive block.", false, 0, true)]
         public IAPIResult ReadArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex)
         {
             Hash hash;
@@ -1970,7 +2024,15 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No node available" };
             }
 
-            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
+            IEnumerable<Peer> allPeers = Node.Peers;
+
+            if (Nexus.Name == DomainSettings.NexusMainnet)
+            {
+                // exclude fom the list all peers that did not configure external host properly
+                allPeers = allPeers.Where(x => !x.Endpoint.Host.Contains("localhost"));
+            }
+
+            var peers = allPeers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
 
             peers.Add(new PeerResult() { url = $"{Node.PublicEndpoint}", version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
 
@@ -1982,7 +2044,7 @@ namespace Phantasma.API
             };
         }
 
-        [APIInfo(typeof(bool), "Writes a message to the relay network.", false)]
+        [APIInfo(typeof(bool), "Writes a message to the relay network.", false, 0, true)]
         public IAPIResult RelaySend([APIParameter("Serialized receipt, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string receiptHex)
         {
             if (Node == null)
@@ -2147,7 +2209,7 @@ namespace Phantasma.API
         }
 
 
-        [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 0)]
+        [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 0, true)]
         public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")] string sourcePlatform
                 , [APIParameter("Name of platform to settle", "phantasma")] string destPlatform
                 , [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
@@ -2213,7 +2275,7 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 0)]
+        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 0, true)]
         public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account, bool extended = false)
         {
             if (TokenSwapper == null)

@@ -122,6 +122,11 @@ namespace Phantasma.Storage.Context
             return _entries.Count > 0;
         }
 
+        public int Count()
+        {
+            return _entries.Count;
+        }
+
         public override void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
             ulong count = 0;

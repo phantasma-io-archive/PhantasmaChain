@@ -38,6 +38,24 @@ namespace Phantasma.Network.P2P
             this.pingDelay = 32;
             this.status = EndpointStatus.Waiting;
         }
+
+        protected bool Equals(EndpointEntry other)
+        {
+            return this.endpoint.Equals(other.endpoint);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((EndpointEntry) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return this.endpoint.GetHashCode();
+        }
     }
 
     public struct PendingBlock
@@ -183,7 +201,10 @@ namespace Phantasma.Network.P2P
                     }
 
                     var entry = new EndpointEntry(endpoint);
-                    _knownEndpoints.Add(entry);
+                    if (!_knownEndpoints.Contains(entry))
+                    {
+                        _knownEndpoints.Add(entry);
+                    }
                 }
             }
         }
@@ -333,7 +354,6 @@ namespace Phantasma.Network.P2P
             lock (_knownEndpoints)
             {
                 _knownEndpoints.RemoveAll(x => x.endpoint.Protocol != PeerProtocol.TCP);
-
                 var possibleTargets = new List<int>();
                 for (int i = 0; i < _knownEndpoints.Count; i++)
                 {
@@ -346,7 +366,7 @@ namespace Phantasma.Network.P2P
                 if (possibleTargets.Count > 0)
                 {
                     // adds a bit of pseudo randomness to connection order
-                    var idx = Environment.TickCount % possibleTargets.Count;
+                    var idx = Math.Abs(Environment.TickCount) % possibleTargets.Count;
                     idx = possibleTargets[idx];
                     var target = _knownEndpoints[idx];
 
@@ -528,25 +548,39 @@ namespace Phantasma.Network.P2P
 
             if (count > 0)
             {
-                BigInteger expectedHeight;
+                BigInteger expectedHeight = 0;
                 lock (_knownHeights)
                 {
-                    expectedHeight = _knownHeights[chain.Name];
+                    if (_knownHeights.TryGetValue(chain.Name, out expectedHeight))
+                    {
+                        if (last <= expectedHeight)
+                        {
+                            int percent = (int)((last * 100) / expectedHeight);
+                            if (start == last)
+                            {
+                                Logger.Message($"{this.Version}: Added block #{start} to {chain.Name} ...{percent}%");
+                            }
+                            else
+                            {
+                                Logger.Message($"{this.Version}: Added blocks #{start} to #{last} to {chain.Name} ...{percent}%");
+                            }
+
+                            if (expectedHeight == chain.Height)
+                            {
+                                IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
+                            }
+                        }
+                        else
+                        {
+                            Logger.Message($"{this.Version}: Added block #{start} to {chain.Name}");
+                            IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
+                        }
+                    }
                 }
 
-                int percent = (int)((last * 100) / expectedHeight);
-
-                if (start == last)
+                if (expectedHeight == 0) 
                 {
-                    Logger.Message($"{this.Version}: Added block #{start} in {chain.Name} ...{percent}%");
-                }
-                else
-                {
-                    Logger.Message($"{this.Version}: Added blocks #{start} to #{last} in {chain.Name} ...{percent}%");
-                }
-
-                if (expectedHeight == chain.Height)
-                {
+                    Logger.Message($"{this.Version}: Added block #{start} to {chain.Name}");
                     IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed
                 }
             }
@@ -695,9 +729,9 @@ namespace Phantasma.Network.P2P
                                 newPeers = listMsg.Peers.Where(x => !_peers.ContainsKey(x));
                             }
 
-                            foreach (var entry in listMsg.Peers)
+                            foreach (var entry in newPeers)
                             {
-                                Logger.Message("New peer: " + entry.ToString());
+                                Logger.Message("New peer: " + entry);
                             }
                             QueueEndpoints(newPeers);
                         }
@@ -709,27 +743,35 @@ namespace Phantasma.Network.P2P
                             {
                                 var chain = Nexus.GetChainByName(entry.name);
                                 // NOTE if we dont find this chain then it is too soon for ask for blocks from that chain
-                                if (chain != null && chain.Height < entry.height)
+                                if (chain != null)
                                 {
-                                    var start = chain.Height + 1;
-                                    var end = entry.height;
-                                    var limit = start + ListMessage.MaxBlocks - 1;
-
-                                    if (end > limit)
+                                    if (chain.Height < entry.height)
                                     {
-                                        end = limit;
+                                        var start = chain.Height + 1;
+                                        var end = entry.height;
+                                        var limit = start + ListMessage.MaxBlocks - 1;
+
+                                        if (end > limit)
+                                        {
+                                            end = limit;
+                                        }
+
+                                        blockFetches[entry.name] = new RequestRange(start, end);
+
+                                        lock (_knownHeights)
+                                        {
+                                            BigInteger lastKnowHeight = _knownHeights.ContainsKey(chain.Name) ? _knownHeights[chain.Name] : 0;
+                                            if (entry.height > lastKnowHeight)
+                                            {
+                                                _knownHeights[chain.Name] = entry.height;
+                                                IsFullySynced = false;
+                                            }
+                                        }
                                     }
 
-                                    blockFetches[entry.name] = new RequestRange(start, end);
-
-                                    lock (_knownHeights)
+                                    if (chain.Height == entry.height)
                                     {
-                                        BigInteger lastKnowHeight = _knownHeights.ContainsKey(chain.Name) ? _knownHeights[chain.Name] : 0;
-                                        if (entry.height > lastKnowHeight)
-                                        {
-                                            _knownHeights[chain.Name] = entry.height;
-                                            IsFullySynced = false;
-                                        }
+                                        IsFullySynced = true;
                                     }
                                 }
                             }

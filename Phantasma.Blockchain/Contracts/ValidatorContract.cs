@@ -301,8 +301,6 @@ namespace Phantasma.Blockchain.Contracts
             var entry = _validators.Get<BigInteger, ValidatorEntry>(index);
             Runtime.Expect(entry.type == ValidatorType.Primary || entry.type == ValidatorType.Secondary, "not active validator");
 
-            Runtime.CallNativeContext(NativeContractKind.Stake, "Migrate", from, to);
-
             entry.address = to;
             _validators.Set<BigInteger, ValidatorEntry>(index, entry);
 

@@ -1,5 +1,6 @@
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System;
@@ -9,18 +10,18 @@ namespace Phantasma.Blockchain.Tokens
 {
     public class BalanceException : Exception
     {
-        public static string symbol = null;
+        public static IToken token = null;
         public static Address address;
         public static BigInteger amount;
 
-        public BalanceException(string symbol, Address address, BigInteger amount) : base($"Address {address} lacks {amount} {symbol}")
+        public BalanceException(IToken token, Address address, BigInteger amount) : base($"Address {address} lacks {UnitConversion.ToDecimal(amount, token.Decimals)} {token.Symbol}")
         {
-            if (BalanceException.symbol != null)
+            if (BalanceException.token != null)
             {
-                BalanceException.symbol = null; // should never enter here...
+                BalanceException.token = null; // should never enter here...
             }
 
-            BalanceException.symbol = symbol;
+            BalanceException.token = token;
             BalanceException.address = address;
             BalanceException.amount = amount;
         }
@@ -29,12 +30,12 @@ namespace Phantasma.Blockchain.Tokens
     public struct BalanceSheet
     {
         private byte[] _prefix;
-        private string symbol;
+        private IToken _token;
 
-        public BalanceSheet(string symbol)
+        public BalanceSheet(IToken token)
         {
-            this.symbol = symbol;
-            this._prefix = MakePrefix(symbol);
+            this._token = token;
+            this._prefix = MakePrefix(token.Symbol);
         }
 
         public static byte[] MakePrefix(string symbol)
@@ -94,7 +95,7 @@ namespace Phantasma.Blockchain.Tokens
             var diff = balance - amount;
             if (diff < 0)
             {
-                throw new BalanceException(symbol, address, -diff);
+                throw new BalanceException(_token, address, -diff);
                 //return false;
             }
 

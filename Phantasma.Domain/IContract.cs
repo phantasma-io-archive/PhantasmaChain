@@ -291,6 +291,21 @@ namespace Phantasma.Domain
         public readonly ContractParameter[] parameters;
         public int offset;
 
+        public ContractMethod(string name, VMType returnType, Dictionary<string, int> labels, params ContractParameter[] parameters) 
+        {
+            if (!labels.ContainsKey(name))
+            {
+                throw new Exception("Missing offset in label map for method " + name);
+            }
+
+            var offset = labels[name];
+
+            this.name = name;
+            this.offset = offset;
+            this.returnType = returnType;
+            this.parameters = parameters;
+        }
+
         public ContractMethod(string name, VMType returnType, int offset, params ContractParameter[] parameters)
         {
             this.name = name;

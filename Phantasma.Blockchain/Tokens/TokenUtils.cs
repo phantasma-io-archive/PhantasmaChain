@@ -11,8 +11,76 @@ using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    public static class NFTUtils
+    public static class TokenUtils
     {
+        public static Address GetContractAddress(this IToken token)
+        {
+            return GetContractAddress(token.Symbol);
+        }
+
+        public static Address GetContractAddress(string symbol)
+        {
+            return SmartContract.GetAddressForName(symbol);
+        }
+
+        public static IEnumerable<ContractMethod> GetTriggersForABI(Dictionary<string, int> labels)
+        {
+            var triggers = new Dictionary<TokenTrigger, int>();
+            foreach (var entry in labels)
+            {
+                TokenTrigger kind;
+
+                if (Enum.TryParse<TokenTrigger>(entry.Key, true, out kind))
+                {
+                    triggers[kind] = entry.Value;
+                }
+            }
+
+            return GetTriggersForABI(triggers);
+        }
+
+        public static IEnumerable<ContractMethod> GetTriggersForABI(IEnumerable<TokenTrigger> triggers)
+        {
+            var entries = new Dictionary<TokenTrigger, int>();
+            foreach (var trigger in triggers)
+            {
+                entries[trigger] = 0;
+            }
+
+            return GetTriggersForABI(entries);
+        }
+
+        public static IEnumerable<ContractMethod> GetTriggersForABI(Dictionary<TokenTrigger, int> triggers)
+        {
+            var result = new List<ContractMethod>();
+
+            foreach (var entry in triggers)
+            {
+                var trigger = entry.Key;
+                var offset = entry.Value;
+
+                switch (trigger)
+                {
+                    case TokenTrigger.OnBurn:
+                    case TokenTrigger.OnMint:
+                    case TokenTrigger.OnReceive:
+                    case TokenTrigger.OnSend:
+                        result.Add(new ContractMethod(trigger.ToString(), VM.VMType.None, offset, new[] {
+                            new ContractParameter("from", VM.VMType.Object),
+                            new ContractParameter("to", VM.VMType.Object),
+                            new ContractParameter("symbol", VM.VMType.String),
+                            new ContractParameter("amount", VM.VMType.Number)
+                        }));
+                        break;
+
+                    default:
+                        throw new System.Exception("AddTriggerToABI: Unsupported trigger: " + trigger);
+                }
+            }
+
+            return result;
+        }
+
         public static ContractInterface GetNFTStandard()
         {
             var parameters = new ContractParameter[]
@@ -114,7 +182,7 @@ namespace Phantasma.Blockchain.Tokens
             abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
         }
 
-        private static VMObject ExecuteScript(Chain chain, byte[] script, ContractInterface abi, string methodName, params object[] args)
+        private static VMObject ExecuteScript(StorageContext storage, Chain chain, byte[] script, ContractInterface abi, string methodName, params object[] args)
         {
             var method = abi.FindMethod(methodName);
 
@@ -123,7 +191,13 @@ namespace Phantasma.Blockchain.Tokens
                 throw new Exception("ABI is missing: " + method.name);
             }
 
-            var changeSet = new StorageChangeSetContext(chain.Storage);
+            var changeSet = storage as StorageChangeSetContext;
+
+            if (changeSet == null)
+            {
+                changeSet = new StorageChangeSetContext(storage);
+            }
+
             var oracle = chain.Nexus.GetOracleReader();
             var vm = new RuntimeVM(-1, script, (uint)method.offset, chain, Address.Null, Timestamp.Now, null, changeSet, oracle, ChainTask.Null, true);
 
@@ -144,11 +218,11 @@ namespace Phantasma.Blockchain.Tokens
             throw new Exception("Script execution failed for: " + method.name);
         }
 
-        public static void FetchProperty(Chain chain, string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
+        public static void FetchProperty(StorageContext storage, Chain chain, string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
         {
             if (series.ABI.HasMethod(methodName))
             {
-                var result = ExecuteScript(chain, series.Script, series.ABI, methodName, tokenID);
+                var result = ExecuteScript(storage, chain, series.Script, series.ABI, methodName, tokenID);
 
                 string propName = methodName;
 
@@ -166,11 +240,16 @@ namespace Phantasma.Blockchain.Tokens
             }
         }
 
-        public static void FetchProperty(Chain chain, string methodName, IToken token, Action<string, VMObject> callback)
+        public static void FetchProperty(StorageContext storage, Chain chain, string methodName, IToken token, Action<string, VMObject> callback)
         {
-            if (token.ABI.HasMethod(methodName))
+            FetchProperty(storage, chain, methodName, token.Script, token.ABI, callback);
+        }
+
+        public static void FetchProperty(StorageContext storage, Chain chain, string methodName, byte[] script, ContractInterface abi, Action<string, VMObject> callback)
+        {
+            if (abi.HasMethod(methodName))
             {
-                var result = ExecuteScript(chain, token.Script, token.ABI, methodName);
+                var result = ExecuteScript(storage, chain, script, abi, methodName);
 
                 string propName = methodName;
 

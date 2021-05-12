@@ -63,6 +63,9 @@ namespace Phantasma.API
         [APIDescription("Name of the nexus")]
         public string name;
 
+        [APIDescription("Network protocol version")]
+        public uint protocol;
+
         [APIDescription("List of platforms")]
         public PlatformResult[] platforms;
 
@@ -299,6 +302,15 @@ namespace Phantasma.API
         public string hash;
     }
 
+    public struct TokenPriceResult: IAPIResult
+    {
+        public uint Timestamp;
+        public string Open;
+        public string High;
+        public string Low;
+        public string Close;
+    }
+
     public struct TokenResult : IAPIResult
     {
         [APIDescription("Ticker symbol for the token")]
@@ -334,6 +346,9 @@ namespace Phantasma.API
 
         [APIDescription("External platforms info")]
         public TokenExternalResult[] external;
+
+        [APIDescription("Cosmic swap historic data")]
+        public TokenPriceResult[] price;
     }
 
     public struct TokenSeriesResult : IAPIResult

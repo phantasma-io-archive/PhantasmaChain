@@ -73,6 +73,9 @@ namespace Phantasma.Blockchain.Contracts
             var marketAddress = SmartContract.GetAddressForNative(NativeContractKind.Market);
             Runtime.Expect(nft.CurrentOwner == marketAddress, "invalid owner");
 
+            Runtime.Expect(price >= 0, "price has to be >= 0");
+            Runtime.Expect(endPrice >= 0, "final price has to be >= 0");
+
             var auctionID = baseSymbol + "." + tokenID;
 
             Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
@@ -145,6 +148,8 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "token not currently in this chain");
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
+            Runtime.Expect(price >= 0, "price has to be >= 0");
+
             Runtime.Expect(listingFee <= 5, "listingFee has to be <= 5%");
 
             Runtime.Expect(listingFee == 0 || listingFeeAddress != Address.Null, "Fee receiving address cannot be null");
@@ -172,6 +177,7 @@ namespace Phantasma.Blockchain.Contracts
             {
                 Runtime.Expect(endDate > startDate, "end date must be later than start date");
                 Runtime.Expect(endPrice < price, "final price has to be lower than initial price");
+                Runtime.Expect(endPrice >= 0, "final price has to be >= 0");
                 var maxAllowedDate = Runtime.Time + TimeSpan.FromDays(30);
                 Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant, max: " + maxAllowedDate + ", received: " + endDate);
                 extensionPeriod = 0;
@@ -205,6 +211,8 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
             var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
+
+            Runtime.Expect(price >= 0, "price has to be >= 0");
 
             Runtime.Expect(buyingFee <= 5, "buyingFee has to be <= 5%");
 
@@ -360,6 +368,8 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "token not currently in this chain");
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
+            Runtime.Expect(price >= 0, "price has to be >= 0");
+
             Runtime.TransferToken(baseToken.Symbol, from, this.Address, tokenID);
 
             var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price, 0, 0, TypeAuction.Fixed, 0, Address.Null, 0, Address.Null, Address.Null);
@@ -464,7 +474,7 @@ namespace Phantasma.Blockchain.Contracts
                     if (combinedFees > balance)
                     {
                         var diff = combinedFees - balance;
-                        throw new BalanceException(quoteToken.Symbol, from, diff);
+                        throw new BalanceException(quoteToken, from, diff);
                     }
 
                     Runtime.TransferTokens(auction.QuoteSymbol, from, this.Address, combinedFees);

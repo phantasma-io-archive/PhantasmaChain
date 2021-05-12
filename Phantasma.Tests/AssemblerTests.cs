@@ -16,6 +16,7 @@ using Phantasma.VM.Utils;
 using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Tests
 {

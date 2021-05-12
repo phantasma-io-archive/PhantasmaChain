@@ -381,16 +381,48 @@ namespace Phantasma.Blockchain
 
             block.CleanUp();
 
+            var changeSet = ProcessTransactions(block, transactions, oracle, minimumFee, out inflationTx, signingKeys);
+
             Address expectedValidator;
             using (var m = new ProfileMarker("GetValidator"))
                 expectedValidator = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GetGenesisAddress(Nexus.RootStorage);
 
-            if (block.Validator != expectedValidator && !expectedValidator.IsNull)
+            var migrationFound = false;
+            var migratedAddress = Address.Null;
+            foreach (var hash in outputHashes)
             {
-                throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
+                if (migrationFound)
+                {
+                    break;
+                }
+
+                var events = block.GetEventsForTransaction(hash);
+                foreach (var evt in events)
+                {
+                    if (evt.Kind == EventKind.AddressMigration && evt.Contract == "validator")
+                    {
+                        var oldAddress = evt.GetContent<Address>();
+                        if (oldAddress == expectedValidator)
+                        {
+                            migratedAddress = evt.Address;
+                            migrationFound = true;
+                            break;
+                        }
+                    }
+                }
             }
 
-            var changeSet = ProcessTransactions(block, transactions, oracle, minimumFee, out inflationTx, signingKeys);
+            if (block.Validator != expectedValidator && !expectedValidator.IsNull)
+            {
+                if (migrationFound && migratedAddress == block.Validator)
+                {
+                    expectedValidator = migratedAddress;
+                }
+                else
+                {
+                    throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
+                }
+            }
 
             if (oracle.Entries.Any())
             {
@@ -459,7 +491,7 @@ namespace Phantasma.Blockchain
         {
             if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
-                var balances = new BalanceSheet(token.Symbol);
+                var balances = new BalanceSheet(token);
                 return balances.Get(storage, address);
             }
             else
@@ -523,7 +555,7 @@ namespace Phantasma.Blockchain
         {
             if (!IsContractDeployed(storage, contract.Address))
             {
-                throw new ChainException($"contract {contract.Name} not deployed on {Name} chain");
+                throw new ChainException($"contract '{contract.Name}' not deployed on '{Name}' chain");
             }
 
             var context = new ChainExecutionContext(contract);
@@ -1278,7 +1310,9 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var balance = new BalanceSheet(DomainSettings.FuelTokenSymbol);
+            var tokenStorage = this.Name == DomainSettings.RootChainName ? storage : Nexus.RootStorage;
+            var token = this.Nexus.GetTokenInfo(tokenStorage, DomainSettings.FuelTokenSymbol);
+            var balance = new BalanceSheet(token);
             var blockAddress = Address.FromHash("block");
             var totalAvailable = balance.Get(storage, blockAddress);
 
