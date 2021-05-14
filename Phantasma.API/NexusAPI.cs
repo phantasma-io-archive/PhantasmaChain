@@ -532,6 +532,22 @@ namespace Phantasma.API
                 }
             }
 
+            var prices = new List<TokenPriceResult>();
+
+            if (extended)
+            {
+                for (int i=0; i<30; i++)
+                {
+                    prices.Add(new TokenPriceResult()
+                    {
+                        Open = "0",
+                        Close = "0",
+                        High = "0",
+                        Low = "0",
+                    });
+                }
+            }
+
             return new TokenResult
             {
                 symbol = tokenInfo.Symbol,
@@ -546,6 +562,7 @@ namespace Phantasma.API
                 script = tokenInfo.Script.Encode(),
                 series = seriesList.ToArray(),
                 external = external.ToArray(),
+                price = prices.ToArray(),
             };
         }
 
