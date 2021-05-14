@@ -1572,6 +1572,8 @@ namespace Phantasma.Blockchain
             vm.Expect(decimals >= 0, "missing or invalid token decimals");
             vm.Expect(flags != TokenFlags.None, "missing or invalid token flags");
 
+            vm.Expect(!flags.HasFlag(TokenFlags.Swappable), "swappable swap can't be set in token creation");
+
             vm.CreateToken(owner, symbol, name, maxSupply, decimals, flags, script, abi);
 
             return ExecutionState.Running;
