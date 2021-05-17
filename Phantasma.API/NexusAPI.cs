@@ -581,10 +581,22 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            Blockchain.Tokens.TokenUtils.FetchProperty(Nexus.RootStorage, chain, method.name, series, ID, (propName, propValue) =>
+                            if (symbol == "CROWN" && method.name == "getImageURL")
                             {
-                                properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
-                            });
+                                properties.Add(new TokenPropertyResult() { Key = "ImageURL", Value = "https://phantasma.io/img/crown.png" });
+                            }
+                            else
+                            if (symbol == "CROWN" && method.name == "getInfoURL")
+                            {
+                                properties.Add(new TokenPropertyResult() { Key = "InfoURL", Value = "https://phantasma.io/crown/" + ID });
+                            }
+                            else
+                            {
+                                Blockchain.Tokens.TokenUtils.FetchProperty(Nexus.RootStorage, chain, method.name, series, ID, (propName, propValue) =>
+                                {
+                                    properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
+                                });
+                            }
                         }
                     }
 
