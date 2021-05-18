@@ -25,7 +25,7 @@ namespace Phantasma.API
             EndPoint = endPoint;
             API = api;
 
-            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port, MaxPostSizeInBytes = 1024 * 1024, Compression = false};
+            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port, MaxPostSizeInBytes = 1024 * 1024, Compression = false, Binding = ServerBinding.Any };
 
             _server = new HTTPServer(settings, logger);
 

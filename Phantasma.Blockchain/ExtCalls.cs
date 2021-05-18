@@ -11,6 +11,7 @@ using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using System.Collections.Generic;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -24,6 +25,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.GasTarget", Runtime_GasTarget);
             vm.RegisterMethod("Runtime.Validator", Runtime_Validator);
             vm.RegisterMethod("Runtime.Context", Runtime_Context);
+            vm.RegisterMethod("Runtime.PreviousContext", Runtime_PreviousContext);
             vm.RegisterMethod("Runtime.GenerateUID", Runtime_GenerateUID);
             vm.RegisterMethod("Runtime.Random", Runtime_Random);            
             vm.RegisterMethod("Runtime.SetSeed", Runtime_SetSeed);
@@ -54,7 +56,10 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.AESDecrypt", Runtime_AESDecrypt);
             vm.RegisterMethod("Runtime.AESEncrypt", Runtime_AESEncrypt);
 
-            vm.RegisterMethod("Nexus.Init", Nexus_Init);
+            vm.RegisterMethod("Nexus.BeginInit", Nexus_BeginInit);
+            vm.RegisterMethod("Nexus.EndInit", Nexus_EndInit);
+            vm.RegisterMethod("Nexus.MigrateToken", Nexus_MigrateToken);
+
             vm.RegisterMethod("Nexus.CreateToken", Nexus_CreateToken);
             vm.RegisterMethod("Nexus.CreateTokenSeries", Nexus_CreateTokenSeries);
             vm.RegisterMethod("Nexus.CreateChain", Nexus_CreateChain);
@@ -385,6 +390,15 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        private static ExecutionState Runtime_PreviousContext(RuntimeVM vm)
+        {
+            var result = new VMObject();
+            result.SetValue(vm.PreviousContext.Name);
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
         private static ExecutionState Runtime_GenerateUID(RuntimeVM vm)
         {
             try
@@ -485,10 +499,11 @@ namespace Phantasma.Blockchain
             vm.ExpectStackSize(3);
 
             var contractName = vm.PopString("contract");
-            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
             var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
+
+            vm.Expect(vm.ContractDeployed(contractName), $"contract '{contractName}' is not deployed when trying to fetch field '{field}'");
 
             var type_obj = vm.Stack.Pop();
             var vmType = type_obj.AsEnum<VMType>();
@@ -512,10 +527,11 @@ namespace Phantasma.Blockchain
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
-            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
             var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
+
+            vm.Expect(vm.ContractDeployed(contractName), $"contract '{contractName}' is not deployed when trying to fetch field '{field}'");
 
             var obj = vm.Stack.Pop();
             var valBytes = obj.AsByteArray();
@@ -1090,21 +1106,24 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_WriteToken(RuntimeVM vm)
         {
-            vm.ExpectStackSize(3);
+            vm.ExpectStackSize(vm.ProtocolVersion >= 6 ? 4 : 3);
 
-            VMObject temp;
+            Address from;
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            if (vm.ProtocolVersion >= 6)
+            {
+                from = vm.PopAddress();
+            }
+            else
+            {
+                from = Address.Null;
+            }
 
+            var symbol = vm.PopString("symbol");
             var tokenID = vm.PopNumber("token ID");
+            var ram = vm.PopBytes("ram");
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
-            var ram = temp.AsByteArray();
-
-            vm.WriteToken(symbol, tokenID, ram);
+            vm.WriteToken(from, symbol, tokenID, ram);
 
             return ExecutionState.Running;
         }
@@ -1228,10 +1247,10 @@ namespace Phantasma.Blockchain
             bool isNative = Nexus.IsNativeContract(contractName);
             if (isNative)
             {
-                if (contractName == "validator" && vm.GenesisAddress == Address.Null)
+                /*if (contractName == "validator" && vm.GenesisAddress == Address.Null)
                 {
-                    vm.Nexus.Initialize(from);
-                }
+                    vm.Nexus.BeginInitialize(vm, from);
+                }*/
 
                 script = new byte[] { (byte)Opcode.RET };
 
@@ -1398,7 +1417,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Nexus_Init(RuntimeVM vm)
+        private static ExecutionState Nexus_BeginInit(RuntimeVM vm)
         {
             vm.Expect(vm.Chain == null || vm.Chain.Height == 0, "nexus already initialized");
 
@@ -1406,22 +1425,67 @@ namespace Phantasma.Blockchain
 
             var owner = vm.PopAddress();
 
-            vm.Nexus.Initialize(owner);
+            vm.Nexus.BeginInitialize(vm, owner);
 
             return ExecutionState.Running;
         }
-        
-        private static ExecutionState Nexus_CreateToken(RuntimeVM vm)
+
+        private static ExecutionState Nexus_EndInit(RuntimeVM vm)
         {
-            vm.ExpectStackSize(7);
+            vm.Expect(vm.Chain == null || vm.Chain.Height == 0, "nexus already initialized");
+
+            vm.ExpectStackSize(1);
 
             var owner = vm.PopAddress();
 
-            var symbol = vm.PopString("symbol");
-            var name = vm.PopString("name");
-            var maxSupply = vm.PopNumber("maxSupply");
-            var decimals = (int)vm.PopNumber("decimals");
-            var flags = vm.PopEnum<TokenFlags>("flags");
+            vm.Nexus.FinishInitialize(vm, owner);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Nexus_MigrateToken(RuntimeVM vm)
+        {
+            vm.Expect(vm.CurrentContext.Name == "account", "Can only be called from account context");
+
+            vm.ExpectStackSize(2);
+
+            var from = vm.PopAddress();
+            var to = vm.PopAddress();
+
+            vm.Nexus.MigrateTokenOwner(vm.RootStorage, from, to);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Nexus_CreateToken(RuntimeVM vm)
+        {
+            Address owner = Address.Null;
+            string symbol = null;
+            string name = null;
+            BigInteger maxSupply = -1;
+            int decimals = -1;
+            TokenFlags flags = TokenFlags.None;
+
+            if (vm.ProtocolVersion < 6)
+            {
+                vm.ExpectStackSize(7);
+
+                owner = vm.PopAddress();
+                symbol = vm.PopString("symbol");
+                name = vm.PopString("name");
+                maxSupply = vm.PopNumber("maxSupply");
+                decimals = (int)vm.PopNumber("decimals");
+                flags = vm.PopEnum<TokenFlags>("flags");
+
+                vm.Expect(!owner.IsNull, "missing or invalid token owner");
+            }
+            else
+            {
+                vm.ExpectStackSize(3);
+
+                owner = vm.PopAddress();
+            }
+
             var script = vm.PopBytes("script");
 
             ContractInterface abi;
@@ -1435,6 +1499,80 @@ namespace Phantasma.Blockchain
             {
                 abi = new ContractInterface();
             }
+
+            var rootChain = (Chain)vm.GetRootChain(); // this cast is not the best, but works for now...
+            var storage = vm.RootStorage;
+
+            if (vm.ProtocolVersion >= 6)
+            {
+                TokenUtils.FetchProperty(storage, rootChain, "getSymbol", script, abi, (prop, value) =>
+                {
+                    symbol = value.AsString();
+                });
+
+                TokenUtils.FetchProperty(storage, rootChain, "getName", script, abi, (prop, value) =>
+                {
+                    name = value.AsString();
+                });
+
+                TokenUtils.FetchProperty(storage, rootChain, "getTokenFlags", script, abi, (prop, value) =>
+                {
+                    flags = value.AsEnum<TokenFlags>();
+                });
+
+                // we offer two ways to describe the flags, either individually or via getTokenFlags
+                if (flags == TokenFlags.None)
+                {
+                    var possibleFlags = Enum.GetValues(typeof(TokenFlags)).Cast<TokenFlags>().ToArray();
+                    foreach (var entry in possibleFlags)
+                    {
+                        var flag = entry; // this line necessary for lambda closure to catch the correct value
+                        var propName = $"is{flag}";
+
+                        // for each flag, if the property exists and returns true, we set the flag
+                        TokenUtils.FetchProperty(storage, rootChain, propName, script, abi, (prop, value) =>
+                        {
+                            var isSet = value.AsBool();
+                            if (isSet)
+                            {
+                                flags |= flag;
+                            }
+                        });
+                    }
+                }
+
+                if (flags.HasFlag(TokenFlags.Finite))
+                {
+                    TokenUtils.FetchProperty(storage, rootChain, "getMaxSupply", script, abi, (prop, value) =>
+                    {
+                        maxSupply = value.AsNumber();
+                    });
+                }
+                else
+                {
+                    maxSupply = 0;
+                }
+
+                if (flags.HasFlag(TokenFlags.Fungible))
+                {
+                    TokenUtils.FetchProperty(storage, rootChain, "getDecimals", script, abi, (prop, value) =>
+                    {
+                        decimals = (int)value.AsNumber();
+                    });
+                }
+                else
+                {
+                    decimals = 0;
+                }
+            }
+
+            vm.Expect(ValidationUtils.IsValidTicker(symbol), "missing or invalid token symbol");
+            vm.Expect(!string.IsNullOrEmpty(name), "missing or invalid token name");
+            vm.Expect(maxSupply >= 0, "missing or invalid token supply");
+            vm.Expect(decimals >= 0, "missing or invalid token decimals");
+            vm.Expect(flags != TokenFlags.None, "missing or invalid token flags");
+
+            vm.Expect(!flags.HasFlag(TokenFlags.Swappable), "swappable swap can't be set in token creation");
 
             vm.CreateToken(owner, symbol, name, maxSupply, decimals, flags, script, abi);
 

@@ -6,7 +6,7 @@
     <OldToolsVersion>Current</OldToolsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="LunarLabs.Server" Version="1.4.1" />
+    <PackageReference Include="LunarLabs.Server" Version="1.5.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />

@@ -150,7 +150,9 @@ namespace Phantasma.Simulator
                 var communitySupply = 100000;
                 GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
                 MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
+                EndBlock();
 
+                BeginBlock();
                 GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 {
                     return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
@@ -160,6 +162,7 @@ namespace Phantasma.Simulator
                 });
 
                 EndBlock();
+
 
                 //TODO add SOUL/KCAL on ethereum, removed for now because hash is not fixed yet
                 //BeginBlock();
@@ -252,6 +255,8 @@ namespace Phantasma.Simulator
             }
 
             this.blockValidator = validator;
+
+            _owner = validator;
 
             transactions.Clear();
             txChainMap.Clear();
@@ -483,6 +488,36 @@ namespace Phantasma.Simulator
                     $"load r0 \"invalid witness\"",
                     $"throw r0",
 
+                    $"@getOwner: nop",
+                    $"load $owner 0x{addressStr}",
+                    "push $owner",
+                    $"jmp @end",
+
+                    $"@getSymbol: nop",
+                    $"load r0 \""+symbol+"\"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getName: nop",
+                    $"load r0 \""+name+"\"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getMaxSupply: nop",
+                    $"load r0 "+totalSupply+"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getDecimals: nop",
+                    $"load r0 "+decimals+"",
+                    "push r0",
+                    $"jmp @end",
+
+                    $"@getTokenFlags: nop",
+                    $"load r0 "+(int)flags+"",
+                    "push r0",
+                    $"jmp @end",
+
                     $"@end: ret"
                     };
                 }
@@ -533,6 +568,18 @@ namespace Phantasma.Simulator
 
                 var methods = AccountContract.GetTriggersForABI(triggerMap);
 
+                if (version >= 6)
+                {
+                    methods = methods.Concat(new ContractMethod[] {
+                        new ContractMethod("getOwner", VMType.Object, labels, new ContractParameter[0]),
+                        new ContractMethod("getSymbol", VMType.String, labels, new ContractParameter[0]),
+                        new ContractMethod("getName", VMType.String, labels, new ContractParameter[0]),
+                        new ContractMethod("getDecimals", VMType.Number, labels, new ContractParameter[0]),
+                        new ContractMethod("getMaxSupply", VMType.Number, labels, new ContractParameter[0]),
+                        new ContractMethod("getTokenFlags", VMType.Enum, labels, new ContractParameter[0]),
+                    }) ;
+                }
+
                 if (customMethods != null)
                 {
                     methods = methods.Concat(customMethods);
@@ -541,7 +588,18 @@ namespace Phantasma.Simulator
                 var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
                 var abiBytes = abi.ToByteArray();
 
-                sb.CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript, abiBytes);
+                object[] args;
+
+                if (version >= 6)
+                {
+                    args = new object[] { owner.Address, tokenScript, abiBytes };
+                }
+                else
+                {
+                    args = new object[] { owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript, abiBytes };
+                }
+
+                sb.CallInterop("Nexus.CreateToken", args);
             }
             else
             {
@@ -552,7 +610,7 @@ namespace Phantasma.Simulator
             {
                 ContractInterface nftABI;
                 byte[] nftScript;
-                NFTUtils.GenerateNFTDummyScript(symbol, name, name, "http://simulator/nft/*", "http://simulator/img/*", out nftScript, out nftABI);
+                Blockchain.Tokens.TokenUtils.GenerateNFTDummyScript(symbol, name, name, "http://simulator/nft/*", "http://simulator/img/*", out nftScript, out nftABI);
                 sb.CallInterop("Nexus.CreateTokenSeries", owner.Address, symbol, new BigInteger(seriesID), totalSupply, TokenSeriesMode.Unique, nftScript, nftABI.ToByteArray());
             }
 

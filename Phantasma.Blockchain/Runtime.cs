@@ -45,6 +45,7 @@ namespace Phantasma.Blockchain
 
 
         private readonly StorageChangeSetContext changeSet;
+        private int _baseChangeSetCount;
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
@@ -54,6 +55,8 @@ namespace Phantasma.Blockchain
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
+
+            _baseChangeSetCount = changeSet.Count();
 
             // NOTE: block and transaction can be null, required for Chain.InvokeContract
             //Throw.IfNull(block, nameof(block));
@@ -130,6 +133,22 @@ namespace Phantasma.Blockchain
             return ExecutionState.Fault;
         }
 
+        public VMObject CallInterop(string methodName, params object[] args)
+        {
+            PushArgsIntoStack(args);
+            if (ExecuteInterop(methodName) == ExecutionState.Running)
+            {
+                if (this.Stack.Count == 0)
+                {
+                    return null;
+                }
+
+                return this.Stack.Pop();
+            }
+
+            return null;
+        }
+
         public override ExecutionState Execute()
         {
             var result = base.Execute();
@@ -138,7 +157,7 @@ namespace Phantasma.Blockchain
             {
                 if (readOnlyMode)
                 {
-                    if (changeSet.Any())
+                    if (changeSet.Count() != _baseChangeSetCount)
                     {
                         throw new VMException(this, "VM changeset modified in read-only mode");
                     }
@@ -193,6 +212,15 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private void PushArgsIntoStack(object[] args)
+        {
+            for (int i = args.Length - 1; i >= 0; i--)
+            {
+                var obj = VMObject.FromObject(args[i]);
+                this.Stack.Push(obj);
+            }
+        }
+
         public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)
         {
             var tempContext = this.PreviousContext;
@@ -201,11 +229,7 @@ namespace Phantasma.Blockchain
             var context = LoadContext(contextName);
             Expect(context != null, "could not call context: " + contextName);
 
-            for (int i = args.Length - 1; i >= 0; i--)
-            {
-                var obj = VMObject.FromObject(args[i]);
-                this.Stack.Push(obj);
-            }
+            PushArgsIntoStack(args);
 
             this.Stack.Push(VMObject.FromObject(methodName));
 
@@ -1065,6 +1089,11 @@ namespace Phantasma.Blockchain
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
+
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
@@ -1111,19 +1140,6 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(decimals == 0, "indivisible token can't have decimals");
             }
 
-            Runtime.Expect(owner.IsUser, "owner address must be user address");
-            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
-
-            if (Runtime.ProtocolVersion >= 4)
-            {
-                var fuelCost = Runtime.GetGovernanceValue(Nexus.FuelPerTokenDeployTag);
-                // governance value is in usd fiat, here convert from fiat to fuel amount
-                fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
-                // burn the "cost" tokens
-                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, owner, fuelCost);
-            }
-
             var token = Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script, abi);
 
             var constructor = abi.FindMethod(SmartContract.ConstructorName);
@@ -1133,19 +1149,27 @@ namespace Phantasma.Blockchain
                 Runtime.CallContext(symbol, constructor, owner);
             }
 
-            //var getName = abi.FindMethod("getName");
-            //if (getName != null)
-            //{
-            //    Runtime.Expect(getName.returnType == VMType.String, "name property should be string");
-            //    Runtime.Expect(getName.parameters.Length == 0, "name property can't have parameters");
+            if (this.ProtocolVersion >= 6)
+            {
+                var rootChain = (Chain)this.GetRootChain();
+                var currentOwner = owner;
+                TokenUtils.FetchProperty(RootStorage, rootChain, "getOwner", script, abi, (prop, value) =>
+                {
+                    currentOwner = value.AsAddress();
+                });
 
-            //    string fetchedName = string.Empty;
-            //    NFTUtils.FetchProperty(Chain, this, getName.name, token, (key, result) => { fetchedName = result.AsString();  });
+                Expect(!currentOwner.IsNull, "missing or invalid token owner");
+                Expect(currentOwner == owner, "token owner constructor failure");
+            }
 
-            //    Runtime.Expect(fetchedName == token.Name, "name property should return: " + token.Name);
-            //}
-
-            // TODO validate other properties
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                var fuelCost = Runtime.GetGovernanceValue(Nexus.FuelPerTokenDeployTag);
+                // governance value is in usd fiat, here convert from fiat to fuel amount
+                fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
+                // burn the "cost" tokens
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, owner, fuelCost);
+            }
 
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
@@ -1544,9 +1568,18 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
+        public void WriteToken(Address from, string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
             var nft = ReadToken(tokenSymbol, tokenID);
+
+            var Runtime = this;
+            var token = Runtime.GetToken(tokenSymbol);
+
+            if (Runtime.ProtocolVersion >= 6)
+            {
+                Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnWrite, from, ram, tokenID) != TriggerResult.Failure, "token write trigger failed");
+            }
+
             Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Timestamp, nft.Infusion, true);
         }
 

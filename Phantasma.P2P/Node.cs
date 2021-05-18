@@ -358,7 +358,9 @@ namespace Phantasma.Network.P2P
                 if (_knownEndpoints.Count > 0)
                 {
                     // adds a bit of pseudo randomness to connection order
-                    var target = _knownEndpoints.OrderBy(c => Guid.NewGuid()).ToArray()[0];
+                    var idx = (int)(((uint)Math.Abs(Environment.TickCount)) % _knownEndpoints.Count);
+
+                    var target = _knownEndpoints[idx];
 
                     var client = new TcpClient();
                     var result = client.BeginConnect(target.endpoint.Host, target.endpoint.Port, null, null);

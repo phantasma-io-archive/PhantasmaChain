@@ -75,7 +75,7 @@ namespace Phantasma.Blockchain.Tokens
     {
         public string Symbol { get; private set; }
         public string Name { get; private set; }
-        public Address Owner { get; private set; }
+        public Address Owner { get; internal set; }
         public TokenFlags Flags { get; internal set; }
         public BigInteger MaxSupply { get; private set; }    
         public int Decimals { get; private set; }
@@ -86,13 +86,10 @@ namespace Phantasma.Blockchain.Tokens
         {
             Throw.IfNullOrEmpty(symbol, nameof(symbol));
             Throw.IfNullOrEmpty(name, nameof(name));
-            Throw.If(owner.IsNull, "token owner can't be null address");
             Throw.If(decimals < 0, "decimals can't be negative");
             Throw.If(flags == TokenFlags.None, "token must have flags set");
             Throw.If(script == null || script.Length == 0, "token script can't be empty");
             
-            Throw.If(flags.HasFlag(TokenFlags.Swappable), "swappable swap can't be set in token creation");
-
             Throw.If(maxSupply < 0, "negative supply");
             Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
             Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");

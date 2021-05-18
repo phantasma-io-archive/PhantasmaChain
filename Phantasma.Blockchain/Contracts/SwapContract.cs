@@ -4,6 +4,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -335,7 +336,11 @@ namespace Phantasma.Blockchain.Contracts
                 }
             }
 
-            Runtime.Expect(toPotBalance >= total, $"insufficient balance in pot, have {toPotBalance} {toSymbol} in pot, need {total} {toSymbol}, have {fromBalance} {fromSymbol} to convert from");
+            var toSymbolDecimalsInfo = Runtime.GetToken(toSymbol);
+            var toSymbolDecimals = Math.Pow(10, toSymbolDecimalsInfo.Decimals);
+            var fromSymbolDecimalsInfo = Runtime.GetToken(fromSymbol);
+            var fromSymbolDecimals = Math.Pow(10, fromSymbolDecimalsInfo.Decimals);
+            Runtime.Expect(toPotBalance >= total, $"insufficient balance in pot, have {(double)toPotBalance/toSymbolDecimals} {toSymbol} in pot, need {(double)total/toSymbolDecimals} {toSymbol}, have {(double)fromBalance/fromSymbolDecimals} {fromSymbol} to convert from");
 
             var half = toPotBalance / 2;
             Runtime.Expect(total < half, $"taking too much {toSymbol} from pot at once");

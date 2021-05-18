@@ -203,7 +203,7 @@ namespace Phantasma.Blockchain.Contracts
                                     var ram = Serialization.Serialize(externalNft);
 
                                     var localNft = Runtime.ReadToken(transfer.Symbol, transfer.Value);
-                                    Runtime.WriteToken(transfer.Symbol, transfer.Value, ram);
+                                    Runtime.WriteToken(from, transfer.Symbol, transfer.Value, ram); // TODO "from" here might fail due to contract triggers, review this later
                                 }
 
                                 var settleHash = Runtime.Transaction.Hash;
@@ -299,7 +299,7 @@ namespace Phantasma.Blockchain.Contracts
             var feeBalance = Runtime.GetBalance(feeSymbol, from);
             if (feeBalance < feeAmount)
             {
-                Runtime.CallNativeContext(NativeContractKind.Swap, "SwapReverse", from, DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount);
+                Runtime.CallNativeContext(NativeContractKind.Swap, nameof(SwapContract.SwapReverse), from, DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount);
 
                 feeBalance = Runtime.GetBalance(feeSymbol, from);
                 Runtime.Expect(feeBalance >= feeAmount, $"missing {feeSymbol} for interop swap");

@@ -624,10 +624,10 @@ namespace Phantasma.Blockchain
             if (symbol == "TTRS")  // support for 22series tokens with a dummy script that conforms to the standard
             {
                 byte[] nftScript;
-                ContractInterface nftABI = NFTUtils.GetNFTStandard();
+                ContractInterface nftABI;
 
                 var url = "https://www.22series.com/part_info?id=*";
-                NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"{symbol} #*", url, url, out nftScript, out nftABI);
+                Tokens.TokenUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"{symbol} #*", url, url, out nftScript, out nftABI);
 
                 CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
             }
@@ -635,11 +635,10 @@ namespace Phantasma.Blockchain
             if (symbol == DomainSettings.RewardTokenSymbol)  
             {
                 byte[] nftScript;
-                ContractInterface nftABI = NFTUtils.GetNFTStandard();
+                ContractInterface nftABI;
 
-                var jsonUrl = "https://phantasma.io/img/crown/*";
-                var imgUrl = "https://phantasma.io/img/crown.png";
-                NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"Phantasma Reward", jsonUrl, imgUrl, out nftScript, out nftABI);
+                var url = "https://phantasma.io/crown?id=*";
+                Tokens.TokenUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"{symbol} #*", url, url, out nftScript, out nftABI);
 
                 CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
             }
@@ -675,7 +674,14 @@ namespace Phantasma.Blockchain
             if (storage.Has(key))
             {
                 var bytes = storage.Get(key);
-                return Serialization.Unserialize<TokenInfo>(bytes);
+                var token = Serialization.Unserialize<TokenInfo>(bytes);
+
+                TokenUtils.FetchProperty(storage, RootChain, "getOwner", token, (prop, value) =>
+                {
+                    token.Owner = value.AsAddress();
+                });
+
+                return token;
             }
 
             throw new ChainException($"Token does not exist ({symbol})");
@@ -691,7 +697,7 @@ namespace Phantasma.Blockchain
             var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
             Runtime.Expect(supply.Mint(Runtime.Storage, amount, token.MaxSupply), "mint supply failed");
 
-            var balances = new BalanceSheet(token.Symbol);
+            var balances = new BalanceSheet(token);
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), "balance add failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
@@ -805,7 +811,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(supply.Burn(Runtime.Storage, amount), $"{token.Symbol} burn failed");
 
-            var balances = new BalanceSheet(token.Symbol);
+            var balances = new BalanceSheet(token);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
 
             Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, destination, token.Symbol, amount) != TriggerResult.Failure, "token trigger failed");
@@ -957,7 +963,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(allowed, "invalid witness or allowance");
 
-            var balances = new BalanceSheet(token.Symbol);
+            var balances = new BalanceSheet(token);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), $"{token.Symbol} balance add failed to {destination.Text}");
 
@@ -1078,7 +1084,7 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"Token series supply must be 1 or more");
             }
 
-            var nftStandard = NFTUtils.GetNFTStandard();
+            var nftStandard = Tokens.TokenUtils.GetNFTStandard();
 
             if (!abi.Implements(nftStandard))
             {
@@ -1312,7 +1318,7 @@ namespace Phantasma.Blockchain
         private Transaction BeginNexusCreateTx(PhantasmaKeys owner)
         {
             var sb = ScriptUtils.BeginScript();
-            sb.CallInterop("Nexus.Init", owner.Address);
+            sb.CallInterop("Nexus.BeginInit", owner.Address);
 
             var deployInterop = "Runtime.DeployContract";
             sb.CallInterop(deployInterop, owner.Address, ValidatorContractName);
@@ -1343,6 +1349,8 @@ namespace Phantasma.Blockchain
             // requires staking token to be created previously
             sb.CallContract(NativeContractKind.Stake, nameof(StakeContract.Stake), owner.Address, StakeContract.DefaultMasterThreshold);
             sb.CallContract(NativeContractKind.Stake, nameof(StakeContract.Claim), owner.Address, owner.Address);
+
+            sb.CallInterop("Nexus.EndInit", owner.Address);
 
             sb.Emit(VM.Opcode.RET);
 
@@ -1413,7 +1421,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public void Initialize(Address owner)
+        internal void BeginInitialize(RuntimeVM vm, Address owner)
         {
             var storage = RootStorage;
 
@@ -1439,6 +1447,24 @@ namespace Phantasma.Blockchain
             SetPlatformTokenHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
             SetPlatformTokenHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
             //SetPlatformTokenHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
+        }
+
+        internal void FinishInitialize(RuntimeVM vm, Address owner)
+        {
+            var storage = RootStorage;
+
+            var symbols = GetTokens(storage);
+            foreach (var symbol in symbols)
+            {
+                var token = GetTokenInfo(storage, symbol);
+
+                var constructor = token.ABI.FindMethod(SmartContract.ConstructorName);
+
+                if (constructor != null)
+                {
+                    vm.CallContext(symbol, constructor, owner);
+                }
+            }
         }
 
         public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp, int version)
@@ -2417,6 +2443,20 @@ namespace Phantasma.Blockchain
             }
 
             return null;
+        }
+
+        internal void MigrateTokenOwner(StorageContext storage, Address oldOwner, Address newOwner)
+        {
+            var symbols = GetTokens(storage);
+            foreach (var symbol in symbols)
+            {
+                var token = (TokenInfo) GetTokenInfo(storage, symbol);
+                if (token.Owner == oldOwner)
+                {
+                    token.Owner = newOwner;
+                    EditToken(storage, symbol, token);
+                }
+            }
         }
 
         internal void UpgradeTokenContract(StorageContext storage, string symbol, byte[] script, ContractInterface abi)

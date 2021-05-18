@@ -102,6 +102,10 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        // TODO This test fails sometimes on first "Assert.IsTrue(testMap.Count() == 0);" check.
+        // Looks like it's random and related to tests execution order.
+        // Calling TestDBChangeSetStorageMapClear() test before this test makes it complete successfully.
+        // Changing "test2" to other unique key also helps.
         public void TestDBChangeSetStorageMapClearEmpty()
         {
             var storage = (StorageContext)new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));

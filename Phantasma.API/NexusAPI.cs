@@ -532,6 +532,22 @@ namespace Phantasma.API
                 }
             }
 
+            var prices = new List<TokenPriceResult>();
+
+            if (extended)
+            {
+                for (int i=0; i<30; i++)
+                {
+                    prices.Add(new TokenPriceResult()
+                    {
+                        Open = "0",
+                        Close = "0",
+                        High = "0",
+                        Low = "0",
+                    });
+                }
+            }
+
             return new TokenResult
             {
                 symbol = tokenInfo.Symbol,
@@ -546,6 +562,7 @@ namespace Phantasma.API
                 script = tokenInfo.Script.Encode(),
                 series = seriesList.ToArray(),
                 external = external.ToArray(),
+                price = prices.ToArray(),
             };
         }
 
@@ -564,10 +581,27 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            NFTUtils.FetchProperty(chain, method.name, series, ID, (propName, propValue) =>
+                            if (symbol == DomainSettings.RewardTokenSymbol && method.name == "getImageURL")
                             {
-                                properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
-                            });
+                                properties.Add(new TokenPropertyResult() { Key = "ImageURL", Value = "https://phantasma.io/img/crown.png" });
+                            }
+                            else
+                            if (symbol == DomainSettings.RewardTokenSymbol && method.name == "getInfoURL")
+                            {
+                                properties.Add(new TokenPropertyResult() { Key = "InfoURL", Value = "https://phantasma.io/crown/" + ID });
+                            }
+                            else
+                            if (symbol == DomainSettings.RewardTokenSymbol && method.name == "getName")
+                            {
+                                properties.Add(new TokenPropertyResult() { Key = "Name", Value = "Crown #" + info.MintID });
+                            }
+                            else
+                            {
+                                Blockchain.Tokens.TokenUtils.FetchProperty(Nexus.RootStorage, chain, method.name, series, ID, (propName, propValue) =>
+                                {
+                                    properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
+                                });
+                            }
                         }
                     }
 
@@ -1541,6 +1575,7 @@ namespace Phantasma.API
             return new NexusResult()
             {
                 name = Nexus.Name,
+                protocol = Nexus.GetProtocolVersion(Nexus.RootStorage),
                 tokens = tokenList.ToArray(),
                 platforms = platformList.ToArray(),
                 chains = chainList.ToArray(),
@@ -2006,7 +2041,15 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No node available" };
             }
 
-            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
+            IEnumerable<Peer> allPeers = Node.Peers;
+
+            if (Nexus.Name == DomainSettings.NexusMainnet)
+            {
+                // exclude fom the list all peers that did not configure external host properly
+                allPeers = allPeers.Where(x => !x.Endpoint.Host.Contains("localhost"));
+            }
+
+            var peers = allPeers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
 
             peers.Add(new PeerResult() { url = $"{Node.PublicEndpoint}", version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
 
