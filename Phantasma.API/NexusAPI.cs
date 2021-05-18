@@ -581,14 +581,19 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            if (symbol == "CROWN" && method.name == "getImageURL")
+                            if (symbol == DomainSettings.RewardTokenSymbol && method.name == "getImageURL")
                             {
                                 properties.Add(new TokenPropertyResult() { Key = "ImageURL", Value = "https://phantasma.io/img/crown.png" });
                             }
                             else
-                            if (symbol == "CROWN" && method.name == "getInfoURL")
+                            if (symbol == DomainSettings.RewardTokenSymbol && method.name == "getInfoURL")
                             {
                                 properties.Add(new TokenPropertyResult() { Key = "InfoURL", Value = "https://phantasma.io/crown/" + ID });
+                            }
+                            else
+                            if (symbol == DomainSettings.RewardTokenSymbol && method.name == "getName")
+                            {
+                                properties.Add(new TokenPropertyResult() { Key = "Name", Value = "Crown #" + info.MintID });
                             }
                             else
                             {
