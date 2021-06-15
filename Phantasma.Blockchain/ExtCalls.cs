@@ -393,7 +393,16 @@ namespace Phantasma.Blockchain
         private static ExecutionState Runtime_PreviousContext(RuntimeVM vm)
         {
             var result = new VMObject();
-            result.SetValue(vm.PreviousContext.Name);
+
+            if (vm.PreviousContext != null)
+            {
+                result.SetValue(vm.PreviousContext.Name);
+            }
+            else
+            {
+                result.SetValue(VirtualMachine.EntryContextName);
+            }
+
             vm.Stack.Push(result);
 
             return ExecutionState.Running;
