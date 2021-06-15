@@ -947,6 +947,7 @@ namespace Phantasma.API
                 try
                 {
                     result = FillAccount(address);
+                    list.Add(result);
                 }
                 catch (Exception e)
                 {
