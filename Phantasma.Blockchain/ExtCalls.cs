@@ -84,6 +84,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Map.Remove", Map_Remove);
             vm.RegisterMethod("Map.Count", Map_Count);
             vm.RegisterMethod("Map.Clear", Map_Clear);
+            vm.RegisterMethod("Map.Keys", Map_Keys);
 
             vm.RegisterMethod("List.Get", List_Get);
             vm.RegisterMethod("List.Add", List_Add);
@@ -688,6 +689,23 @@ namespace Phantasma.Blockchain
 
             var map = new StorageMap(mapKey, vm.Storage);
             map.Clear();
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Map_Keys(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            var contractName = vm.PopString("contract");
+            var field = vm.PopString("field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var map = new StorageMap(mapKey, vm.Storage);
+
+            var keys = map.AllKeys<byte[]>();
+            var val = VMObject.FromObject(keys);
+            vm.Stack.Push(val);
 
             return ExecutionState.Running;
         }
