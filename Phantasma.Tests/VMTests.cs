@@ -269,7 +269,7 @@ namespace Phantasma.Tests
         {
             var array = new BigInteger[] { 10, 50, 120, 250 };
 
-            var obj = VMObject.FromObject(array);
+            var obj = VMObject.FromArray(array);
 
             Assert.IsTrue(obj.Type == VMType.Struct);
 

@@ -912,11 +912,6 @@ namespace Phantasma.VM
                 return VMType.Enum;
             }
 
-            if (type.IsArray)
-            {
-                return VMType.Struct;
-            }
-
             if (type.IsClass || type.IsValueType)
             {
                 return VMType.Object;
@@ -929,6 +924,22 @@ namespace Phantasma.VM
         {
             var result = GetVMType(type);
             return result != VMType.None;
+        }
+
+        public static VMObject FromArray(Array array)
+        {
+            var result = new VMObject();
+            for (int i = 0; i < array.Length; i++)
+            {
+                var key = VMObject.FromObject(i);
+
+                var temp = array.GetValue(i);
+                var val = VMObject.FromObject(temp);
+
+                result.SetKey(key, val);
+            }
+
+            return result;
         }
 
         public static VMObject FromObject(object obj)
@@ -967,16 +978,7 @@ namespace Phantasma.VM
                 case VMType.Struct:
                     if (objType.IsArray)
                     {
-                        var array = (Array)obj;
-                        for (int i=0; i<array.Length; i++)
-                        {
-                            var key = VMObject.FromObject(i);
-
-                            var temp = array.GetValue(i);
-                            var val = VMObject.FromObject(temp);
-
-                            result.SetKey(key, val);
-                        }
+                        return FromArray((Array)obj);
                     }
                     break;
 
