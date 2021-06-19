@@ -327,6 +327,14 @@ namespace Phantasma.Tests
                 var key = new BigInteger(count);
                 Assert.AreEqual(testMap3.Get<BigInteger, BigInteger>(key), a);
             }
+
+            count = 0;
+            foreach (var a in testMap3.AllKeys<BigInteger>())
+            {
+                count++;
+                var key = new BigInteger(count);
+                Assert.AreEqual(key, a);
+            }
         }
 
         [TestMethod]

@@ -278,6 +278,57 @@ namespace Phantasma.Storage.Context
             return values.ToArray();
         }
 
+        public static byte[][] AllKeysRaw(this StorageMap map)
+        {
+            var values = new List<byte[]>();
+            var countKey = CountKey(map.BaseKey);
+            var found = false;
+            var countKeyRun = false;
+
+            if (map.Count() == 0)
+            {
+                return values.ToArray();
+            }
+
+            map.Context.Visit((key, _) =>
+            {
+                if (!found && key.SequenceEqual(countKey))
+                {
+                    countKeyRun = true;
+                    found = true;
+                }
+
+                if (!countKeyRun)
+                {
+                    var temp = new byte[key.Length - map.BaseKey.Length];
+                    ByteArrayUtils.CopyBytes(key, map.BaseKey.Length, temp, 0, temp.Length);
+                    values.Add(temp);
+                }
+                else
+                {
+                    countKeyRun = false;
+                }
+            }, (uint)map.Count(), map.BaseKey);
+
+            return values.ToArray();
+        }
+
+        public static K[] AllKeys<K>(this StorageMap map)
+        {
+            var values = new List<K>();
+
+            var rawValues = AllKeysRaw(map);
+
+            foreach (var rawValue in rawValues)
+            {
+                K Val;
+                Val = Serialization.Unserialize<K>(rawValue);
+                values.Add(Val);
+            }
+
+            return values.ToArray();
+        }
+
         // TODO optimize this
         public static void Clear(this StorageMap map)
         {
