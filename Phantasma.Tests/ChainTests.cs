@@ -517,6 +517,22 @@ namespace Phantasma.Tests
             crownBalance = nexus.RootChain.GetTokenBalance(nexus.RootStorage, DomainSettings.RewardTokenSymbol, secondOwner.Address);
             Assert.IsTrue(crownBalance == 1);
 
+            var thirdOwner = PhantasmaKeys.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(secondOwner, ProofOfWork.None, () =>
+            {
+                return ScriptUtils.BeginScript().
+                     AllowGas(secondOwner.Address, Address.Null, 400, 9999).
+                     CallContract("account", "Migrate", secondOwner.Address, thirdOwner.Address).
+                     SpendGas(secondOwner.Address).
+                     EndScript();
+            });
+            simulator.EndBlock();
+
+            simulator.BeginBlock(thirdOwner); // here we change the validator keys in simulator
+            simulator.GenerateTransfer(thirdOwner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
         }
 
         [TestMethod]

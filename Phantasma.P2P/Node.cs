@@ -49,7 +49,7 @@ namespace Phantasma.Network.P2P
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((EndpointEntry) obj);
+            return Equals((EndpointEntry)obj);
         }
 
         public override int GetHashCode()
@@ -172,7 +172,7 @@ namespace Phantasma.Network.P2P
                 {
                     // temporary HACK
                     var baseURL = "http:" + seeds.First().Split(':')[1];
-                    ProxyURL = baseURL + ":7078/api"; 
+                    ProxyURL = baseURL + ":7078/api";
                 }
             }
         }
@@ -354,42 +354,46 @@ namespace Phantasma.Network.P2P
             lock (_knownEndpoints)
             {
                 _knownEndpoints.RemoveAll(x => x.endpoint.Protocol != PeerProtocol.TCP);
-                var possibleTargets = new List<int>();
-                for (int i = 0; i < _knownEndpoints.Count; i++)
-                {
-                    if (_knownEndpoints[i].status == EndpointStatus.Waiting)
-                    {
-                        possibleTargets.Add(i);
-                    }
-                }
 
-                if (possibleTargets.Count > 0)
+                if (_knownEndpoints.Count > 0)
                 {
+                    int repeats = 0;
+
                     // adds a bit of pseudo randomness to connection order
-                    var idx = Math.Abs(Environment.TickCount) % possibleTargets.Count;
-                    idx = possibleTargets[idx];
-                    var target = _knownEndpoints[idx];
+                    var rand = Math.Abs(Environment.TickCount);
 
-                    var client = new TcpClient();
-                    var result = client.BeginConnect(target.endpoint.Host, target.endpoint.Port, null, null);
-
-                    var signal = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
-
-                    if (signal && client.Client != null && client.Client.Connected)
+                    do
                     {
-                        Logger.Debug("Connected to peer: " + target.endpoint);
-                        target.status = EndpointStatus.Connected;
+                        var idx = (int)((repeats + (uint)rand) % _knownEndpoints.Count);
 
-                        client.EndConnect(result);
-                        Task.Run(() => { HandleConnection(client.Client); });
-                        return;
-                    }
-                    else
-                    {
-                        Logger.Debug("Could not reach peer: " + target.endpoint);
-                        target.status = EndpointStatus.Disabled;
-                        return;
-                    }
+                        var target = _knownEndpoints[idx];
+                        if (target.status == EndpointStatus.Waiting)
+                        {
+                            var client = new TcpClient();
+                            var result = client.BeginConnect(target.endpoint.Host, target.endpoint.Port, null, null);
+
+                            var signal = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
+
+                            if (signal && client.Client != null && client.Client.Connected)
+                            {
+                                Logger.Debug("Connected to peer: " + target.endpoint);
+                                target.status = EndpointStatus.Connected;
+
+                                client.EndConnect(result);
+                                Task.Run(() => { HandleConnection(client.Client); });
+                            }
+                            else
+                            {
+                                Logger.Debug("Could not reach peer: " + target.endpoint);
+                                target.status = EndpointStatus.Disabled;
+                            }
+
+                            break;
+                        }
+
+                        repeats++;
+                    } while (repeats < 10);
+
                 }
             }
 
@@ -578,7 +582,7 @@ namespace Phantasma.Network.P2P
                     }
                 }
 
-                if (expectedHeight == 0) 
+                if (expectedHeight == 0)
                 {
                     Logger.Message($"{this.Version}: Added block #{start} to {chain.Name}");
                     IsFullySynced = true; // TODO when sidechains are avaible this should be reviewed

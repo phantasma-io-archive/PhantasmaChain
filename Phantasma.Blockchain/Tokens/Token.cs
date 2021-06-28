@@ -90,8 +90,6 @@ namespace Phantasma.Blockchain.Tokens
             Throw.If(flags == TokenFlags.None, "token must have flags set");
             Throw.If(script == null || script.Length == 0, "token script can't be empty");
             
-            Throw.If(flags.HasFlag(TokenFlags.Swappable), "swappable swap can't be set in token creation");
-
             Throw.If(maxSupply < 0, "negative supply");
             Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
             Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");

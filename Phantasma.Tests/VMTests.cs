@@ -252,7 +252,7 @@ namespace Phantasma.Tests
 
             var result = vm.Stack.Pop().AsString();
             Assert.IsTrue(result == "HELLO");
-        }    
+        }
 
         [TestMethod]
         public void DecodeStruct()
@@ -262,6 +262,25 @@ namespace Phantasma.Tests
             var obj = VMObject.FromBytes(bytes);
 
             Assert.IsTrue(obj.Type == VMType.Struct);
+        }
+
+        [TestMethod]
+        public void ArrayObjects()
+        {
+            var array = new BigInteger[] { 10, 50, 120, 250 };
+
+            var obj = VMObject.FromArray(array);
+
+            Assert.IsTrue(obj.Type == VMType.Struct);
+
+            var temp = obj.ToArray<BigInteger>();
+
+            Assert.IsTrue(temp.Length == array.Length);
+
+            for (int i=0; i<array.Length; i++)
+            {
+                Assert.IsTrue(array[i] == temp[i]);
+            }
         }
     }
 }

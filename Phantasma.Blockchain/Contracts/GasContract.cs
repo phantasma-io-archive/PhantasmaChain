@@ -160,10 +160,12 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     var reward = new StakeReward(addr, Runtime.Time);
 
-                    var temp = VMObject.FromObject(reward);
+                    /*var temp = VMObject.FromObject(reward);
                     temp = VMObject.CastTo(temp, VMType.Struct);
 
-                    var rom = temp.Serialize();
+                    var rom = temp.Serialize();*/
+
+                    var rom = Serialization.Serialize(reward);
 
                     var tokenID = Runtime.MintToken(DomainSettings.RewardTokenSymbol, this.Address, this.Address, rom, new byte[0], 0);
                     Runtime.InfuseToken(DomainSettings.RewardTokenSymbol, this.Address, tokenID, DomainSettings.FuelTokenSymbol, rewardFuel);

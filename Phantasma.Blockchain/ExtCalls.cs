@@ -25,6 +25,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.GasTarget", Runtime_GasTarget);
             vm.RegisterMethod("Runtime.Validator", Runtime_Validator);
             vm.RegisterMethod("Runtime.Context", Runtime_Context);
+            vm.RegisterMethod("Runtime.PreviousContext", Runtime_PreviousContext);
             vm.RegisterMethod("Runtime.GenerateUID", Runtime_GenerateUID);
             vm.RegisterMethod("Runtime.Random", Runtime_Random);            
             vm.RegisterMethod("Runtime.SetSeed", Runtime_SetSeed);
@@ -83,6 +84,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Map.Remove", Map_Remove);
             vm.RegisterMethod("Map.Count", Map_Count);
             vm.RegisterMethod("Map.Clear", Map_Clear);
+            vm.RegisterMethod("Map.Keys", Map_Keys);
 
             vm.RegisterMethod("List.Get", List_Get);
             vm.RegisterMethod("List.Add", List_Add);
@@ -389,6 +391,24 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        private static ExecutionState Runtime_PreviousContext(RuntimeVM vm)
+        {
+            var result = new VMObject();
+
+            if (vm.PreviousContext != null)
+            {
+                result.SetValue(vm.PreviousContext.Name);
+            }
+            else
+            {
+                result.SetValue(VirtualMachine.EntryContextName);
+            }
+
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
         private static ExecutionState Runtime_GenerateUID(RuntimeVM vm)
         {
             try
@@ -669,6 +689,23 @@ namespace Phantasma.Blockchain
 
             var map = new StorageMap(mapKey, vm.Storage);
             map.Clear();
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Map_Keys(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            var contractName = vm.PopString("contract");
+            var field = vm.PopString("field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var map = new StorageMap(mapKey, vm.Storage);
+
+            var keys = map.AllKeys<byte[]>();
+            var val = VMObject.FromObject(keys);
+            vm.Stack.Push(val);
 
             return ExecutionState.Running;
         }
@@ -1561,6 +1598,8 @@ namespace Phantasma.Blockchain
             vm.Expect(maxSupply >= 0, "missing or invalid token supply");
             vm.Expect(decimals >= 0, "missing or invalid token decimals");
             vm.Expect(flags != TokenFlags.None, "missing or invalid token flags");
+
+            vm.Expect(!flags.HasFlag(TokenFlags.Swappable), "swappable swap can't be set in token creation");
 
             vm.CreateToken(owner, symbol, name, maxSupply, decimals, flags, script, abi);
 

@@ -926,6 +926,22 @@ namespace Phantasma.VM
             return result != VMType.None;
         }
 
+        public static VMObject FromArray(Array array)
+        {
+            var result = new VMObject();
+            for (int i = 0; i < array.Length; i++)
+            {
+                var key = VMObject.FromObject(i);
+
+                var temp = array.GetValue(i);
+                var val = VMObject.FromObject(temp);
+
+                result.SetKey(key, val);
+            }
+
+            return result;
+        }
+
         public static VMObject FromObject(object obj)
         {
             var objType = obj.GetType();
@@ -939,23 +955,34 @@ namespace Phantasma.VM
                 case VMType.Bool: result.SetValue((bool)obj); break;
                 case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
                 case VMType.String: result.SetValue((string)obj); break;
+                case VMType.Enum: result.SetValue((Enum)obj); break;
+                case VMType.Object: result.SetValue(obj); break;
+
                 case VMType.Number:
-                    if (obj.GetType() == typeof(int))
+                    if (objType == typeof(int))
                     {
                         obj = new BigInteger((int)obj); // HACK
                     }
                     result.SetValue((BigInteger)obj);
                     break;
 
-                case VMType.Enum: result.SetValue((Enum)obj); break;
-                case VMType.Object: result.SetValue(obj); break;
                 case VMType.Timestamp:
-                    if (obj.GetType() == typeof(uint))
+                    if (objType == typeof(uint))
                     {
                         obj = new Timestamp((uint)obj); // HACK
                     }
                     result.SetValue((Timestamp)obj);
                     break;
+
+
+                case VMType.Struct:
+                    if (objType.IsArray)
+                    {
+                        return FromArray((Array)obj);
+                    }
+                    break;
+
+
                 default: return null;
             }
 
@@ -1000,7 +1027,8 @@ namespace Phantasma.VM
             }
             else
             {
-                return this.ToObject();
+                var temp = this.ToObject();
+                return temp;
             }
         }
 
