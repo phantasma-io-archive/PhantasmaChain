@@ -241,27 +241,32 @@ namespace Phantasma.Blockchain
             if (this.IsRoot && allowModify)
             {
                 var inflationReady = NativeContract.LoadFieldFromStorage<bool>(changeSet, NativeContractKind.Gas, nameof(GasContract._inflationReady));
+
                 if (inflationReady)
                 {
-                    var script = new ScriptBuilder()
-                        .AllowGas(block.Validator, Address.Null, minimumFee, 999999)
-                        .CallContract(NativeContractKind.Gas, nameof(GasContract.ApplyInflation), block.Validator)
-                        .SpendGas(block.Validator)
-                        .EndScript();
-
-                    var transaction = new Transaction(this.Nexus.Name, this.Name, script, block.Timestamp.Value + 1, "SYSTEM");
-
-                    transaction.Sign(signingKeys);
-
-                    VMObject vmResult;
-
-                    if (!ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
+                    if (!(block.Height >= 242942) && !(block.Height <= 242944))
                     {
-                        throw new ChainException("failed to execute inflation transaction");
-                    }
+                        Console.WriteLine("do inflation now");
+                        var script = new ScriptBuilder()
+                            .AllowGas(block.Validator, Address.Null, minimumFee, 999999)
+                            .CallContract(NativeContractKind.Gas, nameof(GasContract.ApplyInflation), block.Validator)
+                            .SpendGas(block.Validator)
+                            .EndScript();
 
-		            inflationTx = transaction;
-                    block.AddTransactionHash(transaction.Hash);
+                        var transaction = new Transaction(this.Nexus.Name, this.Name, script, block.Timestamp.Value + 1, "SYSTEM");
+
+                        transaction.Sign(signingKeys);
+
+                        VMObject vmResult;
+
+                        if (!ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
+                        {
+                            throw new ChainException("failed to execute inflation transaction");
+                        }
+
+		                inflationTx = transaction;
+                        block.AddTransactionHash(transaction.Hash);
+                    }
                 }
             }
 
