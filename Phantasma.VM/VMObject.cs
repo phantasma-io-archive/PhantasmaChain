@@ -1210,6 +1210,11 @@ namespace Phantasma.VM
             return result;
         }
 
+        public static VMObject FromStruct(object obj)
+        {
+            return CastViaReflection(obj, 0);
+        }
+
         public void UnserializeData(byte[] bytes)
         {
             using (var stream = new MemoryStream(bytes))

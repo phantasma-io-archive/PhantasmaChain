@@ -10,6 +10,8 @@ using System.Text;
 using Phantasma.Blockchain;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.VM.Utils;
+using Phantasma.Storage;
+using System.IO;
 
 namespace Phantasma.Tests
 {
@@ -262,6 +264,56 @@ namespace Phantasma.Tests
             var obj = VMObject.FromBytes(bytes);
 
             Assert.IsTrue(obj.Type == VMType.Struct);
+        }
+
+        public struct TestStruct : ISerializable
+        {
+            public string Name;
+            public int Number;
+            
+            public TestStruct(string name, int number)
+            {
+                Name = name;
+                Number = number;
+            }
+
+            public void SerializeData(BinaryWriter writer)
+            {
+                writer.Write(Name);
+                writer.Write(Number);
+                writer.Close();
+            }
+
+            public void UnserializeData(BinaryReader reader)
+            {
+                Name = reader.ReadString();
+                Number = reader.ReadInt32();
+                reader.Close();
+            }
+        }
+
+        [TestMethod]
+        public void EncodeDecodeStruct()
+        {
+            TestStruct test = new TestStruct("name", 0);
+
+            Assert.IsTrue(test.Name == "name");
+            Assert.IsTrue(test.Number == 0);
+
+            var vmStruct = VMObject.FromStruct(test);
+
+            var backFromStruct = vmStruct.AsStruct<TestStruct>();
+
+            Assert.IsTrue(backFromStruct.Name == "name");
+            Assert.IsTrue(backFromStruct.Number == 0);
+
+            var vmSerialize = vmStruct.Serialize();
+            var backFromSerialize = Serialization.Unserialize<VMObject>(vmSerialize);
+            var backToStruct = backFromSerialize.AsStruct<TestStruct>();
+
+            Assert.IsTrue(backToStruct.Name == "name");
+            Assert.IsTrue(backToStruct.Number == 0);
+
         }
     }
 }
