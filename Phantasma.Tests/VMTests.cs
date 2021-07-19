@@ -11,6 +11,7 @@ using Phantasma.Blockchain;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.VM.Utils;
 using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 using System.IO;
 
 namespace Phantasma.Tests
@@ -269,9 +270,9 @@ namespace Phantasma.Tests
         public struct TestStruct : ISerializable
         {
             public string Name;
-            public int Number;
+            public BigInteger Number;
             
-            public TestStruct(string name, int number)
+            public TestStruct(string name, BigInteger number)
             {
                 Name = name;
                 Number = number;
@@ -280,14 +281,14 @@ namespace Phantasma.Tests
             public void SerializeData(BinaryWriter writer)
             {
                 writer.Write(Name);
-                writer.Write(Number);
+                writer.WriteBigInteger(Number);
                 writer.Close();
             }
 
             public void UnserializeData(BinaryReader reader)
             {
                 Name = reader.ReadString();
-                Number = reader.ReadInt32();
+                Number = reader.ReadBigInteger();
                 reader.Close();
             }
         }
@@ -295,24 +296,27 @@ namespace Phantasma.Tests
         [TestMethod]
         public void EncodeDecodeStruct()
         {
-            TestStruct test = new TestStruct("name", 0);
+            BigInteger number = 123;
+            string name = "my_test";
 
-            Assert.IsTrue(test.Name == "name");
-            Assert.IsTrue(test.Number == 0);
+            TestStruct test = new TestStruct(name, number);
+
+            Assert.IsTrue(test.Name == name);
+            Assert.IsTrue(test.Number == number);
 
             var vmStruct = VMObject.FromStruct(test);
 
             var backFromStruct = vmStruct.AsStruct<TestStruct>();
 
-            Assert.IsTrue(backFromStruct.Name == "name");
-            Assert.IsTrue(backFromStruct.Number == 0);
+            Assert.IsTrue(backFromStruct.Name == name);
+            Assert.IsTrue(backFromStruct.Number == number);
 
             var vmSerialize = vmStruct.Serialize();
-            var backFromSerialize = Serialization.Unserialize<VMObject>(vmSerialize);
+            var backFromSerialize = VMObject.FromBytes(vmSerialize);
             var backToStruct = backFromSerialize.AsStruct<TestStruct>();
 
-            Assert.IsTrue(backToStruct.Name == "name");
-            Assert.IsTrue(backToStruct.Number == 0);
+            Assert.IsTrue(backToStruct.Name == name);
+            Assert.IsTrue(backToStruct.Number == number);
 
         }
     }
