@@ -319,5 +319,58 @@ namespace Phantasma.Tests
             Assert.IsTrue(backToStruct.Number == number);
 
         }
+
+
+        public struct TestAddressStruct : ISerializable
+        {
+            public string Name;
+            public Address Owner;
+
+            public TestAddressStruct(string Name, Address Owner)
+            {
+                this.Name = Name;
+                this.Owner = Owner;
+            }
+
+            public void SerializeData(BinaryWriter writer)
+            {
+                writer.Write(Name);
+                writer.Write(Owner.Text);
+                writer.Close();
+            }
+
+            public void UnserializeData(BinaryReader reader)
+            {
+                Name = reader.ReadString();
+                Owner = Address.FromText(reader.ReadString());
+                reader.Close();
+            }
+        }
+
+        [TestMethod]
+        public void EncodeWithAddress()
+        {
+            Address addr = Address.FromText("P2K6Sm1bUYGsFkxuzHPhia1AbANZaHBJV54RgtQi5q8oK34");
+            string name = "my_test";
+
+            TestAddressStruct test = new TestAddressStruct(name, addr);
+
+            Assert.IsTrue(test.Name == name);
+            Assert.IsTrue(test.Owner == addr);
+
+            var vmStruct = VMObject.FromStruct(test);
+
+            var backFromStruct = vmStruct.AsStruct<TestAddressStruct>();
+
+            Assert.IsTrue(backFromStruct.Name == name);
+            Assert.IsTrue(backFromStruct.Owner == addr);
+
+            var vmSerialize = vmStruct.Serialize();
+            var backFromSerialize = VMObject.FromBytes(vmSerialize);
+            var backToStruct = backFromSerialize.AsStruct<TestAddressStruct>();
+
+            Assert.IsTrue(backToStruct.Name == name);
+            Assert.IsTrue(backToStruct.Owner == addr);
+        }
     }
 }
