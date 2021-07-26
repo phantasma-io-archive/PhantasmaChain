@@ -1161,7 +1161,7 @@ namespace Phantasma.VM
                             var key = new VMObject();
                             key.SetValue(field.Name);
                             var val = field.GetValue(srcObj);
-                            var vmVal = CastViaReflection(val, level + 1, dontConvertSerializables);
+                            var vmVal = CastViaReflection(val, level + 1, true);
                             children[key] = vmVal;
                         }
 
