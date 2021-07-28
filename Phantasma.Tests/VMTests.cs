@@ -482,5 +482,233 @@ namespace Phantasma.Tests
             Assert.IsTrue(backToStruct_multi.Two.Number == Two.Number);
             Assert.IsTrue(backToStruct_multi.Three == Three);
         }
+
+        // Test Specific cases
+        public enum CharacterState
+        {
+            None = 0,
+            Ingame = 1,
+            Battle = 2,
+            Team = 3
+        }
+
+        public enum ElementType
+        {
+            Normal = 0,
+            Fire = 1,
+            Poison = 2,
+            Water = 3,
+            Grass = 4,
+            Steel = 5,
+            Eletric = 6,
+            Wind = 7
+        }
+
+        public struct CharacterROM
+        {
+            public string Name;
+            public BigInteger Seed;
+            public BigInteger Health;
+            public BigInteger Mana;
+            public BigInteger Attack;
+            public BigInteger Defense;
+            public BigInteger Speed;
+            public ElementType Element;
+
+            public CharacterROM(string Name, BigInteger Seed, BigInteger Health, BigInteger Mana, BigInteger Attack, BigInteger Defense, BigInteger Speed, ElementType Element)
+            {
+                this.Name = Name;
+                this.Seed = Seed;
+                this.Health = Health;
+                this.Mana = Mana;
+                this.Attack = Attack;
+                this.Defense = Defense;
+                this.Speed = Speed;
+                this.Element = Element;
+            }
+        }
+
+        public struct CharacterRAM
+        {
+            public BigInteger XP;
+            public BigInteger Level;
+            public CharacterState State;
+
+            public CharacterRAM(BigInteger XP, BigInteger Level, CharacterState State)
+            {
+                this.XP = XP;
+                this.Level = Level;
+                this.State = State;
+            }
+        }
+
+        public struct CharacterSetup
+        {
+            public CharacterROM Rom;
+            public CharacterRAM Ram;
+            public BigInteger IsBot;
+
+            public CharacterSetup(CharacterROM Rom, CharacterRAM Ram, BigInteger IsBot)
+            {
+                this.Rom = Rom;
+                this.Ram = Ram;
+                this.IsBot = IsBot;
+            }
+        }
+
+        public struct Team
+        {
+            public BigInteger TeamID;
+            public Address Player;
+            public CharacterSetup Character1;
+            public CharacterSetup Character2;
+            public CharacterSetup Character3;
+            
+            public Team(BigInteger TeamID, Address Player, CharacterSetup Character1, CharacterSetup Character2, CharacterSetup Character3)
+            {
+                this.TeamID = TeamID;
+                this.Player = Player;
+                this.Character1 = Character1;
+                this.Character2 = Character2;
+                this.Character3 = Character3;
+            }
+        }
+
+        [TestMethod]
+        public void TestTeam()
+        {
+            var name = "test";
+            var seed = 0;
+            var health = 0;
+            var mana = 0;
+            var attack = 0;
+            var defense = 0;
+            var speed = 0;
+            var element = ElementType.Normal;
+            var xp = 0;
+            var level = 1;
+            var state = CharacterState.Team;
+            var isBot = 0;
+            var teamID = 0;
+
+            var rom = new CharacterROM(name, seed, health, mana, attack, defense, speed, element);
+            var ram = new CharacterRAM(xp, level, state);
+            var cSetup = new CharacterSetup(rom, ram, isBot);
+            var team = new Team(teamID, Address.Null, cSetup, cSetup, cSetup);
+
+            // Test ROM
+            Assert.IsTrue(rom.Name == name);
+            Assert.IsTrue(rom.Seed == seed);
+            Assert.IsTrue(rom.Health == health);
+            Assert.IsTrue(rom.Mana == mana);
+            Assert.IsTrue(rom.Attack == attack);
+            Assert.IsTrue(rom.Defense == defense);
+            Assert.IsTrue(rom.Speed == speed);
+            Assert.IsTrue(rom.Element == element);
+
+            var romVMStruct = VMObject.FromStruct(rom);
+            var romBackFromStruct = romVMStruct.AsStruct<CharacterROM>();
+
+            Assert.IsTrue(romBackFromStruct.Name == name);
+            Assert.IsTrue(romBackFromStruct.Seed == seed);
+            Assert.IsTrue(romBackFromStruct.Health == health);
+            Assert.IsTrue(romBackFromStruct.Mana == mana);
+            Assert.IsTrue(romBackFromStruct.Attack == attack);
+            Assert.IsTrue(romBackFromStruct.Defense == defense);
+            Assert.IsTrue(romBackFromStruct.Speed == speed);
+            Assert.IsTrue(romBackFromStruct.Element == element);
+
+            var romVMSerialize = romVMStruct.Serialize();
+            var romBackFromSerialize = VMObject.FromBytes(romVMSerialize);
+            var romBackToStruct = romBackFromSerialize.AsStruct<CharacterROM>();
+
+            Assert.IsTrue(romBackToStruct.Name == name);
+            Assert.IsTrue(romBackToStruct.Seed == seed);
+            Assert.IsTrue(romBackToStruct.Health == health);
+            Assert.IsTrue(romBackToStruct.Mana == mana);
+            Assert.IsTrue(romBackToStruct.Attack == attack);
+            Assert.IsTrue(romBackToStruct.Defense == defense);
+            Assert.IsTrue(romBackToStruct.Speed == speed);
+            Assert.IsTrue(romBackToStruct.Element == element);
+
+            // Test RAM
+            Assert.IsTrue(ram.XP == xp);
+            Assert.IsTrue(ram.Level == level);
+            Assert.IsTrue(ram.State == state);
+
+            var ramVMStruct = VMObject.FromStruct(ram);
+            var ramBackFromStruct = ramVMStruct.AsStruct<CharacterRAM>();
+
+            Assert.IsTrue(ramBackFromStruct.XP == xp);
+            Assert.IsTrue(ramBackFromStruct.Level == level);
+            Assert.IsTrue(ramBackFromStruct.State == state);
+
+            var ramVMSerialize = ramVMStruct.Serialize();
+            var ramBackFromSerialize = VMObject.FromBytes(ramVMSerialize);
+            var ramBackToStruct = ramBackFromSerialize.AsStruct<CharacterRAM>();
+
+            Assert.IsTrue(ramBackToStruct.XP == xp);
+            Assert.IsTrue(ramBackToStruct.Level == level);
+            Assert.IsTrue(ramBackToStruct.State == state);
+
+            // Test Character
+            Assert.IsTrue(cSetup.IsBot == isBot);
+            Assert.Equals(cSetup.Rom, rom);
+            Assert.Equals(cSetup.Ram, rom);
+
+            var characterVMStruct = VMObject.FromStruct(cSetup);
+            var characterBackFromStruct = characterVMStruct.AsStruct<CharacterSetup>();
+
+            Assert.IsTrue(characterBackFromStruct.IsBot == isBot);
+            Assert.Equals(characterBackFromStruct.Rom, rom);
+            Assert.Equals(characterBackFromStruct.Ram, rom);
+
+
+            var characterVMSerialize = characterVMStruct.Serialize();
+            var characterBackFromSerialize = VMObject.FromBytes(characterVMSerialize);
+            var characterBackToStruct = characterBackFromSerialize.AsStruct<CharacterSetup>();
+
+            Assert.IsTrue(characterBackToStruct.IsBot == isBot);
+            Assert.Equals(characterBackToStruct.Rom, rom);
+            Assert.Equals(characterBackToStruct.Ram, rom);
+
+            // Test Team
+            Assert.IsTrue(team.TeamID == teamID);
+            Assert.IsTrue(team.Player == Address.Null);
+            Assert.Equals(team.Character1, cSetup);
+            Assert.Equals(team.Character1, cSetup);
+            Assert.Equals(team.Character1, cSetup);
+
+            var teamVMStruct = VMObject.FromStruct(team);
+            var teamBackFromStruct = teamVMStruct.AsStruct<Team>();
+
+            Assert.IsTrue(teamBackFromStruct.TeamID == teamID);
+            Assert.IsTrue(teamBackFromStruct.Player == Address.Null);
+            Assert.Equals(teamBackFromStruct.Character1, cSetup);
+            Assert.Equals(teamBackFromStruct.Character1, cSetup);
+            Assert.Equals(teamBackFromStruct.Character1, cSetup);
+
+
+            var teamVMSerialize = teamVMStruct.Serialize();
+            var teamBackFromSerialize = VMObject.FromBytes(teamVMSerialize);
+            var teamBackToStruct = teamBackFromSerialize.AsStruct<Team>();
+
+            Assert.IsTrue(teamBackToStruct.TeamID == teamID);
+            Assert.IsTrue(teamBackToStruct.Player == Address.Null);
+            Assert.Equals(teamBackToStruct.Character1, cSetup);
+            Assert.Equals(teamBackToStruct.Character1, cSetup);
+            Assert.Equals(teamBackToStruct.Character1, cSetup);
+
+            // Encode With Base16 and decode
+            var teamEncode = Base16.Encode(VMObject.FromStruct(team).Serialize());
+            var teamBytes = Base16.Decode(teamEncode);
+            var teamDecode = Serialization.Unserialize<Team>(teamBytes);
+
+            Assert.IsTrue(teamDecode.TeamID == teamID);
+            Assert.IsTrue(teamDecode.Player == Address.Null);
+            Assert.Equals(teamDecode.Character1, cSetup);
+            Assert.Equals(teamDecode.Character1, cSetup);
+            Assert.Equals(teamDecode.Character1, cSetup);
+        }
     }
 }
