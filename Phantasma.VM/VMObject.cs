@@ -385,6 +385,13 @@ namespace Phantasma.VM
                 Throw.If(fi == null, "unknown field: " + fieldName);
 
                 var fieldValue = entry.Value.ToObject();
+
+                if (fi.FieldType.IsStructOrClass() && fieldValue is byte[])
+                {
+                    var bytes = (byte[])fieldValue;
+                    fieldValue = Serialization.Unserialize(bytes, fi.FieldType);
+                }
+
                 fi.SetValueDirect(reference, fieldValue);
             }
 
