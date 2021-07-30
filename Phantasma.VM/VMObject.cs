@@ -386,16 +386,28 @@ namespace Phantasma.VM
 
                 var fieldValue = entry.Value.ToObject();
 
-                if (fi.FieldType.IsStructOrClass() && fieldValue is byte[])
-                {
-                    var bytes = (byte[])fieldValue;
-                    fieldValue = Serialization.Unserialize(bytes, fi.FieldType);
-                }
+                fieldValue = ConvertObjectInternal(fieldValue, fi.FieldType);
 
                 fi.SetValueDirect(reference, fieldValue);
             }
 
             return result;
+        }
+
+        private static object ConvertObjectInternal(object fieldValue, Type fieldType)
+        {
+            if (fieldType.IsStructOrClass() && fieldValue is byte[])
+            {
+                var bytes = (byte[])fieldValue;
+                fieldValue = Serialization.Unserialize(bytes, fieldType);
+            }
+            else
+            if (fieldType.IsEnum)
+            {
+                fieldValue = Enum.Parse(fieldType, fieldValue.ToString());
+            }
+
+            return fieldValue;
         }
 
         public T AsInterop<T>()
@@ -1059,6 +1071,9 @@ namespace Phantasma.VM
                 var index = (int)temp;
 
                 var val = child.Value.ToObject(arrayElementType);
+
+                val = ConvertObjectInternal(val, arrayElementType);
+
                 array.SetValue(val, index);
             }
 
