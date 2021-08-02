@@ -384,7 +384,16 @@ namespace Phantasma.VM
 
                 Throw.If(fi == null, "unknown field: " + fieldName);
 
-                var fieldValue = entry.Value.ToObject();
+                object fieldValue;
+
+                if (entry.Value.Type == VMType.Struct)
+                {
+                    fieldValue = entry.Value.ToStruct(fi.FieldType);
+                }
+                else
+                {
+                    fieldValue = entry.Value.ToObject();
+                }
 
                 fieldValue = ConvertObjectInternal(fieldValue, fi.FieldType);
 
@@ -1008,7 +1017,8 @@ namespace Phantasma.VM
                 case VMType.Timestamp: return this.AsTimestamp();
                 case VMType.Object: return this.Data;
                 case VMType.Enum: return this.Data;
-                default: return null;
+
+                default:  throw new Exception($"Cannot cast {Type} to object");
             }
         }
 
