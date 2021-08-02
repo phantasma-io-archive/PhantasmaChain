@@ -653,15 +653,34 @@ namespace Phantasma.Tests
 
             // Test Character
             Assert.IsTrue(cSetup.IsBot == isBot);
-            Assert.Equals(cSetup.Rom, rom);
-            Assert.Equals(cSetup.Ram, rom);
+            Assert.IsTrue(cSetup.Rom.Name == name);
+            Assert.IsTrue(cSetup.Rom.Seed == seed);
+            Assert.IsTrue(cSetup.Rom.Health == health);
+            Assert.IsTrue(cSetup.Rom.Mana == mana);
+            Assert.IsTrue(cSetup.Rom.Attack == attack);
+            Assert.IsTrue(cSetup.Rom.Defense == defense);
+            Assert.IsTrue(cSetup.Rom.Speed == speed);
+            Assert.IsTrue(cSetup.Rom.Element == element);
+            Assert.IsTrue(cSetup.Ram.XP == xp);
+            Assert.IsTrue(cSetup.Ram.Level == level);
+            Assert.IsTrue(cSetup.Ram.State == state);
+
 
             var characterVMStruct = VMObject.FromStruct(cSetup);
             var characterBackFromStruct = characterVMStruct.AsStruct<CharacterSetup>();
 
             Assert.IsTrue(characterBackFromStruct.IsBot == isBot);
-            Assert.Equals(characterBackFromStruct.Rom, rom);
-            Assert.Equals(characterBackFromStruct.Ram, rom);
+            Assert.IsTrue(characterBackFromStruct.Rom.Name == name);
+            Assert.IsTrue(characterBackFromStruct.Rom.Seed == seed);
+            Assert.IsTrue(characterBackFromStruct.Rom.Health == health);
+            Assert.IsTrue(characterBackFromStruct.Rom.Mana == mana);
+            Assert.IsTrue(characterBackFromStruct.Rom.Attack == attack);
+            Assert.IsTrue(characterBackFromStruct.Rom.Defense == defense);
+            Assert.IsTrue(characterBackFromStruct.Rom.Speed == speed);
+            Assert.IsTrue(characterBackFromStruct.Rom.Element == element);
+            Assert.IsTrue(characterBackFromStruct.Ram.XP == xp);
+            Assert.IsTrue(characterBackFromStruct.Ram.Level == level);
+            Assert.IsTrue(characterBackFromStruct.Ram.State == state);
 
 
             var characterVMSerialize = characterVMStruct.Serialize();
@@ -669,24 +688,99 @@ namespace Phantasma.Tests
             var characterBackToStruct = characterBackFromSerialize.AsStruct<CharacterSetup>();
 
             Assert.IsTrue(characterBackToStruct.IsBot == isBot);
-            Assert.Equals(characterBackToStruct.Rom, rom);
-            Assert.Equals(characterBackToStruct.Ram, rom);
+            Assert.IsTrue(characterBackToStruct.Rom.Name == name);
+            Assert.IsTrue(characterBackToStruct.Rom.Seed == seed);
+            Assert.IsTrue(characterBackToStruct.Rom.Health == health);
+            Assert.IsTrue(characterBackToStruct.Rom.Mana == mana);
+            Assert.IsTrue(characterBackToStruct.Rom.Attack == attack);
+            Assert.IsTrue(characterBackToStruct.Rom.Defense == defense);
+            Assert.IsTrue(characterBackToStruct.Rom.Speed == speed);
+            Assert.IsTrue(characterBackToStruct.Rom.Element == element);
+            Assert.IsTrue(characterBackToStruct.Ram.XP == xp);
+            Assert.IsTrue(characterBackToStruct.Ram.Level == level);
+            Assert.IsTrue(characterBackToStruct.Ram.State == state);
 
             // Test Team
             Assert.IsTrue(team.TeamID == teamID);
             Assert.IsTrue(team.Player == Address.Null);
-            Assert.Equals(team.Character1, cSetup);
-            Assert.Equals(team.Character1, cSetup);
-            Assert.Equals(team.Character1, cSetup);
+            Assert.IsTrue(team.Character1.IsBot == isBot);
+            Assert.IsTrue(team.Character1.Rom.Name == name);
+            Assert.IsTrue(team.Character1.Rom.Seed == seed);
+            Assert.IsTrue(team.Character1.Rom.Health == health);
+            Assert.IsTrue(team.Character1.Rom.Mana == mana);
+            Assert.IsTrue(team.Character1.Rom.Attack == attack);
+            Assert.IsTrue(team.Character1.Rom.Defense == defense);
+            Assert.IsTrue(team.Character1.Rom.Speed == speed);
+            Assert.IsTrue(team.Character1.Rom.Element == element);
+            Assert.IsTrue(team.Character1.Ram.XP == xp);
+            Assert.IsTrue(team.Character1.Ram.Level == level);
+            Assert.IsTrue(team.Character1.Ram.State == state);
+            Assert.IsTrue(team.Character2.IsBot == isBot);
+            Assert.IsTrue(team.Character2.Rom.Name == name);
+            Assert.IsTrue(team.Character2.Rom.Seed == seed);
+            Assert.IsTrue(team.Character2.Rom.Health == health);
+            Assert.IsTrue(team.Character2.Rom.Mana == mana);
+            Assert.IsTrue(team.Character2.Rom.Attack == attack);
+            Assert.IsTrue(team.Character2.Rom.Defense == defense);
+            Assert.IsTrue(team.Character2.Rom.Speed == speed);
+            Assert.IsTrue(team.Character2.Rom.Element == element);
+            Assert.IsTrue(team.Character2.Ram.XP == xp);
+            Assert.IsTrue(team.Character2.Ram.Level == level);
+            Assert.IsTrue(team.Character2.Ram.State == state);
+            Assert.IsTrue(team.Character3.IsBot == isBot);
+            Assert.IsTrue(team.Character3.Rom.Name == name);
+            Assert.IsTrue(team.Character3.Rom.Seed == seed);
+            Assert.IsTrue(team.Character3.Rom.Health == health);
+            Assert.IsTrue(team.Character3.Rom.Mana == mana);
+            Assert.IsTrue(team.Character3.Rom.Attack == attack);
+            Assert.IsTrue(team.Character3.Rom.Defense == defense);
+            Assert.IsTrue(team.Character3.Rom.Speed == speed);
+            Assert.IsTrue(team.Character3.Rom.Element == element);
+            Assert.IsTrue(team.Character3.Ram.XP == xp);
+            Assert.IsTrue(team.Character3.Ram.Level == level);
+            Assert.IsTrue(team.Character3.Ram.State == state);
 
             var teamVMStruct = VMObject.FromStruct(team);
             var teamBackFromStruct = teamVMStruct.AsStruct<Team>();
 
             Assert.IsTrue(teamBackFromStruct.TeamID == teamID);
             Assert.IsTrue(teamBackFromStruct.Player == Address.Null);
-            Assert.Equals(teamBackFromStruct.Character1, cSetup);
-            Assert.Equals(teamBackFromStruct.Character1, cSetup);
-            Assert.Equals(teamBackFromStruct.Character1, cSetup);
+            Assert.IsTrue(teamBackFromStruct.Character1.IsBot == isBot);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Name == name);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Seed == seed);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Health == health);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Mana == mana);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Attack == attack);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Defense == defense);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Speed == speed);
+            Assert.IsTrue(teamBackFromStruct.Character1.Rom.Element == element);
+            Assert.IsTrue(teamBackFromStruct.Character1.Ram.XP == xp);
+            Assert.IsTrue(teamBackFromStruct.Character1.Ram.Level == level);
+            Assert.IsTrue(teamBackFromStruct.Character1.Ram.State == state);
+            Assert.IsTrue(teamBackFromStruct.Character2.IsBot == isBot);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Name == name);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Seed == seed);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Health == health);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Mana == mana);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Attack == attack);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Defense == defense);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Speed == speed);
+            Assert.IsTrue(teamBackFromStruct.Character2.Rom.Element == element);
+            Assert.IsTrue(teamBackFromStruct.Character2.Ram.XP == xp);
+            Assert.IsTrue(teamBackFromStruct.Character2.Ram.Level == level);
+            Assert.IsTrue(teamBackFromStruct.Character2.Ram.State == state);
+            Assert.IsTrue(teamBackFromStruct.Character3.IsBot == isBot);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Name == name);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Seed == seed);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Health == health);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Mana == mana);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Attack == attack);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Defense == defense);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Speed == speed);
+            Assert.IsTrue(teamBackFromStruct.Character3.Rom.Element == element);
+            Assert.IsTrue(teamBackFromStruct.Character3.Ram.XP == xp);
+            Assert.IsTrue(teamBackFromStruct.Character3.Ram.Level == level);
+            Assert.IsTrue(teamBackFromStruct.Character3.Ram.State == state);
 
 
             var teamVMSerialize = teamVMStruct.Serialize();
@@ -695,9 +789,42 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(teamBackToStruct.TeamID == teamID);
             Assert.IsTrue(teamBackToStruct.Player == Address.Null);
-            Assert.Equals(teamBackToStruct.Character1, cSetup);
-            Assert.Equals(teamBackToStruct.Character1, cSetup);
-            Assert.Equals(teamBackToStruct.Character1, cSetup);
+            Assert.IsTrue(teamBackToStruct.Character1.IsBot == isBot);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Name == name);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Seed == seed);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Health == health);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Mana == mana);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Attack == attack);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Defense == defense);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Speed == speed);
+            Assert.IsTrue(teamBackToStruct.Character1.Rom.Element == element);
+            Assert.IsTrue(teamBackToStruct.Character1.Ram.XP == xp);
+            Assert.IsTrue(teamBackToStruct.Character1.Ram.Level == level);
+            Assert.IsTrue(teamBackToStruct.Character1.Ram.State == state);
+            Assert.IsTrue(teamBackToStruct.Character2.IsBot == isBot);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Name == name);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Seed == seed);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Health == health);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Mana == mana);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Attack == attack);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Defense == defense);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Speed == speed);
+            Assert.IsTrue(teamBackToStruct.Character2.Rom.Element == element);
+            Assert.IsTrue(teamBackToStruct.Character2.Ram.XP == xp);
+            Assert.IsTrue(teamBackToStruct.Character2.Ram.Level == level);
+            Assert.IsTrue(teamBackToStruct.Character2.Ram.State == state);
+            Assert.IsTrue(teamBackToStruct.Character3.IsBot == isBot);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Name == name);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Seed == seed);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Health == health);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Mana == mana);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Attack == attack);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Defense == defense);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Speed == speed);
+            Assert.IsTrue(teamBackToStruct.Character3.Rom.Element == element);
+            Assert.IsTrue(teamBackToStruct.Character3.Ram.XP == xp);
+            Assert.IsTrue(teamBackToStruct.Character3.Ram.Level == level);
+            Assert.IsTrue(teamBackToStruct.Character3.Ram.State == state);
 
             // Encode With Base16 and decode
             var teamEncode = Base16.Encode(VMObject.FromStruct(team).Serialize());
@@ -706,9 +833,42 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(teamDecode.TeamID == teamID);
             Assert.IsTrue(teamDecode.Player == Address.Null);
-            Assert.Equals(teamDecode.Character1, cSetup);
-            Assert.Equals(teamDecode.Character1, cSetup);
-            Assert.Equals(teamDecode.Character1, cSetup);
+            Assert.IsTrue(teamDecode.Character1.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character1.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character1.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character1.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character1.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character1.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character1.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character1.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character1.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character1.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character1.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character1.Ram.State == state);
+            Assert.IsTrue(teamDecode.Character2.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character2.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character2.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character2.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character2.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character2.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character2.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character2.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character2.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character2.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character2.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character2.Ram.State == state);
+            Assert.IsTrue(teamDecode.Character3.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character3.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character3.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character3.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character3.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character3.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character3.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character3.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character3.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character3.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character3.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character3.Ram.State == state);
         }
     }
 }
