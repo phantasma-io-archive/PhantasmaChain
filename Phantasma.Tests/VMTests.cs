@@ -829,7 +829,7 @@ namespace Phantasma.Tests
             // Encode With Base16 and decode
             var teamEncode = Base16.Encode(VMObject.FromStruct(team).Serialize());
             var teamBytes = Base16.Decode(teamEncode);
-            var teamDecode = Serialization.Unserialize<Team>(teamBytes);
+            var teamDecode = VMObject.FromBytes(teamBytes).AsStruct<Team>();
 
             Assert.IsTrue(teamDecode.TeamID == teamID);
             Assert.IsTrue(teamDecode.Player == Address.Null);
