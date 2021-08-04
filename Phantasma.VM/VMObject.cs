@@ -345,6 +345,21 @@ namespace Phantasma.VM
 
         public T AsStruct<T>()
         {
+            var structType = typeof(T);
+
+            if (this.Type == VMType.Object)
+            {
+                if (this.Data != null && this.Data.GetType() == structType)
+                {
+                    return (T)this.Data;
+                }
+                else
+                {
+                    throw new Exception($"Invalid cast: expected VMObject of type {structType.Name}");
+                }
+
+            }
+
             Throw.If(this.Type != VMType.Struct, $"Invalid cast: expected struct, got {this.Type}");
 
             if (this.Data == null)
@@ -358,7 +373,6 @@ namespace Phantasma.VM
 
             var result = Activator.CreateInstance<T>();
 
-            var structType = typeof(T);
             TypedReference reference = __makeref(result);
 
             // WARNING this code is still experimental, probably wont work in every situation
@@ -370,11 +384,39 @@ namespace Phantasma.VM
 
                 Throw.If(fi == null, "unknown field: " + fieldName);
 
-                var fieldValue = entry.Value.ToObject();
+                object fieldValue;
+
+                if (entry.Value.Type == VMType.Struct)
+                {
+                    fieldValue = entry.Value.ToStruct(fi.FieldType);
+                }
+                else
+                {
+                    fieldValue = entry.Value.ToObject();
+                }
+
+                fieldValue = ConvertObjectInternal(fieldValue, fi.FieldType);
+
                 fi.SetValueDirect(reference, fieldValue);
             }
 
             return result;
+        }
+
+        private static object ConvertObjectInternal(object fieldValue, Type fieldType)
+        {
+            if (fieldType.IsStructOrClass() && fieldValue is byte[])
+            {
+                var bytes = (byte[])fieldValue;
+                fieldValue = Serialization.Unserialize(bytes, fieldType);
+            }
+            else
+            if (fieldType.IsEnum)
+            {
+                fieldValue = Enum.Parse(fieldType, fieldValue.ToString());
+            }
+
+            return fieldValue;
         }
 
         public T AsInterop<T>()
@@ -1002,7 +1044,8 @@ namespace Phantasma.VM
                 case VMType.Timestamp: return this.AsTimestamp();
                 case VMType.Object: return this.Data;
                 case VMType.Enum: return this.Data;
-                default: return null;
+
+                default:  throw new Exception($"Cannot cast {Type} to object");
             }
         }
 
@@ -1066,6 +1109,9 @@ namespace Phantasma.VM
                 var index = (int)temp;
 
                 var val = child.Value.ToObject(arrayElementType);
+
+                val = ConvertObjectInternal(val, arrayElementType);
+
                 array.SetValue(val, index);
             }
 
@@ -1127,7 +1173,7 @@ namespace Phantasma.VM
         }
 
         // this does the opposite of ToStruct(), takes a InteropObject and converts it to a VM.Struct
-        private static VMObject CastViaReflection(object srcObj, int level)
+        private static VMObject CastViaReflection(object srcObj, int level, bool dontConvertSerializables = true)
         {
             var srcType = srcObj.GetType();
 
@@ -1155,7 +1201,12 @@ namespace Phantasma.VM
 
                 VMObject result;
 
-                bool isKnownType = typeof(BigInteger) == srcType || typeof(Timestamp) == srcType || typeof(ISerializable).IsAssignableFrom(srcType);
+                bool isKnownType = typeof(BigInteger) == srcType || typeof(Timestamp) == srcType;
+
+                if (isKnownType == false && dontConvertSerializables && typeof(ISerializable).IsAssignableFrom(srcType))
+                {
+                    isKnownType = true;
+                }
 
                 if (srcType.IsStructOrClass() && !isKnownType)
                 {
@@ -1170,7 +1221,7 @@ namespace Phantasma.VM
                             var key = new VMObject();
                             key.SetValue(field.Name);
                             var val = field.GetValue(srcObj);
-                            var vmVal = CastViaReflection(val, level + 1);
+                            var vmVal = CastViaReflection(val, level + 1, true);
                             children[key] = vmVal;
                         }
 
@@ -1236,6 +1287,11 @@ namespace Phantasma.VM
             var result = new VMObject();
             result.UnserializeData(bytes);
             return result;
+        }
+
+        public static VMObject FromStruct(object obj)
+        {
+            return CastViaReflection(obj, 0, false);
         }
 
         public void UnserializeData(byte[] bytes)

@@ -95,7 +95,7 @@ namespace Phantasma.Domain
         public const string PhantomForceOrganizationName = "phantom_force";
 
         public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
-        public static readonly string PlatformName = "phantasma";
+        public const string PlatformName = "phantasma";
 
         public static readonly int ArchiveMinSize = 64; // in bytes
         public static readonly int ArchiveMaxSize = 104857600; //100mb
