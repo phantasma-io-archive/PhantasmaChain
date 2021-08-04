@@ -546,9 +546,9 @@ namespace Phantasma.Tests
         {
             public CharacterROM Rom;
             public CharacterRAM Ram;
-            public BigInteger IsBot;
+            public bool IsBot;
 
-            public CharacterSetup(CharacterROM Rom, CharacterRAM Ram, BigInteger IsBot)
+            public CharacterSetup(CharacterROM Rom, CharacterRAM Ram, bool IsBot)
             {
                 this.Rom = Rom;
                 this.Ram = Ram;
@@ -588,7 +588,7 @@ namespace Phantasma.Tests
             var xp = 0;
             var level = 1;
             var state = CharacterState.Team;
-            var isBot = 0;
+            var isBot = false;
             var teamID = 0;
 
             var rom = new CharacterROM(name, seed, health, mana, attack, defense, speed, element);
@@ -830,6 +830,67 @@ namespace Phantasma.Tests
             var teamEncode = Base16.Encode(VMObject.FromStruct(team).Serialize());
             var teamBytes = Base16.Decode(teamEncode);
             var teamDecode = VMObject.FromBytes(teamBytes).AsStruct<Team>();
+
+            Assert.IsTrue(teamDecode.TeamID == teamID);
+            Assert.IsTrue(teamDecode.Player == Address.Null);
+            Assert.IsTrue(teamDecode.Character1.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character1.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character1.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character1.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character1.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character1.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character1.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character1.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character1.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character1.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character1.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character1.Ram.State == state);
+            Assert.IsTrue(teamDecode.Character2.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character2.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character2.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character2.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character2.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character2.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character2.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character2.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character2.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character2.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character2.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character2.Ram.State == state);
+            Assert.IsTrue(teamDecode.Character3.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character3.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character3.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character3.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character3.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character3.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character3.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character3.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character3.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character3.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character3.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character3.Ram.State == state);
+        }
+
+        [TestMethod]
+        public void TestVMEncodeStructs()
+        {
+            string encoded = "010504065465616D49440301000406506C6179657208232200000000000000000000000000000000000000000000000000000000000000000000040A4368617261637465723101030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E7403020100040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F740600040A4368617261637465723201030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E7403020100040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F740600040A4368617261637465723301030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E7403020100040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F740600";
+            var decodeTeam = Base16.Decode(encoded);
+            var teamDecode = VMObject.FromBytes(decodeTeam).AsStruct<Team>();
+
+            var name = "null";
+            var seed = 0;
+            var health = 0;
+            var mana = 0;
+            var attack = 0;
+            var defense = 0;
+            var speed = 0;
+            var element = ElementType.Fire;
+            var xp = 0;
+            var level = 0;
+            var state = CharacterState.Team;
+            var isBot = false;
+            var teamID = 0;
 
             Assert.IsTrue(teamDecode.TeamID == teamID);
             Assert.IsTrue(teamDecode.Player == Address.Null);
