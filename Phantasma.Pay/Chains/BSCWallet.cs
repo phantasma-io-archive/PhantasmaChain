@@ -27,23 +27,7 @@ namespace Phantasma.Pay.Chains
 
         public override void SyncBalances(Action<bool> callback)
         {
-            _balances.Clear();
-
-            var url = $"https://api.blockcypher.com/v1/eth/main/addrs/{this.Address}/balance";
-            JSONRequest(url, (root) =>
-            {
-                if (root == null)
-                {
-                    callback(false);
-                    return;
-                }
-
-                var temp = root.GetString("balance");
-                var n = BigInteger.Parse(temp);
-                var amount = UnitConversion.ToDecimal(n, 18);
-                _balances.Add(new WalletBalance("ETH", amount));
-                callback(true);
-            });
+            throw new NotImplementedException();
         }
 
         protected override string DeriveAddress(PhantasmaKeys keys)
