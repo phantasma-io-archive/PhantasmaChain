@@ -474,7 +474,7 @@ namespace Phantasma.API
                     result = result.Substring(0, 40);
                     break;
 
-                case "ethereum":
+                default:
                     result = result.Substring(0, 40);
                     break;
             }
@@ -2293,7 +2293,8 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 0, true)]
-        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account, bool extended = false)
+        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account,
+                string platform, bool extended = false)
         {
             if (TokenSwapper == null)
             {
@@ -2302,23 +2303,23 @@ namespace Phantasma.API
 
             Address address;
 
-            if (Address.IsValidAddress(account))
+            switch (platform)
             {
-                address = Address.FromText(account);
-            }
-            else
-            if (Pay.Chains.NeoWallet.IsValidAddress(account))
-            {
-                address = Pay.Chains.NeoWallet.EncodeAddress(account);
-            }
-            else
-            if (Pay.Chains.EthereumWallet.IsValidAddress(account))
-            {
-                address = Pay.Chains.EthereumWallet.EncodeAddress(account);
-            }
-            else
-            {
-                address = Nexus.LookUpName(Nexus.RootStorage, account);
+                case DomainSettings.PlatformName:
+                    address = Address.FromText(account);
+                    break;
+                case Pay.Chains.NeoWallet.NeoPlatform:
+                    address = Pay.Chains.NeoWallet.EncodeAddress(account);
+                    break;
+                case Pay.Chains.EthereumWallet.EthereumPlatform:
+                    address = Pay.Chains.EthereumWallet.EncodeAddress(account);
+                    break;
+                case Pay.Chains.BSCWallet.BSCPlatform:
+                    address = Pay.Chains.BSCWallet.EncodeAddress(account);
+                    break;
+                default:
+                    address = Nexus.LookUpName(Nexus.RootStorage, account);
+                    break;
             }
 
             if (address.IsNull)

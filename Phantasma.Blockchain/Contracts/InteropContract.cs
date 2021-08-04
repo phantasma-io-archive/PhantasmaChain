@@ -4,7 +4,6 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
-using System.Diagnostics.Tracing;
 using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts
