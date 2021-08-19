@@ -870,5 +870,102 @@ namespace Phantasma.Tests
             Assert.IsTrue(teamDecode.Character3.Ram.Level == level);
             Assert.IsTrue(teamDecode.Character3.Ram.State == state);
         }
+
+        [TestMethod]
+        public void TestVMEncodeStructs()
+        {
+            var encoded = "010504065465616D49440301000406506C6179657208232200000000000000000000000000000000000000000000000000000000000000000000040A4368617261637465723101030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E740700000000040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F74030100040A4368617261637465723201030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E740700000000040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F74030100040A4368617261637465723301030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E740700000000040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F74030100";
+            var decodeTeam = Base16.Decode(encoded);
+            var teamDecode = VMObject.FromBytes(decodeTeam).AsStruct<Team>();
+
+            var name = "null";
+            var seed = 0;
+            var health = 0;
+            var mana = 0;
+            var attack = 0;
+            var defense = 0;
+            var speed = 0;
+            var element = ElementType.Normal;
+            var xp = 0;
+            var level = 0;
+            var state = CharacterState.None;
+            var isBot = 0;
+            var teamID = 0;
+
+            Assert.IsTrue(teamDecode.TeamID == teamID);
+            Assert.IsTrue(teamDecode.Player == Address.Null);
+            Assert.IsTrue(teamDecode.Character1.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character1.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character1.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character1.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character1.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character1.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character1.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character1.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character1.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character1.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character1.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character1.Ram.State == state);
+            Assert.IsTrue(teamDecode.Character2.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character2.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character2.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character2.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character2.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character2.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character2.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character2.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character2.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character2.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character2.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character2.Ram.State == state);
+            Assert.IsTrue(teamDecode.Character3.IsBot == isBot);
+            Assert.IsTrue(teamDecode.Character3.Rom.Name == name);
+            Assert.IsTrue(teamDecode.Character3.Rom.Seed == seed);
+            Assert.IsTrue(teamDecode.Character3.Rom.Health == health);
+            Assert.IsTrue(teamDecode.Character3.Rom.Mana == mana);
+            Assert.IsTrue(teamDecode.Character3.Rom.Attack == attack);
+            Assert.IsTrue(teamDecode.Character3.Rom.Defense == defense);
+            Assert.IsTrue(teamDecode.Character3.Rom.Speed == speed);
+            Assert.IsTrue(teamDecode.Character3.Rom.Element == element);
+            Assert.IsTrue(teamDecode.Character3.Ram.XP == xp);
+            Assert.IsTrue(teamDecode.Character3.Ram.Level == level);
+            Assert.IsTrue(teamDecode.Character3.Ram.State == state);
+        }
+
+        [TestMethod]
+        public void TestEncodeComparison()
+        {
+            var name = "null";
+            var seed = 0;
+            var health = 0;
+            var mana = 0;
+            var attack = 0;
+            var defense = 0;
+            var speed = 0;
+            var element = ElementType.Normal;
+            var xp = 0;
+            var level = 0;
+            var state = CharacterState.None;
+            var isBot = 0;
+            var teamID = 0;
+
+            var rom = new CharacterROM(name, seed, health, mana, attack, defense, speed, element);
+            var ram = new CharacterRAM(xp, level, state);
+            var cSetup = new CharacterSetup(rom, ram, isBot);
+            var team = new Team(teamID, Address.Null, cSetup, cSetup, cSetup);
+
+            var encodeTeam = Base16.Encode(VMObject.FromStruct(team).Serialize());
+
+            var encoded = "010504065465616D49440301000406506C6179657208232200000000000000000000000000000000000000000000000000000000000000000000040A4368617261637465723101030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E740700000000040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F74030100040A4368617261637465723201030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E740700000000040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F74030100040A4368617261637465723301030403526F6D010804044E616D6504046E756C6C04045365656403010004064865616C746803010004044D616E61030100040641747461636B0301000407446566656E7365030100040553706565640301000407456C656D656E740700000000040352616D01030402585003010004054C6576656C03010004055374617465070000000004054973426F74030100";
+
+            Console.WriteLine(encodeTeam);
+            Console.WriteLine(encoded);
+
+            Assert.AreEqual(encodeTeam, encoded);
+            
+            
+            var decodeTeam = Base16.Decode(encoded);
+            var teamDecode = VMObject.FromBytes(decodeTeam).AsStruct<Team>();
+        }
     }
 }
