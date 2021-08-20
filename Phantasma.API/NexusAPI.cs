@@ -414,10 +414,9 @@ namespace Phantasma.API
 
         internal readonly Logger logger;
 
-        public NexusAPI(Nexus nexus, bool useCache = false, Logger logger = null)
+        // NOTE - Nexus should be null only for proxy-mode
+        public NexusAPI(Nexus nexus = null, bool useCache = false, Logger logger = null)
         {
-            Throw.IfNull(nexus, nameof(nexus));
-
             Nexus = nexus;
             UseCache = useCache;
             this.logger = logger;
@@ -482,8 +481,18 @@ namespace Phantasma.API
             return result;
         }
 
+        // This is required as validation to support proxy-mode
+        private void RequireNexus()
+        {
+            if (this.Nexus == null)
+            {
+                throw new Exception("Nexus not available locally");
+            }
+        }
+
         private TokenResult FillToken(string tokenSymbol, bool fillSeries, bool extended)
         {
+            RequireNexus();
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
             var burnedSupply = Nexus.GetBurnedTokenSupply(Nexus.RootStorage, tokenSymbol);
@@ -568,6 +577,8 @@ namespace Phantasma.API
 
         private TokenDataResult FillNFT(string symbol, BigInteger ID, bool extended)
         {
+            RequireNexus();
+
             TokenContent info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
 
             var properties = new List<TokenPropertyResult>();
@@ -631,6 +642,8 @@ namespace Phantasma.API
 
         private AuctionResult FillAuction(MarketAuction auction, Chain chain)
         {
+            RequireNexus();
+
             var nft = Nexus.ReadNFT(Nexus.RootStorage, auction.BaseSymbol, auction.TokenID);
 
             return new AuctionResult
@@ -655,6 +668,8 @@ namespace Phantasma.API
 
         private TransactionResult FillTransaction(Transaction tx)
         {
+            RequireNexus();
+
             var block = Nexus.FindBlockByTransaction(tx);
             var chain = block != null ? Nexus.GetChainByAddress(block.ChainAddress) : null;
 
@@ -720,6 +735,8 @@ namespace Phantasma.API
 
         private BlockResult FillBlock(Block block, Chain chain)
         {
+            RequireNexus();
+
             var result = new BlockResult
             {
                 hash = block.Hash.ToString(),
@@ -752,6 +769,8 @@ namespace Phantasma.API
 
         private ChainResult FillChain(Chain chain)
         {
+            RequireNexus();
+
             Throw.IfNull(chain, nameof(chain));
 
             var parentName = Nexus.GetParentChainByName(chain.Name);
@@ -775,6 +794,8 @@ namespace Phantasma.API
 
         private Chain FindChainByInput(string chainInput)
         {
+            RequireNexus();
+
             var chain = Nexus.GetChainByName(chainInput);
 
             if (chain != null)
@@ -855,6 +876,8 @@ namespace Phantasma.API
 
         private StorageResult FillStorage(Address address)
         {
+            RequireNexus();
+
             var storage = new StorageResult();
 
             storage.used = (uint)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetUsedSpace), address).AsNumber();
@@ -960,6 +983,8 @@ namespace Phantasma.API
 
         private AccountResult FillAccount(Address address)
         {
+            RequireNexus();
+
             var result = new AccountResult();
             result.address = address.Text;
             result.name = Nexus.RootChain.GetNameFromAddress(Nexus.RootStorage, address);
@@ -1038,6 +1063,8 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid name" };
             }
 
+            RequireNexus();
+
             var address = Nexus.LookUpName(Nexus.RootStorage, name);
             if (address.IsNull)
             {
@@ -1093,6 +1120,7 @@ namespace Phantasma.API
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
+                RequireNexus();
                 var chains = Nexus.GetChains(Nexus.RootStorage);
                 foreach (var chainName in chains)
                 {
@@ -1114,6 +1142,7 @@ namespace Phantasma.API
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
+                RequireNexus();
                 var chains = Nexus.GetChains(Nexus.RootStorage);
                 foreach (var chainName in chains)
                 {
@@ -1157,6 +1186,7 @@ namespace Phantasma.API
         [APIFailCase("chain is invalid", "453dsa")]
         public IAPIResult GetRawBlockByHeight([APIParameter("Address or name of chain", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string chainInput, [APIParameter("Height of block", "1")] uint height)
         {
+            RequireNexus();
             var chain = Nexus.GetChainByName(chainInput);
 
             if (chain == null)
@@ -1240,6 +1270,8 @@ namespace Phantasma.API
 
             if (Address.IsValidAddress(account))
             {
+                RequireNexus();
+
                 var paginatedResult = new PaginatedResult();
                 var address = Address.FromText(account);
 
@@ -1303,6 +1335,8 @@ namespace Phantasma.API
             }
             else
             {
+                RequireNexus();
+
                 var chains = Nexus.GetChains(Nexus.RootStorage);
                 foreach (var chainName in chains)
                 {
@@ -1393,6 +1427,8 @@ namespace Phantasma.API
 
             //System.IO.File.AppendAllLines(@"c:\code\bug_vm.txt", new []{string.Join("\n", new VM.Disassembler(script).Instructions)});
 
+            RequireNexus();
+
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var oracle = Nexus.GetOracleReader();
             uint offset = 0;
@@ -1451,6 +1487,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Invalid hash" };
             }
 
+            RequireNexus();
             var tx = Nexus.FindTransactionByHash(hash);
 
             if (tx == null)
@@ -1489,6 +1526,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Invalid hash" };
             }
 
+            RequireNexus();
             var tx = Nexus.FindTransactionByHash(hash);
 
             if (tx != null)
@@ -1515,6 +1553,7 @@ namespace Phantasma.API
 
             var objs = new List<object>();
 
+            RequireNexus();
             var chains = Nexus.GetChains(Nexus.RootStorage);
             foreach (var chainName in chains)
             {
@@ -1530,6 +1569,8 @@ namespace Phantasma.API
         [APIInfo(typeof(NexusResult), "Returns info about the nexus.", false, 60)]
         public IAPIResult GetNexus(bool extended = false)
         {
+            RequireNexus();
+
             var tokenList = new List<TokenResult>();
 
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
@@ -1588,6 +1629,8 @@ namespace Phantasma.API
         [APIInfo(typeof(OrganizationResult), "Returns info about an organization.", false, 60)]
         public IAPIResult GetOrganization(string ID)
         {
+            RequireNexus();
+
             if (!Nexus.OrganizationExists(Nexus.RootStorage, ID))
             {
                 return new ErrorResult() { error = "invalid organization" };
@@ -1607,6 +1650,7 @@ namespace Phantasma.API
         [APIInfo(typeof(LeaderboardResult), "Returns content of a Phantasma leaderboard.", false, 30)]
         public IAPIResult GetLeaderboard(string name)
         {
+            RequireNexus();
             var temp = Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "ranking", nameof(RankingContract.GetRows), name).ToObject();
 
             try
@@ -1629,6 +1673,8 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.", false, 300)]
         public IAPIResult GetTokens(bool extended = false)
         {
+            RequireNexus();
+
             var tokenList = new List<object>();
 
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
@@ -1644,6 +1690,8 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, 120)]
         public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol, bool extended = false)
         {
+            RequireNexus();
+
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
@@ -1666,6 +1714,8 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
         public IAPIResult GetNFT([APIParameter("Symbol of token", "NACHO")] string symbol, [APIParameter("ID of token", "1")] string IDtext, bool extended = false)
         {
+            RequireNexus();
+
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
@@ -1694,6 +1744,8 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenDataResult[]), "Returns an array of NFTs.", false, 300)]
         public IAPIResult GetNFTs([APIParameter("Symbol of token", "NACHO")] string symbol, [APIParameter("Multiple IDs of token, separated by comman", "1")] string IDText, bool extended = false)
         {
+            RequireNexus();
+
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
@@ -1738,6 +1790,8 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid address" };
             }
 
+            RequireNexus();
+
             if (!Nexus.TokenExists(Nexus.RootStorage, tokenSymbol))
             {
                 return new ErrorResult { error = "invalid token" };
@@ -1781,6 +1835,8 @@ namespace Phantasma.API
         public IAPIResult GetAuctionsCount([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName = null, [APIParameter("Token symbol used as filter", "NACHO")]
             string symbol = null)
         {
+            RequireNexus();
+
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
             {
@@ -1807,6 +1863,8 @@ namespace Phantasma.API
             [APIParameter("Index of page to return", "5")] uint page = 1,
             [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
         {
+            RequireNexus();
+
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
             {
@@ -1859,6 +1917,8 @@ namespace Phantasma.API
         [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", false, 30)]
         public IAPIResult GetAuction([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName, [APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")] string IDtext)
         {
+            RequireNexus();
+
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
@@ -1930,6 +1990,8 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid hash" };
             }
 
+            RequireNexus();
+
             var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
             if (archive == null)
             {
@@ -1948,6 +2010,8 @@ namespace Phantasma.API
             {
                 return new ErrorResult() { error = "invalid hash" };
             }
+
+            RequireNexus();
 
             var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
             if (archive == null)
@@ -1986,6 +2050,8 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid hash" };
             }
 
+            RequireNexus();
+
             var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
             if (archive == null)
             {
@@ -2014,6 +2080,8 @@ namespace Phantasma.API
         [APIInfo(typeof(ContractResult), "Returns the ABI interface of specific contract.", false, 300)]
         public IAPIResult GetContract([APIParameter("Chain address or name where the contract is deployed", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
         {
+            RequireNexus();
+
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
             {
@@ -2129,6 +2197,8 @@ namespace Phantasma.API
             }
             else
             {
+                RequireNexus();
+
                 address = Nexus.LookUpName(Nexus.RootStorage, account);
                 if (address.IsNull)
                 {
@@ -2170,6 +2240,8 @@ namespace Phantasma.API
             }
             else
             {
+                RequireNexus();
+
                 address = Nexus.LookUpName(Nexus.RootStorage, account);
                 if (address.IsNull)
                 {
@@ -2192,6 +2264,8 @@ namespace Phantasma.API
         public IAPIResult GetPlatforms()
         {
             var platformList = new List<PlatformResult>();
+
+            RequireNexus();
 
             var platforms = Nexus.GetPlatforms(Nexus.RootStorage);
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
@@ -2219,6 +2293,8 @@ namespace Phantasma.API
         [APIInfo(typeof(ValidatorResult[]), "Returns an array of available validators.", false, 300)]
         public IAPIResult GetValidators()
         {
+            RequireNexus();
+
             var validators = Nexus.GetValidators().
                 Where(x => !x.address.IsNull).
                 Select(x => new ValidatorResult() { address = x.address.ToString(), type = x.type.ToString() });
@@ -2241,6 +2317,8 @@ namespace Phantasma.API
             {
                 return new ErrorResult { error = $"swaps between {sourcePlatform} and {destPlatform} not available" };
             }
+
+            RequireNexus();
 
             if (!Nexus.PlatformExists(Nexus.RootStorage, sourcePlatform))
             {
@@ -2301,6 +2379,8 @@ namespace Phantasma.API
             {
                 return new ErrorResult { error = "token swapper not available" };
             }
+
+            RequireNexus();
 
             Address address;
 
@@ -2375,6 +2455,8 @@ namespace Phantasma.API
         [APIInfo(typeof(SingleResult), "Returns latest sale hash.", false, -1)]
         public IAPIResult GetLatestSaleHash()
         {
+            RequireNexus();
+
             var hash = (Hash)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "sale", nameof(SaleContract.GetLatestSaleHash)).ToObject();
 
             return new SingleResult() { value = hash.ToString() };
@@ -2389,6 +2471,8 @@ namespace Phantasma.API
             {
                 return new ErrorResult { error = "Invalid hash" };
             }
+
+            RequireNexus();
 
             var sale = (SaleInfo)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "sale", nameof(SaleContract.GetSale), hash).ToObject();
 
