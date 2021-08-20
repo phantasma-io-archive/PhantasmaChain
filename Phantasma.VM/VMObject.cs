@@ -1282,34 +1282,40 @@ namespace Phantasma.VM
 
             var dataType = this.Data.GetType();
 
-            if (this.Type == VMType.Struct)
+            switch (this.Type)
             {
-                var children = this.GetChildren();
-                writer.WriteVarInt(children.Count);
-                foreach (var entry in children)
-                {
-                    entry.Key.SerializeData(writer);
-                    entry.Value.SerializeData(writer);
-                }
-            }
-            else
-            if (this.Type == VMType.Object)
-            {
-                var obj = this.Data as ISerializable;
+                case VMType.Struct:
+                    {
+                        var children = this.GetChildren();
+                        writer.WriteVarInt(children.Count);
+                        foreach (var entry in children)
+                        {
+                            entry.Key.SerializeData(writer);
+                            entry.Value.SerializeData(writer);
+                        }
+                        break;
+                    }
 
-                if (obj != null)
-                {
-                    var bytes = Serialization.Serialize(obj);
-                    writer.WriteByteArray(bytes);
-                }
-                else
-                {
-                    throw new Exception($"Objects of type {dataType.Name} cannot be serialized");
-                }
-            }
-            else
-            {
-                Serialization.Serialize(writer, this.Data);
+                case VMType.Object:
+                    {
+                        var obj = this.Data as ISerializable;
+
+                        if (obj != null)
+                        {
+                            var bytes = Serialization.Serialize(obj);
+                            writer.WriteByteArray(bytes);
+                        }
+                        else
+                        {
+                            throw new Exception($"Objects of type {dataType.Name} cannot be serialized");
+                        }
+
+                        break;
+                    }
+
+                default:
+                    Serialization.Serialize(writer, this.Data);
+                    break;
             }
         }
 
@@ -1401,7 +1407,7 @@ namespace Phantasma.VM
 
                 case VMType.Enum:
                     this.Type = VMType.Enum;
-                    this.Data = (uint)reader.ReadVarInt();
+                    this.Data = Serialization.Unserialize(reader, typeof(uint));
                     break;
 
                 case VMType.None:
