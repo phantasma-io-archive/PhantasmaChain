@@ -560,37 +560,5 @@ namespace Phantasma.Tests
                 this.State = State;
             }
         }
-
-        public struct CharacterSetup
-        {
-            public CharacterROM Rom;
-            public CharacterRAM Ram;
-            public BigInteger IsBot;
-
-            public CharacterSetup(CharacterROM Rom, CharacterRAM Ram, BigInteger IsBot)
-            {
-                this.Rom = Rom;
-                this.Ram = Ram;
-                this.IsBot = IsBot;
-            }
-        }
-
-        public struct Team
-        {
-            public BigInteger TeamID;
-            public Address Player;
-            public CharacterSetup Character1;
-            public CharacterSetup Character2;
-            public CharacterSetup Character3;
-            
-            public Team(BigInteger TeamID, Address Player, CharacterSetup Character1, CharacterSetup Character2, CharacterSetup Character3)
-            {
-                this.TeamID = TeamID;
-                this.Player = Player;
-                this.Character1 = Character1;
-                this.Character2 = Character2;
-                this.Character3 = Character3;
-            }
-        }
     }
 }
