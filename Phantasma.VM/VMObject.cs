@@ -1313,6 +1313,12 @@ namespace Phantasma.VM
                         break;
                     }
 
+                case VMType.Enum:
+                    var temp1 = (Enum)this.Data;
+                    var temp2 = uint.Parse(temp1.ToString("d"));
+                    writer.WriteVarInt(temp2);
+                    break;
+
                 default:
                     Serialization.Serialize(writer, this.Data);
                     break;
@@ -1407,7 +1413,7 @@ namespace Phantasma.VM
 
                 case VMType.Enum:
                     this.Type = VMType.Enum;
-                    this.Data = Serialization.Unserialize(reader, typeof(uint));
+                    this.Data = (uint)reader.ReadVarInt();
                     break;
 
                 case VMType.None:
