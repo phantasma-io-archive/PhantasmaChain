@@ -1314,8 +1314,18 @@ namespace Phantasma.VM
                     }
 
                 case VMType.Enum:
-                    var temp1 = (Enum)this.Data;
-                    var temp2 = uint.Parse(temp1.ToString("d"));
+                    uint temp2;
+
+                    if (this.Data is Enum)
+                    {
+                        var temp1 = (Enum)this.Data;
+                        temp2 = uint.Parse(temp1.ToString("d"));
+                    }
+                    else
+                    {
+                        temp2 = (uint)this.Data;
+                    }
+
                     writer.WriteVarInt(temp2);
                     break;
 
