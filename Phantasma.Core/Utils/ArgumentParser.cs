@@ -82,7 +82,7 @@ namespace Phantasma.Core.Utils
             throw new Exception("Not default argument found");
         }
 
-        public string GetString(string key, string defaultVal = null)
+        public string GetString(string key, string defaultVal = null, bool required = false)
         {
             string result;
 
@@ -100,13 +100,13 @@ namespace Phantasma.Core.Utils
                 result = null;
             }
 
+            if ((required && string.IsNullOrEmpty(result)) || (result != null && result.StartsWith("#")))
+            {
+                throw new Exception("Unconfigured setting: " + key);
+            }
+
             if (result != null)
             {
-                if (result.StartsWith("#"))
-                {
-                    throw new Exception("Unconfigured setting: " + key);
-                }
-
                 return result;
             }
 
