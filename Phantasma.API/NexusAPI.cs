@@ -615,9 +615,7 @@ namespace Phantasma.API
                             }
                         }
                     }
-
                 }
-
             }
 
             var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
@@ -1730,7 +1728,7 @@ namespace Phantasma.API
             TokenDataResult result;
             try
             {
-                result = FillNFT(symbol, ID, extended); ;
+                result = FillNFT(symbol, ID, extended);
             }
             catch (Exception e)
             {

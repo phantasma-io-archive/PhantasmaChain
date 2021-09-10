@@ -189,6 +189,15 @@ namespace Phantasma.VM
 
                         return "Interop:" + Data.GetType().Name;
                     }
+                case VMType.Struct:
+                    using (var stream = new MemoryStream())
+                    {
+                        using (var writer = new BinaryWriter(stream))
+                        {
+                            SerializeData(writer);
+                        }
+                        return BitConverter.ToString(stream.ToArray()).Replace("-", "");
+                    }
 
                 case VMType.Bool:
                     return ((bool)Data) ? "true" : "false";
