@@ -196,7 +196,7 @@ namespace Phantasma.VM
                         {
                             SerializeData(writer);
                         }
-                        return BitConverter.ToString(stream.ToArray()).Replace("-", "");
+                        return Convert.ToBase64String(stream.ToArray());
                     }
 
                 case VMType.Bool:
