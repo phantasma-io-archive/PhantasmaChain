@@ -189,6 +189,15 @@ namespace Phantasma.VM
 
                         return "Interop:" + Data.GetType().Name;
                     }
+                case VMType.Struct:
+                    using (var stream = new MemoryStream())
+                    {
+                        using (var writer = new BinaryWriter(stream))
+                        {
+                            SerializeData(writer);
+                        }
+                        return Convert.ToBase64String(stream.ToArray());
+                    }
 
                 case VMType.Bool:
                     return ((bool)Data) ? "true" : "false";
@@ -345,6 +354,21 @@ namespace Phantasma.VM
 
         public T AsStruct<T>()
         {
+            var structType = typeof(T);
+
+            if (this.Type == VMType.Object)
+            {
+                if (this.Data != null && this.Data.GetType() == structType)
+                {
+                    return (T)this.Data;
+                }
+                else
+                {
+                    throw new Exception($"Invalid cast: expected VMObject of type {structType.Name}");
+                }
+
+            }
+
             Throw.If(this.Type != VMType.Struct, $"Invalid cast: expected struct, got {this.Type}");
 
             if (this.Data == null)
@@ -358,7 +382,6 @@ namespace Phantasma.VM
 
             var result = Activator.CreateInstance<T>();
 
-            var structType = typeof(T);
             TypedReference reference = __makeref(result);
 
             // WARNING this code is still experimental, probably wont work in every situation
@@ -370,11 +393,39 @@ namespace Phantasma.VM
 
                 Throw.If(fi == null, "unknown field: " + fieldName);
 
-                var fieldValue = entry.Value.ToObject();
+                object fieldValue;
+
+                if (entry.Value.Type == VMType.Struct)
+                {
+                    fieldValue = entry.Value.ToStruct(fi.FieldType);
+                }
+                else
+                {
+                    fieldValue = entry.Value.ToObject();
+                }
+
+                fieldValue = ConvertObjectInternal(fieldValue, fi.FieldType);
+
                 fi.SetValueDirect(reference, fieldValue);
             }
 
             return result;
+        }
+
+        private static object ConvertObjectInternal(object fieldValue, Type fieldType)
+        {
+            if (fieldType.IsStructOrClass() && fieldValue is byte[])
+            {
+                var bytes = (byte[])fieldValue;
+                fieldValue = Serialization.Unserialize(bytes, fieldType);
+            }
+            else
+            if (fieldType.IsEnum)
+            {
+                fieldValue = Enum.Parse(fieldType, fieldValue.ToString());
+            }
+
+            return fieldValue;
         }
 
         public T AsInterop<T>()
@@ -557,8 +608,21 @@ namespace Phantasma.VM
             return this;
         }
 
+        internal static void ValidateStructKey(VMObject key)
+        {
+            if (key.Type == VMType.None || key.Type == VMType.Struct || key.Type == VMType.Object)
+            {
+                throw new Exception($"Cannot use value of type {key.Type} as key for struct field");
+            }
+        }
+
         public VMObject SetValue(Dictionary<VMObject, VMObject> children)
         {
+            foreach (var key in children.Keys)
+            {
+                ValidateStructKey(key);
+            }
+
             this.Type = VMType.Struct;
             this.Data = children;
             this._localSize = 4; // TODO not valid
@@ -638,6 +702,8 @@ namespace Phantasma.VM
 
         public void SetKey(VMObject key, VMObject obj)
         {
+            ValidateStructKey(key);
+
             Dictionary<VMObject, VMObject> children;
 
             // NOTE: here we need to instantiate the key as new object
@@ -703,7 +769,7 @@ namespace Phantasma.VM
                         }
                     }
 
-                default: return Data.GetHashCode(); // TODO is this ok for all cases?
+                default: return Data != null ? Data.GetHashCode() : 0; // TODO is this ok for all cases?
 
             }
         }
@@ -761,6 +827,11 @@ namespace Phantasma.VM
             }
             else
             {
+                if (this.Data == null)
+                {
+                    return other.Data == null;
+                }
+
                 return this.Data.Equals(other.Data);
             }
         }
@@ -926,6 +997,22 @@ namespace Phantasma.VM
             return result != VMType.None;
         }
 
+        public static VMObject FromArray(Array array)
+        {
+            var result = new VMObject();
+            for (int i = 0; i < array.Length; i++)
+            {
+                var key = VMObject.FromObject(i);
+
+                var temp = array.GetValue(i);
+                var val = VMObject.FromObject(temp);
+
+                result.SetKey(key, val);
+            }
+
+            return result;
+        }
+
         public static VMObject FromObject(object obj)
         {
             var objType = obj.GetType();
@@ -939,23 +1026,34 @@ namespace Phantasma.VM
                 case VMType.Bool: result.SetValue((bool)obj); break;
                 case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
                 case VMType.String: result.SetValue((string)obj); break;
+                case VMType.Enum: result.SetValue((Enum)obj); break;
+                case VMType.Object: result.SetValue(obj); break;
+
                 case VMType.Number:
-                    if (obj.GetType() == typeof(int))
+                    if (objType == typeof(int))
                     {
                         obj = new BigInteger((int)obj); // HACK
                     }
                     result.SetValue((BigInteger)obj);
                     break;
 
-                case VMType.Enum: result.SetValue((Enum)obj); break;
-                case VMType.Object: result.SetValue(obj); break;
                 case VMType.Timestamp:
-                    if (obj.GetType() == typeof(uint))
+                    if (objType == typeof(uint))
                     {
                         obj = new Timestamp((uint)obj); // HACK
                     }
                     result.SetValue((Timestamp)obj);
                     break;
+
+
+                case VMType.Struct:
+                    if (objType.IsArray)
+                    {
+                        return FromArray((Array)obj);
+                    }
+                    break;
+
+
                 default: return null;
             }
 
@@ -975,7 +1073,8 @@ namespace Phantasma.VM
                 case VMType.Timestamp: return this.AsTimestamp();
                 case VMType.Object: return this.Data;
                 case VMType.Enum: return this.Data;
-                default: return null;
+
+                default:  throw new Exception($"Cannot cast {Type} to object");
             }
         }
 
@@ -1000,7 +1099,8 @@ namespace Phantasma.VM
             }
             else
             {
-                return this.ToObject();
+                var temp = this.ToObject();
+                return temp;
             }
         }
 
@@ -1038,6 +1138,9 @@ namespace Phantasma.VM
                 var index = (int)temp;
 
                 var val = child.Value.ToObject(arrayElementType);
+
+                val = ConvertObjectInternal(val, arrayElementType);
+
                 array.SetValue(val, index);
             }
 
@@ -1062,11 +1165,20 @@ namespace Phantasma.VM
 
             object boxed = result;
             foreach (var field in fields)
-            {
+            {                
                 var key = VMObject.FromObject(field.Name);
-                Throw.If(!dict.ContainsKey(key), "field not present in source struct: " + field.Name);
-                var val = dict[key].ToObject(field.FieldType);
 
+                object val;
+                if (dict.ContainsKey(key))
+                {
+                    val = dict[key].ToObject(field.FieldType);
+                }
+                else
+                {
+                    Throw.If(!field.FieldType.IsStructOrClass() , "field not present in source struct: " + field.Name);
+                    val = null;
+                }
+                                
                 // here we check if the types mismatch
                 // in case of getting a byte[] instead of an object, we try unserializing the bytes in a different approach
                 // NOTE this should not be necessary often, but is already getting into black magic territory...
@@ -1099,7 +1211,7 @@ namespace Phantasma.VM
         }
 
         // this does the opposite of ToStruct(), takes a InteropObject and converts it to a VM.Struct
-        private static VMObject CastViaReflection(object srcObj, int level)
+        private static VMObject CastViaReflection(object srcObj, int level, bool dontConvertSerializables = true)
         {
             var srcType = srcObj.GetType();
 
@@ -1127,7 +1239,12 @@ namespace Phantasma.VM
 
                 VMObject result;
 
-                bool isKnownType = typeof(BigInteger) == srcType || typeof(Timestamp) == srcType || typeof(ISerializable).IsAssignableFrom(srcType);
+                bool isKnownType = typeof(BigInteger) == srcType || typeof(Timestamp) == srcType;
+
+                if (isKnownType == false && dontConvertSerializables && typeof(ISerializable).IsAssignableFrom(srcType))
+                {
+                    isKnownType = true;
+                }
 
                 if (srcType.IsStructOrClass() && !isKnownType)
                 {
@@ -1141,8 +1258,10 @@ namespace Phantasma.VM
                         {
                             var key = new VMObject();
                             key.SetValue(field.Name);
+                            ValidateStructKey(key);
+
                             var val = field.GetValue(srcObj);
-                            var vmVal = CastViaReflection(val, level + 1);
+                            var vmVal = CastViaReflection(val, level + 1, true);
                             children[key] = vmVal;
                         }
 
@@ -1172,34 +1291,56 @@ namespace Phantasma.VM
 
             var dataType = this.Data.GetType();
 
-            if (this.Type == VMType.Struct)
+            switch (this.Type)
             {
-                var children = this.GetChildren();
-                writer.WriteVarInt(children.Count);
-                foreach (var entry in children)
-                {
-                    entry.Key.SerializeData(writer);
-                    entry.Value.SerializeData(writer);
-                }
-            }
-            else
-            if (this.Type == VMType.Object)
-            {
-                var obj = this.Data as ISerializable;
+                case VMType.Struct:
+                    {
+                        var children = this.GetChildren();
+                        writer.WriteVarInt(children.Count);
+                        foreach (var entry in children)
+                        {
+                            entry.Key.SerializeData(writer);
+                            entry.Value.SerializeData(writer);
+                        }
+                        break;
+                    }
 
-                if (obj != null)
-                {
-                    var bytes = Serialization.Serialize(obj);
-                    writer.WriteByteArray(bytes);
-                }
-                else
-                {
-                    throw new Exception($"Objects of type {dataType.Name} cannot be serialized");
-                }
-            }
-            else
-            {
-                Serialization.Serialize(writer, this.Data);
+                case VMType.Object:
+                    {
+                        var obj = this.Data as ISerializable;
+
+                        if (obj != null)
+                        {
+                            var bytes = Serialization.Serialize(obj);
+                            writer.WriteByteArray(bytes);
+                        }
+                        else
+                        {
+                            throw new Exception($"Objects of type {dataType.Name} cannot be serialized");
+                        }
+
+                        break;
+                    }
+
+                case VMType.Enum:
+                    uint temp2;
+
+                    if (this.Data is Enum)
+                    {
+                        var temp1 = (Enum)this.Data;
+                        temp2 = uint.Parse(temp1.ToString("d"));
+                    }
+                    else
+                    {
+                        temp2 = (uint)this.Data;
+                    }
+
+                    writer.WriteVarInt(temp2);
+                    break;
+
+                default:
+                    Serialization.Serialize(writer, this.Data);
+                    break;
             }
         }
 
@@ -1208,6 +1349,11 @@ namespace Phantasma.VM
             var result = new VMObject();
             result.UnserializeData(bytes);
             return result;
+        }
+
+        public static VMObject FromStruct(object obj)
+        {
+            return CastViaReflection(obj, 0, false);
         }
 
         public void UnserializeData(byte[] bytes)
@@ -1253,6 +1399,8 @@ namespace Phantasma.VM
                     {
                         var key = new VMObject();
                         key.UnserializeData(reader);
+
+                        ValidateStructKey(key);
 
                         var val = new VMObject();
                         val.UnserializeData(reader);

@@ -182,7 +182,7 @@ namespace Phantasma.Storage
                 writer.WriteVarInt(val);
             }
             else
-            if (type.IsStructOrClass()) // check if struct or class
+            if (type.IsStructOrClass())
             {
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
 

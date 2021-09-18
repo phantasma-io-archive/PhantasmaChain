@@ -10,6 +10,9 @@ using System.Text;
 using Phantasma.Blockchain;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.VM.Utils;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
+using System.IO;
 
 namespace Phantasma.Tests
 {
@@ -252,7 +255,7 @@ namespace Phantasma.Tests
 
             var result = vm.Stack.Pop().AsString();
             Assert.IsTrue(result == "HELLO");
-        }    
+        }
 
         [TestMethod]
         public void DecodeStruct()
@@ -262,6 +265,300 @@ namespace Phantasma.Tests
             var obj = VMObject.FromBytes(bytes);
 
             Assert.IsTrue(obj.Type == VMType.Struct);
+        }
+
+        [TestMethod]
+        public void ArrayObjects()
+        {
+            var array = new BigInteger[] { 10, 50, 120, 250 };
+
+            var obj = VMObject.FromArray(array);
+
+            Assert.IsTrue(obj.Type == VMType.Struct);
+
+            var temp = obj.ToArray<BigInteger>();
+
+            Assert.IsTrue(temp.Length == array.Length);
+
+            for (int i=0; i<array.Length; i++)
+            {
+                Assert.IsTrue(array[i] == temp[i]);
+            }
+        }
+
+        public struct TestStruct : ISerializable
+        {
+            public string Name;
+            public BigInteger Number;
+
+            public TestStruct(string name, BigInteger number)
+            {
+                Name = name;
+                Number = number;
+            }
+
+            public void SerializeData(BinaryWriter writer)
+            {
+                writer.Write(Name);
+                writer.WriteBigInteger(Number);
+                //writer.Close();
+            }
+
+            public void UnserializeData(BinaryReader reader)
+            {
+                Name = reader.ReadString();
+                Number = reader.ReadBigInteger();
+                //reader.Close();
+            }
+        }
+
+        [TestMethod]
+        public void EncodeDecodeStruct()
+        {
+            BigInteger number = 123;
+            string name = "my_test";
+
+            TestStruct test = new TestStruct(name, number);
+
+            Assert.IsTrue(test.Name == name);
+            Assert.IsTrue(test.Number == number);
+
+            var vmStruct = VMObject.FromStruct(test);
+
+            var backFromStruct = vmStruct.AsStruct<TestStruct>();
+
+            Assert.IsTrue(backFromStruct.Name == name);
+            Assert.IsTrue(backFromStruct.Number == number);
+
+            var vmSerialize = vmStruct.Serialize();
+            var backFromSerialize = VMObject.FromBytes(vmSerialize);
+            var backToStruct = backFromSerialize.AsStruct<TestStruct>();
+
+            Assert.IsTrue(backToStruct.Name == name);
+            Assert.IsTrue(backToStruct.Number == number);
+
+        }
+
+
+        public struct TestAddressStruct : ISerializable
+        {
+            public string Name;
+            public Address Owner;
+
+            public TestAddressStruct(string Name, Address Owner)
+            {
+                this.Name = Name;
+                this.Owner = Owner;
+            }
+
+            public void SerializeData(BinaryWriter writer)
+            {
+                writer.Write(Name);
+                writer.Write(Owner.Text);
+                //writer.Close();
+            }
+
+            public void UnserializeData(BinaryReader reader)
+            {
+                Name = reader.ReadString();
+                Owner = Address.FromText(reader.ReadString());
+                //reader.Close();
+            }
+        }
+
+        [TestMethod]
+        public void EncodeWithAddress()
+        {
+            Address addr = Address.FromText("P2K6Sm1bUYGsFkxuzHPhia1AbANZaHBJV54RgtQi5q8oK34");
+            string name = "my_test";
+
+            TestAddressStruct test = new TestAddressStruct(name, addr);
+
+            Assert.IsTrue(test.Name == name);
+            Assert.IsTrue(test.Owner == addr);
+
+            var vmStruct = VMObject.FromStruct(test);
+
+            var backFromStruct = vmStruct.AsStruct<TestAddressStruct>();
+
+            Assert.IsTrue(backFromStruct.Name == name);
+            Assert.IsTrue(backFromStruct.Owner == addr);
+
+            var vmSerialize = vmStruct.Serialize();
+            var backFromSerialize = VMObject.FromBytes(vmSerialize);
+            var backToStruct = backFromSerialize.AsStruct<TestAddressStruct>();
+
+            Assert.IsTrue(backToStruct.Name == name);
+            Assert.IsTrue(backToStruct.Owner == addr);
+        }
+
+
+        public struct MyMultiStruct : ISerializable
+        {
+            public TestAddressStruct One;
+            public TestStruct Two;
+            public bool Three;
+
+            public MyMultiStruct(TestAddressStruct One, TestStruct Two, bool Three = false)
+            {
+                this.One = One;
+                this.Two = Two;
+                this.Three = Three;
+            }
+
+            public void SerializeData(BinaryWriter writer)
+            {
+                One.SerializeData(writer);
+                Two.SerializeData(writer);
+                writer.Write(Three);
+                writer.Close();
+            }
+
+            public void UnserializeData(BinaryReader reader)
+            {
+                One.UnserializeData(reader);
+                Two.UnserializeData(reader);
+                Three = reader.ReadBoolean();
+                reader.Close();
+            }
+        }
+
+        [TestMethod]
+        public void EncodeDecodeWithMultipleStructures()
+        {
+            Address addr = Address.FromText("P2K6Sm1bUYGsFkxuzHPhia1AbANZaHBJV54RgtQi5q8oK34");
+            string name_2 = "my_test_2";
+            TestAddressStruct One = new TestAddressStruct(name_2, addr);
+
+            BigInteger number = 123;
+            string name = "my_test";
+            TestStruct Two = new TestStruct(name, number);
+
+            bool Three = true;
+
+            MyMultiStruct multi = new MyMultiStruct(One, Two, Three);
+
+            // Test One
+            Assert.IsTrue(One.Name == name_2);
+            Assert.IsTrue(One.Owner == addr);
+
+            var vmStruct = VMObject.FromStruct(One);
+
+            var backFromStruct = vmStruct.AsStruct<TestAddressStruct>();
+
+            Assert.IsTrue(backFromStruct.Name == name_2);
+            Assert.IsTrue(backFromStruct.Owner == addr);
+
+            var vmSerialize = vmStruct.Serialize();
+            var backFromSerialize = VMObject.FromBytes(vmSerialize);
+            var backToStruct = backFromSerialize.AsStruct<TestAddressStruct>();
+
+            Assert.IsTrue(backToStruct.Name == name_2);
+            Assert.IsTrue(backToStruct.Owner == addr);
+
+            // Test Two
+            Assert.IsTrue(Two.Name == name);
+            Assert.IsTrue(Two.Number == number);
+
+            var vmStruct_Two = VMObject.FromStruct(Two);
+
+            var backFromStruct_Two = vmStruct_Two.AsStruct<TestStruct>();
+
+            Assert.IsTrue(backFromStruct_Two.Name == name);
+            Assert.IsTrue(backFromStruct_Two.Number == number);
+
+            var vmSerialize_Two = vmStruct_Two.Serialize();
+            var backFromSerialize_Two = VMObject.FromBytes(vmSerialize_Two);
+            var backToStruct_Two = backFromSerialize_Two.AsStruct<TestStruct>();
+
+            Assert.IsTrue(backToStruct_Two.Name == name);
+            Assert.IsTrue(backToStruct_Two.Number == number);
+
+            // Test Multi
+            Assert.IsTrue(multi.One.Name == One.Name);
+            Assert.IsTrue(multi.One.Owner == One.Owner);
+            Assert.IsTrue(multi.Two.Name == Two.Name);
+            Assert.IsTrue(multi.Two.Number == Two.Number);
+            Assert.IsTrue(multi.Three == Three);
+
+
+            var vmStruct_multi = VMObject.FromStruct(multi);
+            var backFromStruct_multi = vmStruct_multi.AsStruct<MyMultiStruct>();
+
+            Assert.IsTrue(backFromStruct_multi.One.Name == One.Name);
+            Assert.IsTrue(backFromStruct_multi.One.Owner == One.Owner);
+            Assert.IsTrue(backFromStruct_multi.Two.Name == Two.Name);
+            Assert.IsTrue(backFromStruct_multi.Two.Number == Two.Number);
+            Assert.IsTrue(backFromStruct_multi.Three == Three);
+
+            var vmSerialize_multi = vmStruct_multi.Serialize();
+            var backFromSerialize_multi = VMObject.FromBytes(vmSerialize_multi);
+            var backToStruct_multi = backFromSerialize_multi.AsStruct<MyMultiStruct>();
+
+            Assert.IsTrue(backToStruct_multi.One.Name == One.Name);
+            Assert.IsTrue(backToStruct_multi.One.Owner == One.Owner);
+            Assert.IsTrue(backToStruct_multi.Two.Name == Two.Name);
+            Assert.IsTrue(backToStruct_multi.Two.Number == Two.Number);
+            Assert.IsTrue(backToStruct_multi.Three == Three);
+        }
+
+        // Test Specific cases
+        public enum CharacterState
+        {
+            None = 0,
+            Ingame = 1,
+            Battle = 2,
+            Team = 3
+        }
+
+        public enum ElementType
+        {
+            Normal = 0,
+            Fire = 1,
+            Poison = 2,
+            Water = 3,
+            Grass = 4,
+            Steel = 5,
+            Eletric = 6,
+            Wind = 7
+        }
+
+        public struct CharacterROM
+        {
+            public string Name;
+            public BigInteger Seed;
+            public BigInteger Health;
+            public BigInteger Mana;
+            public BigInteger Attack;
+            public BigInteger Defense;
+            public BigInteger Speed;
+            public ElementType Element;
+
+            public CharacterROM(string Name, BigInteger Seed, BigInteger Health, BigInteger Mana, BigInteger Attack, BigInteger Defense, BigInteger Speed, ElementType Element)
+            {
+                this.Name = Name;
+                this.Seed = Seed;
+                this.Health = Health;
+                this.Mana = Mana;
+                this.Attack = Attack;
+                this.Defense = Defense;
+                this.Speed = Speed;
+                this.Element = Element;
+            }
+        }
+
+        public struct CharacterRAM
+        {
+            public BigInteger XP;
+            public BigInteger Level;
+            public CharacterState State;
+
+            public CharacterRAM(BigInteger XP, BigInteger Level, CharacterState State)
+            {
+                this.XP = XP;
+                this.Level = Level;
+                this.State = State;
+            }
         }
     }
 }
