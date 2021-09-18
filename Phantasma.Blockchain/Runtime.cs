@@ -1580,7 +1580,8 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnWrite, from, ram, tokenID) != TriggerResult.Failure, "token write trigger failed");
             }
 
-            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Timestamp, nft.Infusion, true);
+            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.Creator, nft.CurrentOwner, nft.ROM, ram,
+                    nft.SeriesID, nft.Timestamp, nft.Infusion, true);
         }
 
         public TokenContent ReadToken(string tokenSymbol, BigInteger tokenID)
