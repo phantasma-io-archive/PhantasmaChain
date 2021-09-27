@@ -608,9 +608,19 @@ namespace Phantasma.API
                             }
                             else
                             {
-                                Blockchain.Tokens.TokenUtils.FetchProperty(Nexus.RootStorage, chain, method.name, series, ID, (propName, propValue) =>
+                                TokenUtils.FetchProperty(Nexus.RootStorage, chain, method.name, series, ID, (propName, propValue) =>
                                 {
-                                    properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
+                                    string temp;
+                                    if (propValue.Type == VMType.Bytes)
+                                    {
+                                        temp = "0x" + Base16.Encode(propValue.AsByteArray());
+                                    }
+                                    else
+                                    {
+                                        temp = propValue.AsString();
+                                    }
+
+                                    properties.Add(new TokenPropertyResult() { Key = propName, Value = temp });
                                 });
                             }
                         }
