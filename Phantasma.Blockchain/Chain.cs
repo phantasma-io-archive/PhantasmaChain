@@ -244,7 +244,7 @@ namespace Phantasma.Blockchain
 
                 if (inflationReady)
                 {
-                    if (!(block.Height >= 242942) && !(block.Height <= 242944))
+                    if (!(block.Height >= 242942 && block.Height <= 242944))
                     {
                         Console.WriteLine("do inflation now");
                         var script = new ScriptBuilder()
