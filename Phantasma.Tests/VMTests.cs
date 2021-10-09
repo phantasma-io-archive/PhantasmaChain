@@ -286,6 +286,25 @@ namespace Phantasma.Tests
             }
         }
 
+        [TestMethod]
+        public void StringUnicodeArrays()
+        {
+            var original = "Hello Phantasma";
+
+            var obj = VMObject.FromObject(original);
+            Assert.IsTrue(obj.Type == VMType.String);
+
+            var temp = VMObject.CastTo(obj, VMType.Struct);
+            Assert.IsTrue(temp.Type == VMType.Struct);
+
+            var elements = temp.GetChildren();
+            Assert.IsTrue(elements.Count == original.Length);
+
+            var result = temp.AsString();
+
+            Assert.IsTrue(original == result);
+        }
+
         public struct TestStruct : ISerializable
         {
             public string Name;

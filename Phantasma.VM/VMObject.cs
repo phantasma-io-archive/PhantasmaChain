@@ -190,14 +190,36 @@ namespace Phantasma.VM
                         return "Interop:" + Data.GetType().Name;
                     }
                 case VMType.Struct:
-                    using (var stream = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(stream))
+                    VMType arrayType = GetArrayType(); 
+                    if (arrayType == VMType.Number) // convert array of unicode numbers into a string
+                    {                        
+                        var children = GetChildren();
+                        var sb = new StringBuilder();
+
+                        for (int i = 0; i < children.Count; i++)
                         {
-                            SerializeData(writer);
+                            var key = VMObject.FromObject(i);
+                            var val = children[key];
+
+                            var ch = (char)((uint)val.AsNumber());
+
+                            sb.Append(ch);
                         }
-                        return Convert.ToBase64String(stream.ToArray());
+
+                        return sb.ToString();
                     }
+                    else
+                    {
+                        using (var stream = new MemoryStream())
+                        {
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                SerializeData(writer);
+                            }
+                            return Convert.ToBase64String(stream.ToArray());
+                        }
+                    }
+
 
                 case VMType.Bool:
                     return ((bool)Data) ? "true" : "false";
@@ -209,6 +231,46 @@ namespace Phantasma.VM
                 default:
                     throw new Exception($"Invalid cast: expected string, got {this.Type}");
             }
+        }
+
+        // this method checks if the VMObject is an array by checking the following rules
+        // a) must be a struct 
+        // b) all keys of the struct must be numeric indexes from 0 to count-1
+        // c) all element values must have same type
+        public VMType GetArrayType()
+        {
+            if (this.Type != VMType.Struct)
+            {
+                return VMType.None;
+            }
+
+            var children = GetChildren();
+
+            VMType result = VMType.None;
+
+            for (int i=0; i<children.Count; i++)
+            {
+                var key = VMObject.FromObject(i);
+
+                if (!children.ContainsKey(key))
+                {
+                    return VMType.None;
+                }
+
+                var val = children[key];
+
+                if (result == VMType.None)
+                {
+                    result = val.Type;
+                }
+                else
+                if (val.Type != result)
+                {
+                    return VMType.None;
+                }                
+            }
+
+            return result;
         }
 
         public byte[] AsByteArray()
@@ -937,6 +999,14 @@ namespace Phantasma.VM
                 case VMType.Struct:
                     switch (srcObj.Type)
                     {
+                        // this allow casting a string into char array (represented as unicode numbers)
+                        case VMType.String:
+                            {
+                                var str = srcObj.AsString();
+                                var chars = str.ToCharArray().Select(x => new BigInteger((uint)x)).ToArray();
+                                return VMObject.FromArray(chars);
+                            }
+
                         case VMType.Object: return CastViaReflection(srcObj.Data, 0);
 
                         default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
