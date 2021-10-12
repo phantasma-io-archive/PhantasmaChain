@@ -1015,7 +1015,17 @@ namespace Phantasma.Blockchain
                 seriesID = 0;
             }
 
-            var tokenID = vm.MintToken(symbol, source, destination, rom, ram, seriesID);
+            Address creator;
+            if (vm.ProtocolVersion >= 7)
+            {
+                creator = source;
+            }
+            else
+            {
+                creator = destination;
+            }
+
+            var tokenID = vm.MintToken(symbol, creator, destination, rom, ram, seriesID);
 
             var result = new VMObject();
             result.SetValue(tokenID);
