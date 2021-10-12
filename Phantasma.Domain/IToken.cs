@@ -86,7 +86,8 @@ namespace Phantasma.Domain
         public static readonly int MaxROMSize = 1024;
         public static readonly int MaxRAMSize = 1024;
 
-        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address creator, Address currentOwner, byte[] ROM, byte[] RAM, Timestamp timestamp, IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
+        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address creator, Address currentOwner,
+                byte[] ROM, byte[] RAM, Timestamp timestamp, IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
         {
             this.SeriesID = seriesID;
             this.MintID = mintID;
