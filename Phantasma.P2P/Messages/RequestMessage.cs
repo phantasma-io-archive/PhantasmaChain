@@ -17,6 +17,7 @@ namespace Phantasma.Network.P2P.Messages
         Mempool = 0x4,
         Blocks = 0x8,
         Transactions = 0x16,
+        Info = 0x32,
     }
 
     public struct RequestRange

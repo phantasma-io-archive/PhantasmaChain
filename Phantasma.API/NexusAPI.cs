@@ -404,6 +404,7 @@ namespace Phantasma.API
         public ITokenSwapper TokenSwapper;
         public Mempool Mempool;
         public Node Node;
+
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>(StringComparer.InvariantCultureIgnoreCase);
@@ -2126,9 +2127,22 @@ namespace Phantasma.API
                 allPeers = allPeers.Where(x => !x.Endpoint.Host.Contains("localhost"));
             }
 
-            var peers = allPeers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
+            var peers = allPeers.Select(x => new PeerResult() { 
+                url = x.Endpoint.ToString(), 
+                version = x.Version, 
+                flags = x.Capabilities.ToString(), 
+                fee = x.MinimumFee.ToString(), 
+                pow = (uint)x.MinimumPoW, 
+                ports = x.Ports.Select(y => new PortResult() { name = y.Name, port = y.Port}).ToArray() 
+            }) .ToList();
 
-            peers.Add(new PeerResult() { url = $"{Node.PublicEndpoint}", version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
+            peers.Add(new PeerResult() { 
+                url = $"{Node.PublicEndpoint}", 
+                version = Node.Version, 
+                flags = Node.Capabilities.ToString(), 
+                fee = Node.MinimumFee.ToString(), 
+                pow = (uint)Node.MinimumPoW, 
+                ports = this.Node.AvailablePorts.Select(y => new PortResult() { name = y.Name, port = y.Port }).ToArray() });
 
             peers.Shuffle();
 
