@@ -1265,7 +1265,17 @@ namespace Phantasma.Blockchain
             else
             {
                 Runtime.Expect(!mustExist, $"nft {symbol} {tokenID} does not exist");
-                var genID = GenerateNFT(Runtime, symbol, chainName, owner, rom, ram, seriesID);
+                Address _creator;
+                if (this.GetProtocolVersion(Runtime.RootStorage) >= 7)
+                {
+                    _creator = creator;
+                }
+                else
+                {
+                    _creator = owner;
+                }
+                
+                var genID = GenerateNFT(Runtime, symbol, chainName, _creator, rom, ram, seriesID);
                 Runtime.Expect(genID == tokenID, "failed to regenerate NFT");
             }
         }

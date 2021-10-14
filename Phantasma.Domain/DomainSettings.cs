@@ -56,7 +56,7 @@ namespace Phantasma.Domain
 
     public static class DomainSettings
     {
-        public const int LatestKnownProtocol = 6;
+        public const int LatestKnownProtocol = 7;
 
         public const int MaxTxPerBlock = 1024;
 
