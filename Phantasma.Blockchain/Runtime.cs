@@ -1352,9 +1352,19 @@ namespace Phantasma.Blockchain
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed, received: " + rom.Length + ", maximum: " + TokenContent.MaxROMSize);
             Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed, received: " + ram.Length + ", maximum: " + TokenContent.MaxRAMSize);
 
+            Address creator;
+            if (ProtocolVersion >= 7)
+            {
+                creator = from;
+            }
+            else
+            {
+                creator = target;
+            }
+
             BigInteger tokenID;
             using (var m = new ProfileMarker("Nexus.CreateNFT"))
-                tokenID = Nexus.GenerateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram, seriesID);
+                tokenID = Nexus.GenerateNFT(this, symbol, Runtime.Chain.Name, creator, rom, ram, seriesID);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             using (var m = new ProfileMarker("Nexus.MintToken"))
