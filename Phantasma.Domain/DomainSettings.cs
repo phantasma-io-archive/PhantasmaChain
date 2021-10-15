@@ -20,6 +20,7 @@ namespace Phantasma.Domain
         OnWitness, // address
         OnUpgrade, // address
         OnMigrate, // from, to
+        OnKill, // address
     }
 
     public enum TokenTrigger

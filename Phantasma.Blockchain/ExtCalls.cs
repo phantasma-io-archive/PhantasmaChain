@@ -36,6 +36,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.Notify", Runtime_Notify);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
             vm.RegisterMethod("Runtime.UpgradeContract", Runtime_UpgradeContract);
+            vm.RegisterMethod("Runtime.KillContract", Runtime_KillContract);
             vm.RegisterMethod("Runtime.GetBalance", Runtime_GetBalance);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
             vm.RegisterMethod("Runtime.TransferBalance", Runtime_TransferBalance);
@@ -1418,6 +1419,68 @@ namespace Phantasma.Blockchain
             }
 
             vm.Notify(EventKind.ContractUpgrade, from, contractName);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_KillContract(RuntimeVM vm)
+        {
+            var tx = vm.Transaction;
+            Throw.IfNull(tx, nameof(tx));
+
+            var pow = tx.Hash.GetDifficulty();
+            vm.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
+
+            vm.ExpectStackSize(1);
+
+            var from = vm.PopAddress();
+            vm.Expect(from.IsUser, "address must be user");
+
+            vm.Expect(vm.IsWitness(from), "invalid witness");
+
+            var contractName = vm.PopString("contractName");
+
+            var contractAddress = SmartContract.GetAddressForName(contractName);
+            var deployed = vm.Chain.IsContractDeployed(vm.Storage, contractAddress);
+
+            vm.Expect(deployed, $"{contractName} does not exist");
+
+            bool isNative = Nexus.IsNativeContract(contractName);
+            vm.Expect(!isNative, "cannot kill native contract");
+
+            bool isToken = ValidationUtils.IsValidTicker(contractName);
+            vm.Expect(!isToken, "cannot kill token contract");
+
+            SmartContract contract;
+            if (isToken)
+            {
+                contract = vm.Nexus.GetTokenContract(vm.Storage, contractName);
+            }
+            else
+            {
+                contract = vm.Chain.GetContractByName(vm.Storage, contractName);
+            }
+            vm.Expect(contract != null, "could not fetch previous contract");
+
+            var customContract = contract as CustomContract;
+            vm.Expect(customContract != null, "could not contract script");
+
+            var abi = contract.ABI;
+            var triggerName = AccountTrigger.OnKill.ToString();
+
+            vm.ValidateTriggerGuard($"{contractName}.{triggerName}");
+            vm.InvokeTrigger(false, customContract.Script, contract.Name, contract.ABI, triggerName, new object[] { from});
+
+            if (isToken)
+            {
+                throw new ChainException("Cannot kill token contract (missing implementation?)");
+            }
+            else
+            {
+                vm.Chain.KillContract(vm.Storage, contractName);
+            }
+
+            vm.Notify(EventKind.ContractKill, from, contractName);
 
             return ExecutionState.Running;
         }
