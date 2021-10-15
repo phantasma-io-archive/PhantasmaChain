@@ -1354,7 +1354,7 @@ namespace Phantasma.Blockchain
             var pow = tx.Hash.GetDifficulty();
             vm.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
-            vm.ExpectStackSize(1);
+            vm.ExpectStackSize(4);
 
             var from = vm.PopAddress();
             vm.Expect(from.IsUser, "address must be user");
@@ -1433,7 +1433,7 @@ namespace Phantasma.Blockchain
             var pow = tx.Hash.GetDifficulty();
             vm.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
-            vm.ExpectStackSize(1);
+            vm.ExpectStackSize(2);
 
             var from = vm.PopAddress();
             vm.Expect(from.IsUser, "address must be user");
