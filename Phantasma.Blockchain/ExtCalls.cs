@@ -1405,9 +1405,11 @@ namespace Phantasma.Blockchain
 
             vm.Expect(oldContract != null, "could not fetch previous contract");
             vm.Expect(abi.Implements(oldContract.ABI), "new abi does not implement all methods of previous abi");
-            vm.ValidateTriggerGuard($"{contractName}.{AccountTrigger.OnUpgrade.ToString()}");
 
-            vm.Expect(vm.InvokeTrigger(false, script, contractName, abi, AccountTrigger.OnUpgrade.ToString(), from) == TriggerResult.Success, "OnUpgrade trigger failed");
+            var triggerName = AccountTrigger.OnUpgrade.ToString();
+            vm.ValidateTriggerGuard($"{contractName}.{triggerName}");
+
+            vm.Expect(vm.InvokeTrigger(false, script, contractName, abi, triggerName, from) == TriggerResult.Success, triggerName + " trigger failed");
 
             if (isToken)
             {
@@ -1469,7 +1471,8 @@ namespace Phantasma.Blockchain
             var triggerName = AccountTrigger.OnKill.ToString();
 
             vm.ValidateTriggerGuard($"{contractName}.{triggerName}");
-            vm.InvokeTrigger(false, customContract.Script, contract.Name, contract.ABI, triggerName, new object[] { from});
+
+            vm.Expect(vm.InvokeTrigger(false, customContract.Script, contract.Name, contract.ABI, triggerName, new object[] { from }) == TriggerResult.Success, triggerName + " trigger failed");
 
             if (isToken)
             {
