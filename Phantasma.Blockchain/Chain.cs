@@ -827,6 +827,29 @@ namespace Phantasma.Blockchain
             storage.Put(abiKey, abiBytes);
         }
 
+        public void KillContract(StorageContext storage, string name)
+        {
+            if (Nexus.IsNativeContract(name) || ValidationUtils.IsValidTicker(name))
+            {
+                throw new ChainException($"Cannot kill this type of contract: {name}");
+            }
+
+            if (!IsContractDeployed(storage, name))
+            {
+                throw new ChainException($"Cannot kill non-existing contract: {name}");
+            }
+
+            var address = SmartContract.GetAddressForName(name);
+
+            var scriptKey = GetContractKey(address, "script");
+            storage.Delete(scriptKey);
+
+            var abiKey = GetContractKey(address, "abi");
+            storage.Delete(abiKey);
+
+            // TODO clear other storage used by contract (global variables, maps, lists, etc)
+        }
+
         public Address GetContractOwner(StorageContext storage, Address contractAddress)
         {
             if (contractAddress.IsSystem)

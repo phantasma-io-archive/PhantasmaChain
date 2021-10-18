@@ -3,6 +3,7 @@ using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using System;
+using System.Collections.Generic;
 
 namespace Phantasma.Network.P2P
 {
@@ -20,6 +21,18 @@ namespace Phantasma.Network.P2P
         REST = 0x40,
     }
 
+    public struct PeerPort
+    {
+        public readonly string Name;
+        public readonly int Port;
+
+        public PeerPort(string name, int port)
+        {
+            Name = name;
+            Port = port;
+        }
+    }
+
     public abstract class Peer
     {
         public Address Address { get; private set; }
@@ -32,6 +45,8 @@ namespace Phantasma.Network.P2P
 
         public BigInteger MinimumFee { get; set; }
         public int MinimumPoW { get; set; }
+
+        public List<PeerPort> Ports { get; set; }
 
         public abstract void Send(Message msg);
         public abstract Message Receive();

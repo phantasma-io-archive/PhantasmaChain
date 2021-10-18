@@ -2121,7 +2121,9 @@ namespace Phantasma.Tests
                 $"pop r2",
                 $"add r1 r2 r3",
                 $"push r3",
-                $"@end: ret"
+                $"@end: ret",
+                $"@onUpgrade: ret",
+                $"@onKill: ret",
             };
 
             DebugInfo debugInfo;
@@ -2130,8 +2132,11 @@ namespace Phantasma.Tests
 
             var methods = new[]
             {
-                new ContractMethod(methodName , VMType.Number, labels[methodName], new []{ new ContractParameter("a", VMType.Number), new ContractParameter("b", VMType.Number) })
+                new ContractMethod(methodName , VMType.Number, labels[methodName], new []{ new ContractParameter("a", VMType.Number), new ContractParameter("b", VMType.Number) }),
+                new ContractMethod("onUpgrade", VMType.None, labels["onUpgrade"], new []{ new ContractParameter("addr", VMType.Object) }),
+                new ContractMethod("onKill", VMType.None, labels["onKill"], new []{ new ContractParameter("addr", VMType.Object) }),
             };
+
             var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
             var abiBytes = abi.ToByteArray();
 
@@ -2161,6 +2166,28 @@ namespace Phantasma.Tests
                     .SpendGas(testUser.Address)
                     .EndScript());
             simulator.EndBlock();
+
+            // upgrade it
+            var newScript = Core.Utils.ByteArrayUtils.ConcatBytes(script, new byte[] { (byte)Opcode.NOP }); // concat useless opcode just to make it different
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.Minimal,
+                () => ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallInterop("Runtime.UpgradeContract", testUser.Address, contractName, newScript, abiBytes)
+                    .SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            // kill it
+            Assert.IsTrue(nexus.RootChain.IsContractDeployed(nexus.RootStorage, contractName));
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.Minimal,
+                () => ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallInterop("Runtime.KillContract", testUser.Address, contractName)
+                    .SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            Assert.IsFalse(nexus.RootChain.IsContractDeployed(nexus.RootStorage, contractName));
         }
 
         [TestMethod]
