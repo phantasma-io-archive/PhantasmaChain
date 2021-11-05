@@ -39,6 +39,15 @@ namespace Phantasma.Network.P2P.Messages
         }
     }
 
+    public class PeerInfo
+    {
+        public string version;
+        public PeerCaps caps;
+        public BigInteger minimumFee;
+        public uint minimumPow;
+        public PeerPort[] ports;
+    }
+
     public struct BlockRange
     {
         public readonly Block[] blocks;
@@ -63,6 +72,8 @@ namespace Phantasma.Network.P2P.Messages
 
         private ChainInfo[] _chains = null;
         public IEnumerable<ChainInfo> Chains => _chains;
+
+        public PeerInfo _peerInfo = null;
 
         public const int MaxPeers = 255;
         public const int MaxChains = 128;
@@ -169,6 +180,22 @@ namespace Phantasma.Network.P2P.Messages
                 }
             }
 
+            if (kind.HasFlag(RequestKind.Info))
+            {
+                var version = reader.ReadVarString();
+                var caps = (PeerCaps)reader.ReadInt32();
+                var minimumFee = reader.ReadBigInteger();
+                var minimumPow = (int)reader.ReadVarInt();
+                var portCount = (int)reader.ReadVarInt();
+                var ports = new PeerPort[portCount];
+                for (int i=0; i<portCount; i++)
+                {
+                    var portName = reader.ReadVarString();
+                    var portNumber = (int)reader.ReadVarInt();
+                    ports[i] = new PeerPort(portName, portNumber);
+                }
+            }
+
             return result;
         }
 
@@ -231,6 +258,20 @@ namespace Phantasma.Network.P2P.Messages
                             writer.WriteByteArray(bytes);
                         }
                     }
+                }
+            }
+
+            if (Kind.HasFlag(RequestKind.Info))
+            {
+                writer.WriteVarString(_peerInfo.version);
+                writer.Write((int)_peerInfo.caps);
+                writer.WriteBigInteger(_peerInfo.minimumFee);
+                writer.WriteVarInt(_peerInfo.minimumPow);
+                writer.WriteVarInt(_peerInfo.ports.Length);
+                foreach (var entry in _peerInfo.ports)
+                {
+                    writer.WriteVarString(entry.Name);
+                    writer.WriteVarInt(entry.Port);
                 }
             }
         }
@@ -311,6 +352,20 @@ namespace Phantasma.Network.P2P.Messages
             }
 
             AddBlockRange(chain.Name, blocks.ToArray(), transactions);
+        }
+
+        public void SetInfo(string version, PeerCaps caps, BigInteger minimumFee, uint minimumPow, IEnumerable<PeerPort> ports)
+        {
+            var info = new PeerInfo()
+            {
+                version = version,
+                caps = caps,
+                minimumFee = minimumFee,
+                minimumPow = minimumPow,
+                ports = ports.ToArray()
+            };
+
+            this._peerInfo = info;
         }
     }
 }

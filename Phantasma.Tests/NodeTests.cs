@@ -143,7 +143,7 @@ namespace Phantasma.Tests
             mempool.StartInThread();
 
             // node setup
-            node = new Node("test node", nexus, mempool, node_keys, "localhost", port, PeerCaps.Mempool, Enumerable.Empty<String>(), new DebugLogger());
+            node = new Node("test node", nexus, mempool, node_keys, "localhost", new[] { new PeerPort("sync", port) }, PeerCaps.Mempool, Enumerable.Empty<String>(), new DebugLogger());
             node.StartInThread();
         }
 

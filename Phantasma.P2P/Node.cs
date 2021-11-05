@@ -78,7 +78,7 @@ namespace Phantasma.Network.P2P
 
         public readonly string Version;
 
-        public readonly int Port;
+        public readonly int SyncPort;
         public readonly string Host;
         public readonly string PublicEndpoint;
         public readonly PeerCaps Capabilities;
@@ -113,11 +113,13 @@ namespace Phantasma.Network.P2P
 
         private DateTime _lastRequestTime = DateTime.UtcNow;
 
+        public readonly PeerPort[] AvailablePorts;
+
         public bool IsFullySynced { get; private set; }
 
         public string ProxyURL = null;
 
-        public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, string publicHost, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
+        public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, string publicHost, IEnumerable<PeerPort> availablePorts, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
             if (mempool != null)
             {
@@ -129,11 +131,15 @@ namespace Phantasma.Network.P2P
                 Throw.If(caps.HasFlag(PeerCaps.Mempool), "mempool included in caps but mempool instance is null");
             }
 
+            var syncPort = availablePorts.FirstOrDefault(x => x.Name.Equals("sync", StringComparison.OrdinalIgnoreCase)).Port;
+            Throw.If(syncPort <= 0, "missing sync port");
+
             this.Logger = Logger.Init(log);
 
             this.Version = version;
             this.Nexus = nexus;
-            this.Port = port;
+            this.SyncPort = syncPort;
+            this.AvailablePorts = availablePorts.ToArray();
             this.Keys = keys;
             this.Capabilities = caps;
 
@@ -157,7 +163,7 @@ namespace Phantasma.Network.P2P
             Throw.If(publicHost.Contains(":"), "invalid host, protocol or port number should not be included");
             this.Host = publicHost;
 
-            this.PublicEndpoint = $"tcp:{publicHost}:{port}";
+            this.PublicEndpoint = $"tcp:{publicHost}:{syncPort}";
 
             if (this.Capabilities.HasFlag(PeerCaps.Sync))
             {
@@ -166,7 +172,7 @@ namespace Phantasma.Network.P2P
                 // TODO this is a security issue, later change this to be configurable and default to localhost
                 var bindAddress = IPAddress.Any;
 
-                listener = new TcpListener(bindAddress, port);
+                listener = new TcpListener(bindAddress, syncPort);
 
                 if (seeds.Any())
                 {
@@ -220,7 +226,7 @@ namespace Phantasma.Network.P2P
             }
             else
             {
-                port = this.Port;
+                port = this.SyncPort;
             }
 
             if (!IPAddress.TryParse(src, out ipAddress))
@@ -326,7 +332,7 @@ namespace Phantasma.Network.P2P
         {
             if (this.Capabilities.HasFlag(PeerCaps.Sync))
             {
-                Logger.Message($"Phantasma node listening on port {Port}, using address: {Address}");
+                Logger.Message($"Phantasma node listening on port {SyncPort}, using address: {Address}");
 
                 listener.Start();
             }
@@ -465,7 +471,7 @@ namespace Phantasma.Network.P2P
             var peer = new TCPPeer(socket);
 
             // this initial message is not only used to fetch chains but also to verify identity of peers
-            var requestKind = RequestKind.Chains | RequestKind.Peers;
+            var requestKind = RequestKind.Chains | RequestKind.Peers | RequestKind.Info;
             if (Capabilities.HasFlag(PeerCaps.Mempool))
             {
                 requestKind |= RequestKind.Mempool;
@@ -686,6 +692,11 @@ namespace Phantasma.Network.P2P
                         if (request.Kind.HasFlag(RequestKind.Peers))
                         {
                             answer.SetPeers(this.Peers.Where(x => x != peer).Select(x => x.Endpoint.ToString()));
+                        }
+
+                        if (request.Kind.HasFlag(RequestKind.Info))
+                        {
+                            answer.SetInfo(this.Version, this.Capabilities, this.MinimumFee, this.MinimumPoW, this.AvailablePorts);
                         }
 
                         if (request.Kind.HasFlag(RequestKind.Chains))
