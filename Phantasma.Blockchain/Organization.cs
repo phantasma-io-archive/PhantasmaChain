@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Phantasma.Core;
+using System.Linq;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
@@ -32,11 +32,14 @@ namespace Phantasma.Blockchain
 
         private StorageContext Storage;
 
+        public bool IsInvalid { get; private set; }
+
         public Organization(string name, StorageContext storage)
         {
             this.Storage = storage;
  
             this.ID = name;
+            this.IsInvalid = false;
 
             var key = GetKey("script");
             if (Storage.Has(key))
@@ -89,12 +92,19 @@ namespace Phantasma.Blockchain
 
         public bool IsMember(Address address)
         {
+            if (IsInvalid)
+            {
+                return false;
+            }
+
             var list = GetMemberList();
             return list.Contains<Address>(address);
         }
 
         public bool AddMember(RuntimeVM Runtime, Address from, Address target)
         {
+            Runtime.Expect(!IsInvalid, "cannot add member to invalid organization");
+
             if (from.IsSystem)
             {
                 Runtime.Expect(from != this.Address, "can't add organization as member of itself");
@@ -117,6 +127,8 @@ namespace Phantasma.Blockchain
 
         public bool RemoveMember(RuntimeVM Runtime, Address from, Address target)
         {
+            Runtime.Expect(!IsInvalid, "cannot remove member from invalid organization");
+
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
             var list = GetMemberList();
@@ -134,6 +146,11 @@ namespace Phantasma.Blockchain
 
         public bool IsWitness(Transaction transaction)
         {
+            if (IsInvalid)
+            {
+                return false;
+            }
+
             var size = this.Size;
             if (size < 1)
             {
@@ -180,6 +197,8 @@ namespace Phantasma.Blockchain
 
         public bool MigrateMember(RuntimeVM Runtime, Address admin, Address from, Address to)
         {
+            Runtime.Expect(!IsInvalid, "cannot migrate member of invalid organization");
+
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
             if (to.IsSystem)
@@ -203,6 +222,221 @@ namespace Phantasma.Blockchain
             Runtime.Notify(EventKind.OrganizationAdd, admin, new OrganizationEventData(this.ID, to));
 
             return true;
+        }
+
+        private Dictionary<Address, BigInteger> FindTransferHistoryForFungibleToken(List<Event> events, string symbol)
+        {
+            var result = new Dictionary<Address, BigInteger>();
+
+            foreach (var evt in events)
+            {
+                Address address = Address.Null;
+                BigInteger amount = 0;
+
+                switch (evt.Kind)
+                {
+                    case EventKind.TokenReceive:
+                        {
+                            var data = evt.GetContent<TokenEventData>();
+
+                            if (data.Symbol == symbol)
+                            {
+                                address = evt.Address;
+                                amount = -data.Value;
+                            }
+                            break;
+                        }
+
+                    case EventKind.TokenSend:
+                        {
+                            var data = evt.GetContent<TokenEventData>();
+
+                            if (data.Symbol == symbol)
+                            {
+                                address = evt.Address;
+                                amount = data.Value;
+                            }
+                            break;
+                        }
+                }
+
+                if (amount != 0 && address != this.Address)
+                {
+                    if (!address.IsSystem || IsMember(address))
+                    {
+                        var balance = result.ContainsKey(address) ? result[address] : 0;
+                        balance += amount;
+
+                        result[address] = balance;
+
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private Dictionary<Address, HashSet<BigInteger>> FindTransferHistoryForNFT(List<Event> events, string symbol)
+        {
+            var result = new Dictionary<Address, HashSet<BigInteger>>();
+
+            foreach (var evt in events)
+            {
+                switch (evt.Kind)
+                {
+                    case EventKind.TokenReceive:
+                        {
+                            var data = evt.GetContent<TokenEventData>();
+
+                            if (data.Symbol == symbol)
+                            {
+                                HashSet<BigInteger> list = result.ContainsKey(evt.Address) ? result[evt.Address] : new HashSet<BigInteger>();
+                                list.Add(data.Value);
+                            }
+                            break;
+                        }
+
+                    case EventKind.TokenSend:
+                        {
+                            var data = evt.GetContent<TokenEventData>();
+
+                            if (data.Symbol == symbol)
+                            {
+                                HashSet<BigInteger> list = result.ContainsKey(evt.Address) ? result[evt.Address] : new HashSet<BigInteger>();
+                                list.Remove(data.Value);
+                            }
+                            break;
+                        }
+                }
+            }
+
+            return result;
+        }
+
+        private List<Event> GetEventList(RuntimeVM Runtime, Hash[] hashes)
+        {
+            var eventList = new List<Event>();
+
+            foreach (var hash in hashes)
+            {
+                var events = Runtime.GetTransactionEvents(hash).Where(x => x.Kind == EventKind.TokenReceive || x.Kind == EventKind.TokenSend);
+                eventList.AddRange(events);
+            }
+
+            return eventList;
+        }
+
+        public bool Kill(RuntimeVM Runtime, Address from)
+        {
+            Runtime.Expect(!IsInvalid, "cannot kill invalid organization");
+
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            Runtime.Expect(!IsSpecialOrganization(Name) && !Name.Equals(DomainSettings.PhantomForceOrganizationName), "cannot kill organization: " + Name);
+
+            var hashes = Runtime.GetTransactionHashesForAddress(this.Address);
+            //var transactions = hashes.Select(hash => Runtime.GetTransaction(hash)).ToArray();
+            var events = GetEventList(Runtime, hashes);
+
+            // return all assets to previous owners, if possible
+            var symbols = Runtime.GetTokens();
+            foreach (var symbol in symbols)
+            {
+                var balance = Runtime.GetBalance(symbol, this.Address);
+                if (balance > 0)
+                {
+                    var info = Runtime.GetToken(symbol);
+                    if (info.IsFungible())
+                    {
+                        var entries = FindTransferHistoryForFungibleToken(events, symbol);
+
+                        /*foreach (var entry in entries)
+                        {
+                            var amount = entry.Value;
+
+                            if (amount <= 0)
+                            {
+                                continue;
+                            }
+
+                            var target = entry.Key;
+                            balance -= amount;
+
+                            System.Console.WriteLine($"{target},{UnitConversion.ToDecimal(amount, info.Decimals)},{symbol}");
+                        }*/
+
+                        foreach (var entry in entries)
+                        {
+                            var amount = entry.Value;
+
+                            if (amount <= 0)
+                            {
+                                continue;
+                            }
+
+                            var target = entry.Key;
+                            balance -= amount;
+
+                            Runtime.Expect(balance >= 0, $"balance underflow while returning {symbol} to organization members during destruction");
+
+                            Runtime.TransferTokens(symbol, this.Address, target, amount);
+                        }
+                    }
+                    else
+                    {
+                        var entries = FindTransferHistoryForNFT(events, symbol);
+                        foreach (var entry in entries)
+                        {
+                            var target = entry.Key;
+
+                            var tokenIDs = entry.Value;
+
+                            foreach (var tokenID in tokenIDs)
+                            {
+                                Runtime.TransferToken(symbol, this.Address, target, tokenID);
+                                balance--;
+                            }
+                        }
+                    }
+
+                    if (/*symbol != DomainSettings.FuelTokenSymbol && */balance > 0)
+                    {
+                        if (info.IsFungible())
+                        {
+                            balance = Runtime.Chain.GetTokenBalance(Runtime.Storage, symbol, this.Address);
+                            Runtime.TransferTokens(symbol, this.Address, from, balance);
+                        }
+                        else
+                        {
+                            var tokenIDs = Runtime.Chain.GetOwnedTokens(Runtime.Storage, symbol, this.Address);
+                            foreach (var tokenID in tokenIDs)
+                            {
+                                Runtime.TransferToken(symbol, this.Address, from, tokenID);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // remove all keys from storage
+            var key = GetKey("name");
+            this.Storage.Delete(key);
+            key = GetKey("script");
+            this.Storage.Delete(key);
+
+            var list = GetMemberList();
+            list.Clear();
+
+            Runtime.Notify(EventKind.OrganizationKill, from, new OrganizationEventData(this.ID, from));
+
+            this.IsInvalid = true;
+            return true;
+        }
+
+        // returns true if name represents an organization that is required to the chain rules to work 
+        public static bool IsSpecialOrganization(string name)
+        {
+            return (name.Equals(DomainSettings.MastersOrganizationName) || name.Equals(DomainSettings.StakersOrganizationName) || name.Equals(DomainSettings.ValidatorsOrganizationName));
         }
     }
 }

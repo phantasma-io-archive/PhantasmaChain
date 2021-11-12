@@ -1744,22 +1744,28 @@ namespace Phantasma.Blockchain
             return Nexus.GetOrganizationByName(RootStorage, name);
         }
 
-        public bool AddMember(string organization, Address admin, Address target)
+        public bool AddMemberToOrganization(string organization, Address admin, Address target)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
             return org.AddMember(this, admin, target);
         }
 
-        public bool RemoveMember(string organization, Address admin, Address target)
+        public bool RemoveMemberFromOrganization(string organization, Address admin, Address target)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
             return org.RemoveMember(this, admin, target);
         }
 
-        public void MigrateMember(string organization, Address admin, Address source, Address destination)
+        public void MigrateMemberOfOrganization(string organization, Address admin, Address source, Address destination)
         {
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
             org.MigrateMember(this, admin, source, destination);
+        }
+
+        public bool KillOrganization(string organization, Address source)
+        {
+            var org = Nexus.GetOrganizationByName(RootStorage, organization);
+            return org.Kill(this, source);
         }
 
         public Address GetValidator(Timestamp time)

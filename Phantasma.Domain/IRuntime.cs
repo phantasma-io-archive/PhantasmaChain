@@ -65,9 +65,9 @@ namespace Phantasma.Domain
         bool OrganizationExists(string name);
         IOrganization GetOrganization(string name);
 
-        bool AddMember(string organization, Address admin, Address target);
-        bool RemoveMember(string organization, Address admin, Address target);
-        void MigrateMember(string organization, Address admin, Address source, Address destination);
+        bool AddMemberToOrganization(string organization, Address admin, Address target);
+        bool RemoveMemberFromOrganization(string organization, Address admin, Address target);
+        void MigrateMemberOfOrganization(string organization, Address admin, Address source, Address destination);
 
         bool ContractExists(string name);
         bool ContractDeployed(string name);

@@ -302,7 +302,7 @@ namespace Phantasma.Blockchain.Contracts
             stake.stakeAmount += stakeAmount;
             _stakeMap.Set<Address, EnergyStake>(from, stake);
 
-            Runtime.AddMember(DomainSettings.StakersOrganizationName, this.Address, from);
+            Runtime.AddMemberToOrganization(DomainSettings.StakersOrganizationName, this.Address, from);
 
             var claimList = _claimMap.Get<Address, StorageList>(from);
             var claimEntry = new EnergyClaim()
@@ -327,7 +327,7 @@ namespace Phantasma.Blockchain.Contracts
             {
                 var nextClaim = GetMasterClaimDate(2);
 
-                Runtime.AddMember(DomainSettings.MastersOrganizationName, this.Address, from);
+                Runtime.AddMemberToOrganization(DomainSettings.MastersOrganizationName, this.Address, from);
                 _masterClaims.Set<Address, Timestamp>(from, nextClaim);
 
                 _masterAgeMap.Set<Address, Timestamp>(from, Runtime.Time);
@@ -376,7 +376,7 @@ namespace Phantasma.Blockchain.Contracts
                 _stakeMap.Remove(from);
                 _voteHistory.Remove(from);
 
-                Runtime.RemoveMember(DomainSettings.StakersOrganizationName, this.Address, from);
+                Runtime.RemoveMemberFromOrganization(DomainSettings.StakersOrganizationName, this.Address, from);
 
                 var name = Runtime.GetAddressName(from);
                 if (name != ValidationUtils.ANONYMOUS_NAME)
@@ -395,7 +395,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (stake.stakeAmount < masterAccountThreshold)
             {
-                Runtime.RemoveMember(DomainSettings.MastersOrganizationName, this.Address, from);
+                Runtime.RemoveMemberFromOrganization(DomainSettings.MastersOrganizationName, this.Address, from);
 
                 if (_masterClaims.ContainsKey<Address>(from))
                 {

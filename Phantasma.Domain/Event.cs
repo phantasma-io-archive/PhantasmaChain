@@ -68,6 +68,7 @@ namespace Phantasma.Domain
         Crowdsale = 58,
         OrderBid = 59,
         ContractKill = 60,
+        OrganizationKill = 61,
         Custom = 64
     }
 

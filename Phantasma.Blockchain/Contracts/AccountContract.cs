@@ -261,7 +261,7 @@ namespace Phantasma.Blockchain.Contracts
             var orgs = Runtime.GetOrganizations();
             foreach (var orgID in orgs)
             {
-                Runtime.MigrateMember(orgID, from, from, target);
+                Runtime.MigrateMemberOfOrganization(orgID, from, from, target);
             }
 
             var migrateMethod = new ContractMethod("OnMigrate", VM.VMType.None, -1, new ContractParameter[] { new ContractParameter("from", VM.VMType.Object), new ContractParameter("to", VM.VMType.Object) });
