@@ -165,23 +165,11 @@ namespace Phantasma.Tests
             var accountChain = nexus.GetChainByName("account");
             var symbol = "BLA";
 
-            var tokenAsm = new string[]
-            {
-                "LOAD r1 42",
-                "PUSH r1",
-                "RET"
-            };
-
-            var tokenScript = AssemblerUtils.BuildScript(tokenAsm);
-
-            var methods = new ContractMethod[]
-            {
-                new ContractMethod("mycall", VMType.Number, 0, new ContractParameter[0])
-            };
+            byte[] tokenScript = null; // if we dont provide a script, a generic one will be used
 
             var tokenSupply = UnitConversion.ToBigInteger(10000, 18);
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible, tokenScript, null, methods);
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible, tokenScript);
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
@@ -216,7 +204,7 @@ namespace Phantasma.Tests
             {
                 return new ScriptBuilder()
                 .AllowGas(owner.Address, Address.Null, simulator.MinimumFee, 999)
-                .CallContract(symbol, "mycall")
+                .CallContract(symbol, "getSymbol")
                 .SpendGas(owner.Address)
                 .EndScript();
             });
@@ -224,9 +212,9 @@ namespace Phantasma.Tests
 
             var callResultBytes = block.GetResultForTransaction(tx.Hash);
             var callResult = Serialization.Unserialize<VMObject>(callResultBytes);
-            var num = callResult.AsNumber();
+            var temp = callResult.AsString();
 
-            Assert.IsTrue(num == 42);
+            Assert.IsTrue(temp == symbol);
         }
 
         [TestMethod]
