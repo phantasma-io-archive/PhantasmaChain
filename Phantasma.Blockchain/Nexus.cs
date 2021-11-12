@@ -2217,13 +2217,13 @@ namespace Phantasma.Blockchain
 
         public readonly StorageContext RootStorage;
 
-        private StorageList GetSystemList(string name, StorageContext storage)
+        internal StorageList GetSystemList(string name, StorageContext storage)
         {
             var key = System.Text.Encoding.UTF8.GetBytes($".{name}.list");
             return new StorageList(key, storage);
         }
 
-        private StorageMap GetSystemMap(string name, StorageContext storage)
+        internal StorageMap GetSystemMap(string name, StorageContext storage)
         {
             var key = System.Text.Encoding.UTF8.GetBytes($".{name}.map");
             return new StorageMap(key, storage);
@@ -2234,7 +2234,7 @@ namespace Phantasma.Blockchain
         private const string ChainTag = "chains";
         private const string PlatformTag = "platforms";
         private const string FeedTag = "feeds";
-        private const string OrganizationTag = "orgs";
+        internal const string OrganizationTag = "orgs";
 
         public string[] GetTokens(StorageContext storage)
         {

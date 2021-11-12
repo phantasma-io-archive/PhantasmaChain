@@ -427,6 +427,26 @@ namespace Phantasma.Blockchain
             var list = GetMemberList();
             list.Clear();
 
+            // remove org from system list
+            var organizationList = Runtime.Nexus.GetSystemList(Nexus.OrganizationTag, Runtime.RootStorage);
+            var index = -1;
+            var count = (int)organizationList.Count();
+            for (int i=0; i<count; i++)
+            {
+                var entry = organizationList.Get<string>(i);
+                if (entry == this.ID)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            Runtime.Expect(index >= 0, "organization ID not found in system list");
+            organizationList.RemoveAt(index);
+
+            var organizationMap = Runtime.Nexus.GetSystemMap(Nexus.OrganizationTag, Runtime.RootStorage);
+            organizationMap.Remove(this.Address);
+
             Runtime.Notify(EventKind.OrganizationKill, from, new OrganizationEventData(this.ID, from));
 
             this.IsInvalid = true;
