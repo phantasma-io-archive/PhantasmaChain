@@ -553,7 +553,7 @@ namespace Phantasma.VM
 
                 case VMType.Timestamp:
                     {
-                        var temp = BitConverter.ToUInt32(val, 0);
+                        var temp = val == null ? 0 : BitConverter.ToUInt32(val, 0);
                         this.Data = new Timestamp(temp);
                         break;
                     }
@@ -709,6 +709,11 @@ namespace Phantasma.VM
 
         public VMObject SetValue(object val)
         {
+            if (val != null && val.GetType() == typeof(Timestamp))
+            {
+                return SetValue((Timestamp)val);
+            }
+
             var type = val.GetType();
             Throw.If(!type.IsStructOrClass(), $"Invalid cast: expected struct or class, got {type.Name}");
             this.Type = VMType.Object;

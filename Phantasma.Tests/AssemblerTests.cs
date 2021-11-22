@@ -182,6 +182,36 @@ namespace Phantasma.Tests
 
                 $"ret",
 
+                $"@getOwner: nop",
+                $"load r0 0x{addressStr}",
+                "push r0",
+                $"ret",
+
+                $"@getSymbol: nop",
+                $"load r0 \"TEST\"",
+                "push r0",
+                $"ret",
+
+                $"@getName: nop",
+                $"load r0 \"Test Token\"",
+                "push r0",
+                $"ret",
+
+                $"@getMaxSupply: nop",
+                $"load r0 100000000",
+                "push r0",
+                $"ret",
+
+                $"@getDecimals: nop",
+                $"load r0 2",
+                "push r0",
+                $"ret",
+
+                $"@getTokenFlags: nop",
+                $"load r0 "+(int)flags+"",
+                "push r0",
+                $"ret",
+
                 $"@sendHandler: ret",
 
                 $"@receiveHandler: ret",
@@ -284,6 +314,36 @@ namespace Phantasma.Tests
                 $"push r10",
                 $@"extcall ""Runtime.Notify""",
                 "ret",
+
+                $"@getOwner: nop",
+                $"load r0 0x{addressStr}",
+                "push r0",
+                $"ret",
+
+                $"@getSymbol: nop",
+                $"load r0 \"TEST\"",
+                "push r0",
+                $"ret",
+
+                $"@getName: nop",
+                $"load r0 \"Test Token\"",
+                "push r0",
+                $"ret",
+
+                $"@getMaxSupply: nop",
+                $"load r0 100000000",
+                "push r0",
+                $"ret",
+
+                $"@getDecimals: nop",
+                $"load r0 2",
+                "push r0",
+                $"ret",
+
+                $"@getTokenFlags: nop",
+                $"load r0 "+(int)flags+"",
+                "push r0",
+                $"ret",
 
                 $"@return: ret",
             };

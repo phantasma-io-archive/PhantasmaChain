@@ -76,7 +76,7 @@ namespace Phantasma.Blockchain
                 return result;
             }
 
-                var native = Contract as NativeContract;
+            var native = Contract as NativeContract;
             if (native != null)
             {
                 using (var m = new ProfileMarker("InternalCall"))

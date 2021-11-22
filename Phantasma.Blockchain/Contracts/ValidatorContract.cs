@@ -243,7 +243,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (type != ValidatorType.Proposed)
             {
-                Runtime.AddMember(DomainSettings.ValidatorsOrganizationName, this.Address, target);
+                Runtime.AddMemberToOrganization(DomainSettings.ValidatorsOrganizationName, this.Address, target);
             }
 
             Runtime.Notify(type == ValidatorType.Proposed ? EventKind.ValidatorPropose : EventKind.ValidatorElect, Runtime.Chain.Address, target);
@@ -304,7 +304,7 @@ namespace Phantasma.Blockchain.Contracts
             entry.address = to;
             _validators.Set<BigInteger, ValidatorEntry>(index, entry);
 
-            Runtime.MigrateMember(DomainSettings.ValidatorsOrganizationName, this.Address, from, to);
+            Runtime.MigrateMemberOfOrganization(DomainSettings.ValidatorsOrganizationName, this.Address, from, to);
 
             Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, from);
             Runtime.Notify(EventKind.ValidatorElect, Runtime.Chain.Address, to);

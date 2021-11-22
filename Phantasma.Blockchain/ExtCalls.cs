@@ -69,6 +69,8 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Nexus.SetPlatformTokenHash", Nexus_SetPlatformTokenHash);
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
+            vm.RegisterMethod("Organization.RemoveMember", Organization_RemoveMember);
+            vm.RegisterMethod("Organization.Kill", Organization_Kill);
 
             vm.RegisterMethod("Task.Start", Task_Start);
             vm.RegisterMethod("Task.Stop", Task_Stop);
@@ -1752,7 +1754,38 @@ namespace Phantasma.Blockchain
             var name = vm.PopString("name");
             var target = vm.PopAddress();
 
-            vm.AddMember(name, source, target);
+            Throw.If(Organization.IsSpecialOrganization(name), "cannot add member to special org:" + name);
+
+            vm.AddMemberToOrganization(name, source, target);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Organization_RemoveMember(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(3);
+
+            var source = vm.PopAddress();
+            var name = vm.PopString("name");
+            var target = vm.PopAddress();
+
+            Throw.If(Organization.IsSpecialOrganization(name), "cannot remove member from special org:" + name);
+
+            vm.RemoveMemberFromOrganization(name, source, target);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Organization_Kill(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            var source = vm.PopAddress();
+            var name = vm.PopString("name");
+
+            Throw.If(Organization.IsSpecialOrganization(name) || name.Equals(DomainSettings.PhantomForceOrganizationName), "cannot kill special org:" + name);
+
+            vm.KillOrganization(name, source);
 
             return ExecutionState.Running;
         }
