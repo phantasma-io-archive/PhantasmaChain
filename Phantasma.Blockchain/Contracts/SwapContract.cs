@@ -31,8 +31,23 @@ namespace Phantasma.Blockchain.Contracts
     public sealed class SwapContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Swap;
+
+        internal BigInteger _swapVersion;
+
         public SwapContract() : base()
         {
+        }
+
+        public BigInteger GetSwapVersion()
+        {
+            if (_swapVersion <= 0) // support for legacy versions
+            {
+                return 2;
+            }
+            else
+            {
+                return _swapVersion;
+            }
         }
 
         public bool IsSupportedToken(string symbol)
@@ -200,9 +215,71 @@ namespace Phantasma.Blockchain.Contracts
             return result.ToArray();
         }
 
+        private void MigrateToV3() 
+        {
+            Runtime.Expect(GetSwapVersion() < 3, "Migration failed, wrong version");
+
+            var existsLP = Runtime.TokenExists(DomainSettings.LiquidityTokenSymbol);
+            Runtime.Expect(!existsLP, "LP token already exists!");
+
+            var owner = Runtime.GenesisAddress;
+            var tokenScript = new byte[] { (byte)VM.Opcode.RET }; // TODO maybe fetch a pre-compiled Tomb script here, like for Crown?
+            var abi = ContractInterface.Empty;
+            Runtime.CreateToken(owner, DomainSettings.LiquidityTokenSymbol, DomainSettings.LiquidityTokenSymbol, 0, 0, TokenFlags.Transferable | TokenFlags.Burnable, tokenScript, abi);
+
+            // check how much SOUL we have here
+            var soulTotal = Runtime.GetBalance(DomainSettings.StakingTokenSymbol, this.Address);
+
+            // creates a new pool for SOUL and every asset that has a balance in v2
+            var symbols = Runtime.GetTokens();
+
+            var tokens = new Dictionary<string, BigInteger>();
+
+            // fetch all fungible tokens with balance > 0
+            foreach (var symbol in symbols)
+            {
+                if (symbol == DomainSettings.StakingTokenSymbol)
+                {
+                    continue;
+                }
+
+                var info = Runtime.GetToken(symbol);
+                if (info.IsFungible())
+                {
+                    var balance = Runtime.GetBalance(symbol, this.Address);
+
+                    if (balance > 0)
+                    {
+                        tokens[symbol] = balance;
+                    }
+                }
+            }
+
+            // sort tokens by estimated SOUL value, from low to high
+            var sortedTokens = tokens.Select(x => new KeyValuePair<string, BigInteger>(x.Key, GetRateV2(x.Key, DomainSettings.StakingTokenSymbol, x.Value)))
+                .OrderBy(x => x.Value)
+                .Select(x => x.Key)
+                .ToArray();
+
+            // create a pool for every found fungible token
+            foreach (var symbol in sortedTokens)
+            {
+                var amount = tokens[symbol];
+                //var soulAmount = ????; // how should we calculate how much SOUL to put in each pool, based in soulTotal variable? soulAvg = soulTotal / sortedTokens.Length??
+                //CreateLiquidityPool(symbol, DomainSettings.StakingTokenSymbol, amount, soulAmount); TODO finish this
+            }            
+        }
+
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
         {
-            if (Runtime.ProtocolVersion >= 3)
+            var protocol = Runtime.ProtocolVersion;
+
+            if (protocol >= 7)
+            {
+                SwapFeeV3(from, fromSymbol, feeAmount);
+            }
+            else
+            if (protocol >= 3)
             {
                 SwapFeeV2(from, fromSymbol, feeAmount);
             }
@@ -210,6 +287,16 @@ namespace Phantasma.Blockchain.Contracts
             {
                 SwapFeeV1(from, fromSymbol, feeAmount);
             }
+        }
+
+        private void SwapFeeV3(Address from, string fromSymbol, BigInteger feeAmount)
+        {
+            if (GetSwapVersion() < 3)
+            {
+                MigrateToV3();
+            }
+
+            throw new ChainException("TODO implemented swapV3");
         }
 
         private void SwapFeeV2(Address from, string fromSymbol, BigInteger feeAmount)
