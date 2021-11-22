@@ -10,6 +10,27 @@ using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts
 {
+    public struct LPTokenContent: ISerializable
+    {
+        public string Token0;
+        public string Token1;
+        public BigInteger Amount;
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarString(Token0);
+            writer.WriteVarString(Token1);
+            writer.WriteBigInteger(Amount);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            Token0 = reader.ReadVarString();
+            Token1 = reader.ReadVarString();
+            Amount = reader.ReadBigInteger();
+        }
+    }
+
     public struct SwapPair: ISerializable
     {
         public string Symbol;
