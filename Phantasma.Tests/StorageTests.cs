@@ -5,6 +5,7 @@ using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Storage.Context;
 using System;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Tests
 {
@@ -56,6 +57,40 @@ namespace Phantasma.Tests
 
             map.Remove(1);
             Assert.IsTrue(map.Count() == 1);
+        }
+
+        [TestMethod]
+        public void TestStorageMapClearMultipleTimes()
+        {
+            var context = new MemoryStorageContext();
+            var address = Address.Null;
+            var keys = PhantasmaKeys.Generate();
+            var address2 = Address.FromKey(keys);
+            
+            var map = new StorageMap("test".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
+
+            map.Set(address, "hello");
+            map.Set(address2, "world");
+            Assert.IsTrue(map.Count() == 2);
+
+
+            map.Clear();
+            Assert.IsTrue(map.Count() == 0);
+
+            var keys2 = PhantasmaKeys.Generate();
+            var address3 = Address.FromKey(keys2);
+            for (int i = 0; i < 10; i++)
+            {
+                map.Set(address, 0);
+                map.Set(address2, 1);
+                map.Set(address3, 3);
+                Assert.IsTrue(map.Count() == 3);
+
+                map.Clear();
+                Assert.IsTrue(map.Count() == 0);
+            }           
+
         }
 
         [TestMethod]
