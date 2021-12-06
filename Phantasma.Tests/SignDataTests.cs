@@ -84,7 +84,7 @@ namespace Phantasma.Tests
             var rawData = Encoding.ASCII.GetBytes("SignWithEthereum");
 
             // Make a sign Data Call
-            var encryptionScheme = SignatureKind.Ed25519;
+            var encryptionScheme = SignatureKind.ECDSA;
             link1.forceSignData(platform, encryptionScheme, rawData, 0, (signed, random, error) =>
             {
                 Assert.IsTrue(random != null);
