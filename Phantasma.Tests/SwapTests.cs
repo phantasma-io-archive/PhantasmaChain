@@ -136,7 +136,6 @@ namespace Phantasma.Tests
             // setup Tokens for the user
             simulator.BeginBlock();
             simulator.GenerateToken(owner, virtualPoolPair, "CoolToken", virtualPoolPairAmount, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
-            simulator.GenerateToken(owner, LPTokenSymbol, "LP", 1000, 0, TokenFlags.Burnable | TokenFlags.Transferable);
             simulator.MintTokens(owner, testUserA.Address, poolSymbol, 10000);
             simulator.MintTokens(owner, testUserA.Address, poolPair, 100000);
             simulator.MintTokens(owner, testUserA.Address, virtualPoolPair, virtualPoolPairAmount);

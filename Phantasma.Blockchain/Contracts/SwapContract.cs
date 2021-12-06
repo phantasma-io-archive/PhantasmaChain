@@ -355,17 +355,26 @@ namespace Phantasma.Blockchain.Contracts
             return result.ToArray();
         }
 
-        private void MigrateToV3() 
+        public void MigrateToV3() 
         {
+            var owner = Runtime.GenesisAddress;
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
             Runtime.Expect(GetSwapVersion() < 3, "Migration failed, wrong version");
 
             var existsLP = Runtime.TokenExists(DomainSettings.LiquidityTokenSymbol);
             Runtime.Expect(!existsLP, "LP token already exists!");
 
-            var owner = Runtime.GenesisAddress;
             var tokenScript = new byte[] { (byte)VM.Opcode.RET }; // TODO maybe fetch a pre-compiled Tomb script here, like for Crown?
             var abi = ContractInterface.Empty;
             Runtime.CreateToken(owner, DomainSettings.LiquidityTokenSymbol, DomainSettings.LiquidityTokenSymbol, 0, 0, TokenFlags.Transferable | TokenFlags.Burnable, tokenScript, abi);
+
+            byte[] nftScript;
+            ContractInterface nftABI;
+
+            var url = "https://www.22series.com/part_info?id=*";
+            Tokens.TokenUtils.GenerateNFTDummyScript(DomainSettings.LiquidityTokenSymbol, $"{DomainSettings.LiquidityTokenSymbol} #*", $"{DomainSettings.LiquidityTokenSymbol} #*", url, url, out nftScript, out nftABI);
+            Runtime.CreateTokenSeries(DomainSettings.LiquidityTokenSymbol, this.Address, 1, 0, TokenSeriesMode.Duplicated, nftScript, nftABI);
 
             // check how much SOUL we have here
             var soulTotal = Runtime.GetBalance(DomainSettings.StakingTokenSymbol, this.Address);
@@ -431,10 +440,7 @@ namespace Phantasma.Blockchain.Contracts
 
         private void SwapFeeV3(Address from, string fromSymbol, BigInteger feeAmount)
         {
-            if (GetSwapVersion() < 3)
-            {
-                MigrateToV3();
-            }
+            Runtime.Expect(GetSwapVersion() == 3, "call migrateV3 first");
 
             throw new ChainException("TODO implemented swapV3");
         }
@@ -702,6 +708,8 @@ namespace Phantasma.Blockchain.Contracts
         /// <param name="amount1">Amount for Symbol1</param>
         public void CreatePool(Address from, string symbol0, BigInteger amount0, string symbol1,  BigInteger amount1)
         {
+            Runtime.Expect(GetSwapVersion() == 3, "call migrateV3 first");
+
             // Check the if the input is valid
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(amount0 > 0, "invalid amount");
@@ -740,8 +748,6 @@ namespace Phantasma.Blockchain.Contracts
             // Give LP Token to the address
             LPTokenContentROM nftROM = new LPTokenContentROM(symbol0, symbol1);
             LPTokenContentRAM nftRAM = new LPTokenContentRAM(amount0, amount1, TLP);
-
-            //Runtime.CreateTokenSeries(DomainSettings.LiquidityTokenSymbol, this.Address, _pools.Count()+1, 100000000, TokenSeriesMode.Unique, ABI.Serialize(), ABI);
 
             var nftID = Runtime.MintToken(DomainSettings.LiquidityTokenSymbol, this.Address, from, VMObject.FromStruct(nftROM).AsByteArray(), VMObject.FromStruct(nftRAM).AsByteArray(), DEXSeriesID);
             AddToLPTokens(from, nftID, pool.Symbol0, pool.Symbol1);
