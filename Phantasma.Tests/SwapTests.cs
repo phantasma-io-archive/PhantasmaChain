@@ -21,6 +21,11 @@ namespace Phantasma.Tests
     [TestClass]
     public class SwapTests
     {
+        private void MigrateCall(NexusSimulator simulator, PhantasmaKeys owner)
+        {
+
+        }
+
         private void CreatePools(NexusSimulator simulator, PhantasmaKeys testUser)
         {
             // Setup Tokens
@@ -69,27 +74,31 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateToken(owner, virtualPoolPair, "CoolToken", virtualPoolPairAmount, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
-            simulator.GenerateToken(owner, LPTokenSymbol, "LP", 0, 0, TokenFlags.Burnable | TokenFlags.Transferable  );
             simulator.MintTokens(owner, testUserA.Address, poolSymbol, 10000);
             simulator.MintTokens(owner, testUserA.Address, poolPair, 100000);
             simulator.MintTokens(owner, testUserA.Address, virtualPoolPair, virtualPoolPairAmount);
             simulator.EndBlock();
 
             // TODO
-            //var script = new ScriptBuilder().CallContract("swap", "CreatePool", testUserA.Address, poolSymbol, poolSymbolAmount, poolPair, poolPairAmount).EndScript();
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal, () =>
+                ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "MigrateToV3").
+                    SpendGas(owner.Address).EndScript());
+            var block = simulator.EndBlock().First();
 
             simulator.BeginBlock();
-            var tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("swap", "CreatePool", testUserA.Address, poolSymbol, poolSymbolAmount, poolPair, poolPairAmount).
                     SpendGas(testUserA.Address).EndScript());
-            var block = simulator.EndBlock().First();
+            block = simulator.EndBlock().First();
 
             var resultBytes = block.GetResultForTransaction(tx.Hash);
             var resultObj = Serialization.Unserialize<VMObject>(resultBytes);
-            var saleHash = resultObj.AsInterop<Hash>();
+            var poolHash = resultObj.AsInterop<Hash>();
 
-            Console.WriteLine($"saleHash:{saleHash}");            
+            Console.WriteLine($"poolHash:{poolHash}");            
 
             //var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
 
