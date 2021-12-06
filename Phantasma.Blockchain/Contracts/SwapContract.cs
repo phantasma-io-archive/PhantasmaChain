@@ -416,7 +416,9 @@ namespace Phantasma.Blockchain.Contracts
                 var amount = tokens[symbol];
                 //var soulAmount = ????; // how should we calculate how much SOUL to put in each pool, based in soulTotal variable? soulAvg = soulTotal / sortedTokens.Length??
                 //CreateLiquidityPool(symbol, DomainSettings.StakingTokenSymbol, amount, soulAmount); TODO finish this
-            }            
+            }
+
+            _swapVersion = 3;
         }
 
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
