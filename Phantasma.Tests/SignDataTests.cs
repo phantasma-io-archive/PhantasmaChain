@@ -36,28 +36,26 @@ namespace Phantasma.Tests
             var platform = "phantasma";
 
             // Encode Data
-            var rawData = "SignWithPhantasma";
-            var encodedData = Base16.Encode(Encoding.ASCII.GetBytes(rawData));
-
-            Assert.IsTrue(rawData.Equals(Encoding.ASCII.GetString(Base16.Decode(encodedData))));
+            var rawData = Encoding.ASCII.GetBytes("SignWithPhantasma");
 
             // Make a sign Data Call
-            link1.forceSignData(platform, SignatureKind.Ed25519, Encoding.ASCII.GetBytes(encodedData), 0, (signed, random, error) =>
+            var encryptionScheme = SignatureKind.Ed25519;
+            link1.forceSignData(platform, encryptionScheme, rawData, 0, (signed, random, error) =>
             {
-                Assert.IsTrue(random != encodedData);
-                Assert.IsTrue(signed != encodedData);
+                Assert.IsTrue(random != null);
+                Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser1.Address.Text, signed, random, encodedData);
+                var result = EncryptionUtils.ValidateSignedData(testUser1.Address.Text, signed, random, Base16.Encode(rawData));
                 Assert.IsTrue(result, "Not Valid");
             });
 
             // Make a sign Data Call
-            link2.forceSignData(platform, SignatureKind.Ed25519, Encoding.ASCII.GetBytes(encodedData), 1, (signed, random, error) =>
+            link2.forceSignData(platform, encryptionScheme, rawData, 1, (signed, random, error) =>
             {
-                Assert.IsTrue(random != encodedData);
-                Assert.IsTrue(signed != encodedData);
+                Assert.IsTrue(random != null);
+                Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser2.Address.Text, signed, random, encodedData);
+                var result = EncryptionUtils.ValidateSignedData(testUser2.Address.Text, signed, random, Base16.Encode(rawData));
                 Assert.IsFalse(result, "Valid, but shouldn't be.");
             });
         }
@@ -80,32 +78,29 @@ namespace Phantasma.Tests
             var account2 = new MyAccount(testUser2, PlatformKind.Phantasma);
             LinkSimulator link2 = new LinkSimulator(nexus, "Ac2", account1);
 
-            var signature = "Ed25519";
             var platform = "ethereum";
 
             // Encode Data
-            var rawData = "SignWithEthereum";
-            var encodedData = Base16.Encode(Encoding.ASCII.GetBytes(rawData));
-
-            Assert.IsTrue(rawData.Equals(Encoding.ASCII.GetString(Base16.Decode(encodedData))));
+            var rawData = Encoding.ASCII.GetBytes("SignWithEthereum");
 
             // Make a sign Data Call
-            link1.forceSignData(platform, SignatureKind.Ed25519, Encoding.ASCII.GetBytes(encodedData), 0, (signed, random, error) =>
+            var encryptionScheme = SignatureKind.Ed25519;
+            link1.forceSignData(platform, encryptionScheme, rawData, 0, (signed, random, error) =>
             {
-                Assert.IsTrue(random != encodedData);
-                Assert.IsTrue(signed != encodedData);
+                Assert.IsTrue(random != null);
+                Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser1.Address.Text, signed, random, encodedData);
+                var result = EncryptionUtils.ValidateSignedData(testUser1.Address.Text, signed, random, Base16.Encode(rawData));
                 Assert.IsTrue(result, "Not Valid");
             });
 
             // Make a sign Data Call
-            link2.forceSignData(platform, SignatureKind.Ed25519, Encoding.ASCII.GetBytes(encodedData), 1, (signed, random, error) =>
+            link2.forceSignData(platform, encryptionScheme, rawData, 1, (signed, random, error) =>
             {
-                Assert.IsTrue(random != encodedData);
-                Assert.IsTrue(signed != encodedData);
+                Assert.IsTrue(random != null);
+                Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser2.Address.Text, signed, random, encodedData);
+                var result = EncryptionUtils.ValidateSignedData(testUser2.Address.Text, signed, random, Base16.Encode(rawData));
                 Assert.IsFalse(result, "Valid, but shouldn't be.");
             });
         }

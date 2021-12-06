@@ -107,7 +107,7 @@ namespace Phantasma.Simulator
             }
 
             var state = Status;
-            if (state == null)
+            if (state != WalletStatus.Ready)
             {
                 callback(null, null, "not logged in");
                 return;
