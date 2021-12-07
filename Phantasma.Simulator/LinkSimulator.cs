@@ -113,23 +113,32 @@ namespace Phantasma.Simulator
                 return;
             }
 
-            if (kind != SignatureKind.Ed25519)
-            {
-                callback(null, null, kind + " signatures unsupported");
-                return;
-            }
-
             var account = _account;
 
             var description = System.Text.Encoding.UTF8.GetString(data);
-
-            var phantasmaKeys = account.keys;
 
             var randomValue = new Random().Next(0, int.MaxValue);
             var randomBytes = BitConverter.GetBytes(randomValue);
 
             var msg = ByteArrayUtils.ConcatBytes(randomBytes, data);
-            var signature = phantasmaKeys.Sign(msg);
+            Cryptography.Signature signature;
+            
+            switch (kind)
+            {
+                case SignatureKind.Ed25519:
+                    var phantasmaKeys = account.keys;
+                    signature = phantasmaKeys.Sign(msg);
+                    break;
+
+                case SignatureKind.ECDSA:
+                    var ethKeys = new Ethereum.EthereumKey(account.keys.PrivateKey);
+                    signature = ethKeys.Sign(msg);
+                    break;
+
+                default:
+                    callback(null, null, kind + " signatures unsupported");
+                    return;
+            }
 
             byte[] sigBytes = null;
 

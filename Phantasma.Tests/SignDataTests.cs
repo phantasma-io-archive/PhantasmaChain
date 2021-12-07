@@ -1,8 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
-using Phantasma.Cryptography.Encryption;
 using Phantasma.Numerics;
+using Phantasma.Pay;
 using Phantasma.Simulator;
 using System;
 using System.Collections.Generic;
@@ -32,7 +33,6 @@ namespace Phantasma.Tests
             var account2 = new MyAccount(testUser2, PlatformKind.Ethereum);
             LinkSimulator link2 = new LinkSimulator(nexus, "Ac2", account1);
 
-            var signature = "Ed25519";
             var platform = "phantasma";
 
             // Encode Data
@@ -45,7 +45,7 @@ namespace Phantasma.Tests
                 Assert.IsTrue(random != null);
                 Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser1.Address.Text, signed, random, Base16.Encode(rawData));
+                var result = WalletUtils.ValidateSignedData(testUser1.Address, signed, random, Base16.Encode(rawData));
                 Assert.IsTrue(result, "Not Valid");
             });
 
@@ -55,7 +55,7 @@ namespace Phantasma.Tests
                 Assert.IsTrue(random != null);
                 Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser2.Address.Text, signed, random, Base16.Encode(rawData));
+                var result = WalletUtils.ValidateSignedData(testUser2.Address, signed, random, Base16.Encode(rawData));
                 Assert.IsFalse(result, "Valid, but shouldn't be.");
             });
         }
@@ -83,6 +83,11 @@ namespace Phantasma.Tests
             // Encode Data
             var rawData = Encoding.ASCII.GetBytes("SignWithEthereum");
 
+            var ethKeys1 = new Ethereum.EthereumKey(testUser1.PrivateKey);
+            // NOTE this is not the same as an "transcoded address", instead it is a Phantasma address made from the public key of the eth addres
+            // A transcoded address would be created from the public ethereum address instead....
+            var ethPhaAddress1 = Address.FromKey(ethKeys1); 
+
             // Make a sign Data Call
             var encryptionScheme = SignatureKind.ECDSA;
             link1.forceSignData(platform, encryptionScheme, rawData, 0, (signed, random, error) =>
@@ -90,9 +95,12 @@ namespace Phantasma.Tests
                 Assert.IsTrue(random != null);
                 Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser1.Address.Text, signed, random, Base16.Encode(rawData));
+                var result = WalletUtils.ValidateSignedData(ethPhaAddress1, signed, random, Base16.Encode(rawData));
                 Assert.IsTrue(result, "Not Valid");
             });
+
+            var ethKeys2 = new Ethereum.EthereumKey(testUser2.PrivateKey);
+            var ethPhaAddress2 = Address.FromKey(ethKeys2);
 
             // Make a sign Data Call
             link2.forceSignData(platform, encryptionScheme, rawData, 1, (signed, random, error) =>
@@ -100,21 +108,9 @@ namespace Phantasma.Tests
                 Assert.IsTrue(random != null);
                 Assert.IsTrue(signed != null);
                 Console.WriteLine($"Error:{error}");
-                var result = EncryptionUtils.ValidateSignedData(testUser2.Address.Text, signed, random, Base16.Encode(rawData));
+                var result = WalletUtils.ValidateSignedData(ethPhaAddress2, signed, random, Base16.Encode(rawData));
                 Assert.IsFalse(result, "Valid, but shouldn't be.");
             });
-        }
-
-        [TestMethod]
-        public void SignWithBNB()
-        {
-            // TODO
-        }
-
-        [TestMethod]
-        public void SignWithNEO()
-        {
-           // TODO
         }
     }
 }
