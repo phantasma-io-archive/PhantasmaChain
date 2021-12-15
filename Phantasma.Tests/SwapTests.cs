@@ -27,16 +27,14 @@ namespace Phantasma.Tests
 
         // Token Values
         string poolSymbol0 = "SOUL";
-        BigInteger poolAmount0 = 1000;
+        BigInteger poolAmount0 = UnitConversion.ToBigInteger(1000, 8);
         string poolSymbol1 = "KCAL";
-        BigInteger poolAmount1 = 16000;
+        BigInteger poolAmount1 = UnitConversion.ToBigInteger(16000, 10);
 
         // Virtual Token
         string virtualPoolSymbol = "COOL";
-        BigInteger virtualPoolAmount1 = 10000000;
+        BigInteger virtualPoolAmount1 = UnitConversion.ToBigInteger(10000000, 10);
 
-
-        
         public void Init()
         {
             owner = PhantasmaKeys.Generate();
@@ -529,23 +527,20 @@ namespace Phantasma.Tests
         {
             Init();
 
-            var script = new ScriptBuilder().CallContract("swap", "GetRate", poolSymbol0, poolSymbol1, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals)).EndScript();
+            BigInteger amount = UnitConversion.ToBigInteger(5, 8);
+            BigInteger targetRate = poolAmount1 * (1 - 3 / 100) * amount / (poolAmount0 + (1 - 3 / 100) * amount);
+
+            var script = new ScriptBuilder().CallContract("swap", "GetRate", poolSymbol0, poolSymbol1, amount).EndScript();
 
             var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
 
             var temp = result.ToObject();
             var rate = (BigInteger)temp;
 
-            decimal targetRate = 0;
-
-            targetRate = UnitConversion.ToDecimal(rate, DomainSettings.FuelTokenDecimals);
-            Console.WriteLine($"Rate:{rate} |-> {targetRate}");
-
-            Assert.IsTrue(targetRate == 5m);
+            Assert.IsTrue(targetRate == rate);
         }
 
         [TestMethod]
-        [Ignore]
         public void SwapTokens()
         {
             Init();
@@ -553,11 +548,79 @@ namespace Phantasma.Tests
             var testUserA = PhantasmaKeys.Generate();
             var testUserB = PhantasmaKeys.Generate();
 
+            BigInteger swapValue = UnitConversion.ToBigInteger(10, 8);
+
             simulator.BeginBlock();
             simulator.MintTokens(owner, testUserA.Address, poolSymbol0, virtualPoolAmount1);
             simulator.MintTokens(owner, testUserA.Address, poolSymbol1, virtualPoolAmount1);
             simulator.MintTokens(owner, testUserB.Address, poolSymbol0, virtualPoolAmount1);
-            simulator.MintTokens(owner, testUserB.Address, poolSymbol1, virtualPoolAmount1);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol1, poolAmount1);
+            simulator.EndBlock();
+            
+            var beforeTXBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol1, testUserB.Address);
+
+            // Add Liquidity to the pool
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, poolAmount0, poolSymbol1, poolAmount1)
+                    .SpendGas(testUserA.Address)
+                    .EndScript()
+                );
+            var block = simulator.EndBlock().First();
+
+            // Get Rate
+            var scriptRate = new ScriptBuilder().CallContract("swap", "GetRate", poolSymbol0, poolSymbol1, swapValue).EndScript();
+            var resultRate = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptRate);
+            var rate = (BigInteger)resultRate.AsNumber();
+
+            Console.WriteLine($"{swapValue} {poolSymbol0} for {rate} {poolSymbol1}");
+
+            // Make Swap
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserB.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "SwapTokens", testUserB.Address, poolSymbol0, poolSymbol1, swapValue)
+                    .SpendGas(testUserB.Address)
+                    .EndScript()
+                );
+            block = simulator.EndBlock().First();
+           
+
+            //foreach (var _event in block.GetEventsForTransaction(tx.Hash))
+            //{
+            //    
+            //    if (_event.Kind == EventKind.GasPayment)
+            //    {
+            //        //var eventData = Serialization.Unserialize<VMObject>(_event.Data);
+            //        //Console.WriteLine(eventData);
+            //    }
+            //}
+
+            // Check trade
+            var originalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol1, testUserB.Address);
+            Assert.IsTrue(rate+ beforeTXBalance == originalBalance, $"{beforeTXBalance} + {rate} = {beforeTXBalance + rate} != {originalBalance}");
+        }
+
+        [TestMethod]
+        public void SwapTokensReverse()
+        {
+            Init();
+
+
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+
+            int swapValue = 1000;
+
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol0, virtualPoolAmount1);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol1, virtualPoolAmount1);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol0, virtualPoolAmount1);
             simulator.EndBlock();
 
             // Add Liquidity to the pool
@@ -566,27 +629,52 @@ namespace Phantasma.Tests
                     ScriptUtils
                     .BeginScript()
                     .AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol1, poolAmount1, virtualPoolSymbol, virtualPoolAmount1)
+                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, poolAmount0, poolSymbol1, poolAmount1)
                     .SpendGas(testUserA.Address)
                     .EndScript()
                 );
             var block = simulator.EndBlock().First();
 
-            // First get the amount of tokens for a determinated amount
+            // Get Rate
+            //UnitConversion.ConvertDecimals(swapValue, 0, 10)
+            var originalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol1, testUserB.Address);
 
-            // TODO
-            Assert.IsFalse(true, "need Implementation");
 
         }
 
         [TestMethod]
-        [Ignore]
-        public void SwapTokensReverse()
+        public void GetUnclaimed()
         {
             Init();
 
-            // TODO
-            Assert.IsFalse(true, "need Implementation");
+            var testUserA = PhantasmaKeys.Generate();
+
+            int swapValue = 1000;
+
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol0, virtualPoolAmount1);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol1, virtualPoolAmount1);
+            simulator.EndBlock();
+
+            // Add Liquidity to the pool
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, poolAmount0, poolSymbol1, poolAmount1)
+                    .SpendGas(testUserA.Address)
+                    .EndScript()
+                );
+            var block = simulator.EndBlock().First();
+
+            // Get Rate
+            //UnitConversion.ConvertDecimals(swapValue, 0, 10)
+            var script = new ScriptBuilder().CallContract("swap", "GetUnclaimedFees", testUserA.Address, poolSymbol0, poolSymbol1).EndScript();
+            var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
+            var unclaimed = (BigInteger)result.AsNumber();
+
+            Assert.IsTrue(unclaimed == 0, "Unclaimed Failed");
         }
 
 

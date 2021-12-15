@@ -30,6 +30,12 @@ namespace Phantasma.Ethereum
             this.Address = "0x"+Base16.Encode( kak.Skip(12).ToArray());
         }
 
+        public static string FromPublicKey(byte[] publicKey)
+        {
+            var kak = new Sha3Keccack().CalculateHash(publicKey);
+            return "0x" + Base16.Encode(kak.Skip(12).ToArray());
+        }
+
         public static EthereumKey FromPrivateKey(string prv)
         {
             if (prv == null) throw new ArgumentNullException();
