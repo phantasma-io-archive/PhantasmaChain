@@ -21,8 +21,8 @@ namespace Phantasma.Blockchain.Contracts
 
         public LPTokenContentROM(string Symbol0, string Symbol1, BigInteger ID)
         {
-            this.Symbol0 = Symbol0;
-            this.Symbol1 = Symbol1;
+            this.Symbol0 = "";
+            this.Symbol1 = "";
             this.ID = ID;
         }
 
@@ -331,7 +331,14 @@ namespace Phantasma.Blockchain.Contracts
             var toInfo = Runtime.GetToken(toSymbol);
             Runtime.Expect(toInfo.IsFungible(), "must be fungible");
 
-            Runtime.Expect(PoolExists(fromSymbol, toSymbol), $"Pool {fromSymbol}/{toSymbol} doesn't exist.");
+            //Runtime.Expect(PoolExists(fromSymbol, toSymbol), $"Pool {fromSymbol}/{toSymbol} doesn't exist.");
+            if ( !PoolIsReal(fromSymbol, toSymbol))
+            {
+                BigInteger rate1 = GetRate(fromSymbol, "SOUL", amount);
+                BigInteger rate2 = GetRate("SOUL", toSymbol, rate1);
+                return rate2;
+            }
+
             BigInteger rate = 0;
 
             Pool pool = GetPool(fromSymbol, toSymbol);
@@ -354,6 +361,7 @@ namespace Phantasma.Blockchain.Contracts
             }
             else
             {
+
                 tokenAmount = pool.Amount0 * (1-feeAmount / 100) * amount / (pool.Amount1 + (1 - feeAmount / 100) * amount);
                 canBeTraded = ValidateTrade(tokenAmount, amount, pool, false);
                 //power = (BigInteger)Math.Pow((long)(pool.Amount1 + amount), 2);
@@ -559,7 +567,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(GetSwapVersion() >= 7, "call migrateV3 first");
             var feeSymbol = DomainSettings.FuelTokenSymbol;
-            Runtime.Expect(PoolExists(fromSymbol, feeSymbol), $"Pool {fromSymbol}/{feeSymbol} doesn't exist.");
+            //Runtime.Expect(PoolExists(fromSymbol, feeSymbol), $"Pool {fromSymbol}/{feeSymbol} doesn't exist.");
 
             var feeBalance = Runtime.GetBalance(feeSymbol, from);
             feeAmount -= feeBalance;
@@ -569,7 +577,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             // Need to remove the fees
-            var amountInOtherSymbol = GetRate(feeSymbol, fromSymbol, feeAmount);
 
             var token = Runtime.GetToken(fromSymbol);
             BigInteger minAmount;
@@ -592,15 +599,25 @@ namespace Phantasma.Blockchain.Contracts
                 }
             }
 
-            if (amountInOtherSymbol < minAmount)
+            if (!PoolIsReal(fromSymbol, feeSymbol))
             {
-                amountInOtherSymbol = minAmount;
-            }
+                var rate = GetRate(fromSymbol, "SOUL", feeAmount);
+                SwapTokens(from, fromSymbol, "SOUL", feeAmount);
+                SwapTokens(from, "SOUL", feeSymbol, rate);
+                return;
+            }else
+            {
+                var amountInOtherSymbol = GetRate(feeSymbol, fromSymbol, feeAmount);
+                if (amountInOtherSymbol < minAmount)
+                {
+                    amountInOtherSymbol = minAmount;
+                }
 
-            // round up
-            amountInOtherSymbol++;
+                // round up
+                amountInOtherSymbol++;
 
-            SwapTokens(from, fromSymbol, feeSymbol, amountInOtherSymbol);
+                SwapTokens(from, fromSymbol, feeSymbol, amountInOtherSymbol);
+            }           
 
             var finalFeeBalance = Runtime.GetBalance(feeSymbol, from);
             Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee finalFeeBalance: {finalFeeBalance} feeAmount: {feeAmount}");
@@ -819,6 +836,14 @@ namespace Phantasma.Blockchain.Contracts
             var total = GetRate(fromSymbol, toSymbol, amount);
             Runtime.Expect(total > 0, "amount to swap needs to be larger than zero");
 
+
+            if (!PoolIsReal(fromSymbol, toSymbol)){
+                var rate = GetRate(fromSymbol, "SOUL", amount);
+                SwapTokens(from, fromSymbol, "SOUL", amount);
+                SwapTokens(from, "SOUL", toSymbol, rate);
+                return;
+            }
+
             // Validate Pools
             Runtime.Expect(PoolExists(fromSymbol, toSymbol), $"Pool {fromSymbol}/{toSymbol} doesn't exist.");
 
@@ -865,7 +890,7 @@ namespace Phantasma.Blockchain.Contracts
             pool.FeesForUsers += feeForUsers;
             pool.FeesForOwner += feeForOwner;
 
-            //DistributeFee(feeForUsers, pool.Symbol0, pool.Symbol1);
+            DistributeFee(feeForUsers, pool.Symbol0, pool.Symbol1);
 
             // Save Pool
             _pools.Set<string, Pool>($"{pool.Symbol0}_{pool.Symbol1}", pool);
@@ -1112,7 +1137,7 @@ namespace Phantasma.Blockchain.Contracts
         /// <returns></returns>
         private bool PoolIsReal(string symbol0, string symbol1)
         {
-            return symbol0 == "SOUL" || symbol1 == "SOUL";
+            return symbol0 == DomainSettings.StakingTokenSymbol || symbol1 == DomainSettings.StakingTokenSymbol;
         }
 
         public LPTokenContentRAM GetMyPoolRAM(Address from, string symbol0, string symbol1)
@@ -1150,6 +1175,11 @@ namespace Phantasma.Blockchain.Contracts
             if (_pools.ContainsKey($"{symbol0}_{symbol1}"))
             {
                 return _pools.Get<string, Pool>($"{symbol0}_{symbol1}");
+            }
+
+            if (_pools.ContainsKey($"{symbol1}_{symbol0}"))
+            {
+                return _pools.Get<string, Pool>($"{symbol1}_{symbol0}");
             }
 
             return _pools.Get<string, Pool>($"{symbol0}_{symbol1}");
@@ -1221,7 +1251,9 @@ namespace Phantasma.Blockchain.Contracts
             // Token1 Address
             Address token1Address = TokenUtils.GetContractAddress(symbol1);
 
-            BigInteger TLP = (BigInteger)Math.Sqrt((double)(amount0 * amount1));
+            double am0 = (double)amount0;
+            double am1 = (double)amount1;
+            BigInteger TLP = (BigInteger)Math.Sqrt(am0 * am1);
 
             // Create the pool
             Pool pool = new Pool(symbol0, symbol1, token0Address.Text, token1Address.Text, amount0, amount1, feeRatio, TLP);
@@ -1487,7 +1519,7 @@ namespace Phantasma.Blockchain.Contracts
                 holder = holdersList.Get<LPHolderInfo>(index);
                 nftRAM = GetMyPoolRAM(holder.address, symbol0, symbol1);
                 amount = CalculateFeeForUser(totalFeeAmount, nftRAM.Liquidity, pool.TotalLiquidity);
-                Runtime.Expect(amount < 0, $"Amount failed for user: {holder.address}, unclaimed:{holder.unclaimed}, feeAmount:{feeAmount}, feeTotal:{totalFeeAmount}");
+                Runtime.Expect(amount > 0, $"Amount failed for user: {holder.address}, unclaimed:{holder.unclaimed}, amount:{amount}, feeAmount:{feeAmount}, feeTotal:{totalFeeAmount}");
 
                 feeAmount -= amount;
                 holder.unclaimed += amount;

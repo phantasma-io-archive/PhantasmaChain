@@ -296,15 +296,17 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             var feeBalance = Runtime.GetBalance(feeSymbol, from);
+            BigInteger feeRate = 0;
             if (feeBalance < feeAmount)
             {
+                feeRate = Runtime.CallNativeContext(NativeContractKind.Swap, nameof(SwapContract.GetRate), DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount).AsNumber();
                 Runtime.CallNativeContext(NativeContractKind.Swap, nameof(SwapContract.SwapReverse), from, DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount);
 
                 feeBalance = Runtime.GetBalance(feeSymbol, from);
-                Runtime.Expect(feeBalance >= feeAmount, $"missing {feeSymbol} for interop swap");
+                Runtime.Expect(feeBalance >= feeRate, $"missing {feeSymbol} for interop swap");
             }
 
-            Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
+            Runtime.TransferTokens(feeSymbol, from, this.Address, feeRate);
 
             Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, to, symbol, value);
 
