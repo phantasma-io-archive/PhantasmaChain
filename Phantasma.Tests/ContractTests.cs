@@ -2493,6 +2493,12 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TimestampArgumentBug()
+        {
+
+        }
+
+        [TestMethod]
         public void MapClearBug()
         {
             var scriptString = new string[]
