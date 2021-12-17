@@ -1301,7 +1301,7 @@ namespace Phantasma.Blockchain.Contracts
 
             var token1Info = Runtime.GetToken(symbol1);
             Runtime.Expect(IsSupportedToken(symbol1), "destination token is unsupported");
-
+            /*
             var symbol0Price = Runtime.GetTokenQuote(symbol0, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, token0Info.Decimals));
             var symbol1Price = Runtime.GetTokenQuote(symbol1, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, token1Info.Decimals));
             BigInteger tradeRatio = 0;
@@ -1334,7 +1334,7 @@ namespace Phantasma.Blockchain.Contracts
             var symbol0Balance = Runtime.GetBalance(symbol0, from);
             Runtime.Expect(symbol0Balance >= amount0, $"not enough {symbol0} balance, you need {amount0}");
             var symbol1Balance = Runtime.GetBalance(symbol1, from);
-            Runtime.Expect(symbol1Balance >= amount1, $"not enough {symbol1} balance, you need {amount1}");
+            Runtime.Expect(symbol1Balance >= amount1, $"not enough {symbol1} balance, you need {amount1}");*/
 
 
             BigInteger feeRatio = (amount0 * FeeConstant) / 1000;
@@ -1383,7 +1383,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(symbol0 != symbol1, "Symbols are the same...");
 
             // if its virtual we need an aditional step
-            Runtime.Expect(!PoolIsReal(symbol0, symbol1), "Only Real pools are supported.");
+            Runtime.Expect(PoolIsReal(symbol0, symbol1), "Only Real pools are supported.");
 
             // Check if pool exists
             if (!PoolExists(symbol0, symbol1))
