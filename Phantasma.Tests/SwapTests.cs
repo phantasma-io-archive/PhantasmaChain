@@ -27,17 +27,17 @@ namespace Phantasma.Tests
 
         // Token Values
         string poolSymbol0 = "SOUL";
-        BigInteger poolAmount0 = UnitConversion.ToBigInteger(100000, 8);
+        BigInteger poolAmount0 = UnitConversion.ToBigInteger(50000, 8);
         string poolSymbol1 = "KCAL";
-        BigInteger poolAmount1 = UnitConversion.ToBigInteger(1600000, 10);
+        BigInteger poolAmount1 = UnitConversion.ToBigInteger(16000, 10);
         string poolSymbol2 = "ETH";
-        BigInteger poolAmount2 = UnitConversion.ToBigInteger(55.7m, 18);
+        BigInteger poolAmount2 = UnitConversion.ToBigInteger(50, 18);
         string poolSymbol3 = "BNB";
-        BigInteger poolAmount3 = UnitConversion.ToBigInteger(444.4m, 18);
+        BigInteger poolAmount3 = UnitConversion.ToBigInteger(100, 18);
         string poolSymbol4 = "NEO";
-        BigInteger poolAmount4 = UnitConversion.ToBigInteger(444.4m, 0);
+        BigInteger poolAmount4 = UnitConversion.ToBigInteger(500, 0);
         string poolSymbol5 = "GAS";
-        BigInteger poolAmount5 = UnitConversion.ToBigInteger(444.4m, 8);
+        BigInteger poolAmount5 = UnitConversion.ToBigInteger(600, 8);
 
         // Virtual Token
         string virtualPoolSymbol = "COOL";
@@ -151,6 +151,44 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void MigrateTest()
+        {
+            owner = PhantasmaKeys.Generate();
+            nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var SwapAddress = SmartContract.GetAddressForNative(NativeContractKind.Swap);
+
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, owner.Address, poolSymbol0, poolAmount0 * 100);
+            simulator.MintTokens(owner, owner.Address, poolSymbol1, poolAmount1 * 100);
+            simulator.MintTokens(owner, owner.Address, poolSymbol2, poolAmount2 * 100);
+            simulator.MintTokens(owner, owner.Address, poolSymbol4, poolAmount4 * 20);
+            simulator.MintTokens(owner, owner.Address, poolSymbol5, poolAmount5 * 100);
+            simulator.MintTokens(owner, SwapAddress, poolSymbol0, poolAmount0);
+            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol1, poolAmount1 * 5);
+            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol2, poolAmount2);
+            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol4, poolAmount4 * 3);
+            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol5, poolAmount5 * 5);
+            //simulator.MintTokens(owner, SwapAddress, poolSymbol4, poolAmount4);
+            //simulator.MintTokens(owner, SwapAddress, poolSymbol5, poolAmount5);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal, () =>
+                ScriptUtils
+                .BeginScript()
+                .AllowGas(owner.Address, Address.Null, 1, 9999)
+                .CallContract("swap", "MigrateToV3")
+                .SpendGas(owner.Address)
+                .EndScript());
+            var block = simulator.EndBlock().First();
+            var resultBytes = block.GetResultForTransaction(tx.Hash);
+        }
+
+
+        [TestMethod]
         
         public void CreatePool()
         {
@@ -195,15 +233,15 @@ namespace Phantasma.Tests
             var block = simulator.EndBlock().First();
 
             // Create a Pool
-            simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal, () =>
-                ScriptUtils
-                .BeginScript()
-                .AllowGas(owner.Address, Address.Null, 1, 9999)
-                .CallContract("swap", "CreatePool", owner.Address, poolSymbol0, poolAmount0, poolSymbol1, poolAmount1)
-                .SpendGas(owner.Address)
-                .EndScript());
-            block = simulator.EndBlock().First();
+            //simulator.BeginBlock();
+            //tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal, () =>
+            //    ScriptUtils
+            //    .BeginScript()
+            //    .AllowGas(owner.Address, Address.Null, 1, 9999)
+            //    .CallContract("swap", "CreatePool", owner.Address, poolSymbol0, poolAmount0, poolSymbol1, poolAmount1)
+            //    .SpendGas(owner.Address)
+            //    .EndScript());
+            //block = simulator.EndBlock().First();
 
             // Check if the pool was created
             var script = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
@@ -211,9 +249,9 @@ namespace Phantasma.Tests
             var pool = result.AsStruct<Pool>();
 
             Assert.IsTrue(pool.Symbol0 == poolSymbol0, "Symbol0 doesn't check");
-            Assert.IsTrue(pool.Amount0 == poolAmount0, "Amount0 doesn't check");
+            Assert.IsTrue(pool.Amount0 == poolAmount0, $"Amount0 doesn't check {pool.Amount0}");
             Assert.IsTrue(pool.Symbol1 == poolSymbol1, "Symbol1 doesn't check");
-            Assert.IsTrue(pool.Amount1 == poolAmount1, "Amount1 doesn't check");
+            Assert.IsTrue(pool.Amount1 == poolAmount1, $"Amount1 doesn't check {pool.Amount1}");
             Assert.IsTrue(pool.TotalLiquidity == totalLiquidity, "Liquidity doesn't check"); 
             Assert.IsTrue(pool.Symbol0Address == token0Address.Address.Text);
             Assert.IsTrue(pool.Symbol1Address == token1Address.Address.Text);
