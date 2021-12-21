@@ -221,7 +221,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var info = Runtime.GetToken(symbol);
-            return info.IsFungible() && info.Flags.HasFlag(TokenFlags.Swappable);
+            return info.IsFungible() && info.Flags.HasFlag(TokenFlags.Transferable);
         }
 
         public const string SwapMakerFeePercentTag = "swap.fee.maker";
@@ -323,7 +323,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
             Runtime.Expect(IsSupportedToken(fromSymbol), "unsupported from symbol");
-            Runtime.Expect(IsSupportedToken(toSymbol), "unsupported to symbol");
+            Runtime.Expect(IsSupportedToken(toSymbol), $"unsupported to symbol -> {toSymbol}");
 
             var fromInfo = Runtime.GetToken(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible(), "must be fungible");
@@ -440,6 +440,9 @@ namespace Phantasma.Blockchain.Contracts
                     continue;
                 }
 
+                if (toSymbol == DomainSettings.LiquidityTokenSymbol)
+                    continue;
+
                 var toBalance = GetAvailableForSymbol(toSymbol);
 
                 if (toBalance <= 0)
@@ -462,143 +465,7 @@ namespace Phantasma.Blockchain.Contracts
             return result.ToArray();
         }
 
-        /// <summary>
-        /// Method use to Migrate to the new SwapMechanism
-        /// </summary>
-        public void MigrateToV3() 
-        {
-            var owner = Runtime.GenesisAddress;
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
-
-            Runtime.Expect(GetSwapVersion() < 3, "Migration failed, wrong version");
-
-            var existsLP = Runtime.TokenExists(DomainSettings.LiquidityTokenSymbol);
-            Runtime.Expect(!existsLP, "LP token already exists!");
-
-            var tokenScript = new byte[] { (byte)VM.Opcode.RET }; // TODO maybe fetch a pre-compiled Tomb script here, like for Crown?
-            var abi = ContractInterface.Empty;
-            Runtime.CreateToken(owner, DomainSettings.LiquidityTokenSymbol, DomainSettings.LiquidityTokenSymbol, 0, 0, TokenFlags.Transferable | TokenFlags.Burnable, tokenScript, abi);
-
-            byte[] nftScript;
-            ContractInterface nftABI;
-
-            var url = "https://www.22series.com/part_info?id=*";
-            Tokens.TokenUtils.GenerateNFTDummyScript(DomainSettings.LiquidityTokenSymbol, $"{DomainSettings.LiquidityTokenSymbol} #*", $"{DomainSettings.LiquidityTokenSymbol} #*", url, url, out nftScript, out nftABI);
-            Runtime.CreateTokenSeries(DomainSettings.LiquidityTokenSymbol, this.Address, 1, 0, TokenSeriesMode.Duplicated, nftScript, nftABI);
-
-            // check how much SOUL we have here
-            var soulTotal = Runtime.GetBalance(DomainSettings.StakingTokenSymbol, this.Address);
-
-            // creates a new pool for SOUL and every asset that has a balance in v2
-            var symbols = Runtime.GetTokens();
-
-            var tokens = new Dictionary<string, BigInteger>();
-
-            // fetch all fungible tokens with balance > 0
-            foreach (var symbol in symbols)
-            {
-                if (symbol == DomainSettings.StakingTokenSymbol)
-                {
-                    continue;
-                }
-
-                var info = Runtime.GetToken(symbol);
-                if (info.IsFungible())
-                {
-                    var balance = Runtime.GetBalance(symbol, this.Address);
-
-                    if (balance > 0)
-                    {
-                        tokens[symbol] = balance;
-                    }
-                }
-            }
-
-            // sort tokens by estimated SOUL value, from low to high
-            var sortedTokens = tokens.Select(x => new KeyValuePair<string, BigInteger>(x.Key, GetRateV2(x.Key, DomainSettings.StakingTokenSymbol, x.Value)))
-                .OrderBy(x => x.Value)
-                .Select(x => x.Key)
-                .ToArray();
-
-
-            // Calculate the Percent to each Pool
-            var tokensPrice = new Dictionary<string, BigInteger>();
-            var soulPrice = Runtime.GetTokenQuote(DomainSettings.StakingTokenSymbol, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals));
-            var soulTotalPrice = soulPrice * UnitConversion.ConvertDecimals(soulTotal, DomainSettings.StakingTokenDecimals, DomainSettings.FiatTokenDecimals);
-            BigInteger otherTokensTotalValue = 0;
-            BigInteger amount = 0;
-            BigInteger tokenPrice = 0;
-            BigInteger tokenRatio = 0;
-            BigInteger totalPrice = 0;
-            BigInteger tokenAmount = 0;
-            BigInteger percent = 0;
-            BigInteger soulAmount = 0;
-            IToken tokenInfo;
-
-            foreach (var symbol in sortedTokens)
-            {
-                tokenInfo = Runtime.GetToken(symbol);
-
-                amount = UnitConversion.ConvertDecimals(tokens[symbol], tokenInfo.Decimals, DomainSettings.FiatTokenDecimals);
-                tokenPrice = Runtime.GetTokenQuote(symbol, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, tokenInfo.Decimals));
-
-                //Console.WriteLine($"{symbol} price {tokenPrice}$  .{tokenInfo.Decimals}  { amount}x{tokenPrice} :{ amount * tokenPrice} -> {UnitConversion.ToDecimal(tokenPrice, DomainSettings.FiatTokenDecimals)}");
-                tokensPrice[symbol] = tokenPrice;
-                otherTokensTotalValue += amount * tokenPrice;
-            }
-
-            // Create Pools based on that percent and on the availableSOUL and on token ratio
-            BigInteger totalSOULUsed = 0;
-            _swapVersion = 7;
-
-            if (otherTokensTotalValue < soulTotalPrice)
-            {
-                foreach (var symbol in sortedTokens)
-                {
-                    tokenInfo = Runtime.GetToken(symbol);
-                    amount = UnitConversion.ConvertDecimals(tokens[symbol], tokenInfo.Decimals, DomainSettings.FiatTokenDecimals);
-                    soulAmount = tokensPrice[symbol] * amount / soulPrice;
-                    Console.WriteLine($"TokenInfo |-> .{tokenInfo.Decimals} | ${tokensPrice[symbol]} | {tokens[symbol]} {symbol} | Converted {amount} {symbol} ");
-                    Console.WriteLine($"TradeValues |-> {percent}% | {tokenAmount} | {soulAmount}/{soulTotal}\n");
-                    totalSOULUsed += soulAmount;
-                    CreatePool(this.Address, DomainSettings.StakingTokenSymbol, soulAmount, symbol, amount);
-                }
-            }
-            else
-            {
-                foreach (var symbol in sortedTokens)
-                {
-                    tokenInfo = Runtime.GetToken(symbol);
-                    amount = UnitConversion.ConvertDecimals(tokens[symbol], tokenInfo.Decimals, DomainSettings.FiatTokenDecimals);
-                    tokenAmount = 0;
-                    percent = tokensPrice[symbol] * amount * 100 / otherTokensTotalValue;
-                    soulAmount = UnitConversion.ConvertDecimals((soulTotal * percent / 100), DomainSettings.FiatTokenDecimals , DomainSettings.StakingTokenDecimals);
-                    tokenRatio = tokensPrice[symbol] * 100 / soulPrice;
-                    if (tokenInfo.Decimals != 0)
-                    {
-                        tokenRatio = tokensPrice[symbol] * 100 / soulPrice;
-                        tokenAmount = UnitConversion.ConvertDecimals((soulAmount / 100 / tokenRatio), DomainSettings.FiatTokenDecimals, tokenInfo.Decimals);
-                    }
-                    else
-                    {
-                        tokenRatio = tokensPrice[symbol] / soulPrice;
-                        tokenAmount = UnitConversion.ConvertDecimals((soulAmount / tokenRatio), DomainSettings.FiatTokenDecimals, tokenInfo.Decimals);
-                    }
-
-                    Console.WriteLine($"TokenInfo |-> .{tokenInfo.Decimals} | ${tokensPrice[symbol]} | {tokens[symbol]} {symbol} | Converted {amount} {symbol} ");
-                    Console.WriteLine($"TradeValues |-> {percent}% | {tokenAmount} | {soulAmount}/{soulTotal}\n");
-                    totalSOULUsed += soulAmount;
-                    Runtime.Expect(soulAmount <= soulTotal, $"SOUL higher than total... {soulAmount}/{soulTotal}");
-                    CreatePool(this.Address, DomainSettings.StakingTokenSymbol, soulAmount, symbol, tokenAmount);
-                    Runtime.TransferTokens(symbol, this.Address, owner, tokens[symbol] - tokenAmount);
-                }
-            }
-
-            Runtime.Expect(totalSOULUsed <= soulTotal, "Used more than it has...");
-
-            // return the left overs
-            Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, this.Address, owner, soulTotal - totalSOULUsed);
-        }
+        
 
         /// <summary>
         /// Method used to convert a Symbol into KCAL
@@ -635,20 +502,20 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(GetSwapVersion() >= 7, "call migrateV3 first");
             var feeSymbol = DomainSettings.FuelTokenSymbol;
-            //Runtime.Expect(PoolExists(fromSymbol, feeSymbol), $"Pool {fromSymbol}/{feeSymbol} doesn't exist.");
+
+            // Need to remove the fees
+            var token = Runtime.GetToken(fromSymbol);
+            BigInteger minAmount;
+
 
             var feeBalance = Runtime.GetBalance(feeSymbol, from);
-            feeAmount -= feeBalance;
+            feeAmount -= UnitConversion.ConvertDecimals(feeBalance, DomainSettings.FuelTokenDecimals, token.Decimals);
             if (feeAmount <= 0)
             {
                 return;
             }
 
-            // Need to remove the fees
-
-            var token = Runtime.GetToken(fromSymbol);
-            BigInteger minAmount;
-
+            
             // different tokens have different decimals, so we need to make sure a certain minimum amount is swapped
             if (token.Decimals == 0)
             {
@@ -663,7 +530,7 @@ namespace Phantasma.Blockchain.Contracts
                 }
                 else
                 {
-                    minAmount = 1;
+                    minAmount = 1 * BigInteger.Pow(10, token.Decimals);
                 }
             }
 
@@ -676,19 +543,22 @@ namespace Phantasma.Blockchain.Contracts
             }else
             {
                 var amountInOtherSymbol = GetRate(feeSymbol, fromSymbol, feeAmount);
+                var amountIKCAL = GetRate(fromSymbol, feeSymbol, feeAmount);
+                Console.WriteLine($"AmountOther: {amountInOtherSymbol} | feeAmount:{feeAmount} | feeBalance:{feeBalance} | amountOfKcal: {amountIKCAL}" );
+
                 if (amountInOtherSymbol < minAmount)
                 {
                     amountInOtherSymbol = minAmount;
                 }
 
                 // round up
-                amountInOtherSymbol++;
+                //amountInOtherSymbol++;
 
-                SwapTokens(from, fromSymbol, feeSymbol, amountInOtherSymbol);
+                SwapTokens(from, fromSymbol, feeSymbol, feeAmount);
             }           
 
             var finalFeeBalance = Runtime.GetBalance(feeSymbol, from);
-            Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee finalFeeBalance: {finalFeeBalance} feeAmount: {feeAmount}");
+            Runtime.Expect(finalFeeBalance >= feeBalance, $"something went wrong in swapfee finalFeeBalance: {finalFeeBalance} feeBalance: {feeBalance}");
         }
 
         /// <summary>
@@ -890,7 +760,7 @@ namespace Phantasma.Blockchain.Contracts
         public void SwapTokensV3(Address from, string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(amount > 0, "invalid amount");
+            Runtime.Expect(amount > 0, $"invalid amount, need to be higher than 0 | {amount}");
 
             var fromInfo = Runtime.GetToken(fromSymbol);
             Runtime.Expect(IsSupportedToken(fromSymbol), "source token is unsupported");
@@ -962,6 +832,154 @@ namespace Phantasma.Blockchain.Contracts
 
             // Save Pool
             _pools.Set<string, Pool>($"{pool.Symbol0}_{pool.Symbol1}", pool);
+        }
+
+
+        /// <summary>
+        /// Method use to Migrate to the new SwapMechanism
+        /// </summary>
+        public void MigrateToV3()
+        {
+            var owner = Runtime.GenesisAddress;
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
+            Runtime.Expect(GetSwapVersion() < 3, "Migration failed, wrong version");
+
+            var existsLP = Runtime.TokenExists(DomainSettings.LiquidityTokenSymbol);
+            Runtime.Expect(!existsLP, "LP token already exists!");
+
+            var tokenScript = new byte[] { (byte)VM.Opcode.RET }; // TODO maybe fetch a pre-compiled Tomb script here, like for Crown?
+            var abi = ContractInterface.Empty;
+            Runtime.CreateToken(owner, DomainSettings.LiquidityTokenSymbol, DomainSettings.LiquidityTokenSymbol, 0, 0, TokenFlags.Transferable | TokenFlags.Burnable, tokenScript, abi);
+
+            byte[] nftScript;
+            ContractInterface nftABI;
+
+            var url = "https://www.22series.com/part_info?id=*";
+            Tokens.TokenUtils.GenerateNFTDummyScript(DomainSettings.LiquidityTokenSymbol, $"{DomainSettings.LiquidityTokenSymbol} #*", $"{DomainSettings.LiquidityTokenSymbol} #*", url, url, out nftScript, out nftABI);
+            Runtime.CreateTokenSeries(DomainSettings.LiquidityTokenSymbol, this.Address, 1, 0, TokenSeriesMode.Duplicated, nftScript, nftABI);
+
+            // check how much SOUL we have here
+            var soulTotal = Runtime.GetBalance(DomainSettings.StakingTokenSymbol, this.Address);
+
+            // creates a new pool for SOUL and every asset that has a balance in v2
+            var symbols = Runtime.GetTokens();
+
+            var tokens = new Dictionary<string, BigInteger>();
+
+            // fetch all fungible tokens with balance > 0
+            foreach (var symbol in symbols)
+            {
+                if (symbol == DomainSettings.StakingTokenSymbol)
+                {
+                    continue;
+                }
+
+                var info = Runtime.GetToken(symbol);
+                if (info.IsFungible())
+                {
+                    var balance = Runtime.GetBalance(symbol, this.Address);
+
+                    if (balance > 0)
+                    {
+                        tokens[symbol] = balance;
+                    }
+                }
+            }
+
+            // sort tokens by estimated SOUL value, from low to high
+            var sortedTokens = tokens.Select(x => new KeyValuePair<string, BigInteger>(x.Key, GetRateV2(x.Key, DomainSettings.StakingTokenSymbol, x.Value)))
+                .OrderBy(x => x.Value)
+                .Select(x => x.Key)
+                .ToArray();
+
+
+            // Calculate the Percent to each Pool
+            var tokensPrice = new Dictionary<string, BigInteger>();
+            var soulPrice = Runtime.GetTokenQuote(DomainSettings.StakingTokenSymbol, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals));
+            var soulTotalPrice = soulPrice * UnitConversion.ConvertDecimals(soulTotal, DomainSettings.StakingTokenDecimals, DomainSettings.FiatTokenDecimals);
+            BigInteger otherTokensTotalValue = 0;
+            BigInteger totalTokenAmount = 0;
+            BigInteger amount = 0;
+            BigInteger tokenPrice = 0;
+            BigInteger tokenRatio = 0;
+            BigInteger totalPrice = 0;
+            BigInteger tokenAmount = 0;
+            BigInteger percent = 0;
+            BigInteger soulAmount = 0;
+            IToken tokenInfo;
+
+            foreach (var symbol in sortedTokens)
+            {
+                tokenInfo = Runtime.GetToken(symbol);
+
+                amount = UnitConversion.ConvertDecimals(tokens[symbol], tokenInfo.Decimals, DomainSettings.FiatTokenDecimals);
+                tokenPrice = Runtime.GetTokenQuote(symbol, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, tokenInfo.Decimals));
+
+                //Console.WriteLine($"{symbol} price {tokenPrice}$  .{tokenInfo.Decimals}  { amount}x{tokenPrice} :{ amount * tokenPrice} -> {UnitConversion.ToDecimal(tokenPrice, DomainSettings.FiatTokenDecimals)}");
+                tokensPrice[symbol] = tokenPrice;
+                otherTokensTotalValue += amount * tokenPrice;
+            }
+
+            // Create Pools based on that percent and on the availableSOUL and on token ratio
+            BigInteger totalSOULUsed = 0;
+            _swapVersion = 7;
+
+            if (otherTokensTotalValue < soulTotalPrice)
+            {
+                foreach (var symbol in sortedTokens)
+                {
+                    tokenInfo = Runtime.GetToken(symbol);
+                    totalTokenAmount = UnitConversion.ConvertDecimals(tokens[symbol], tokenInfo.Decimals, DomainSettings.FiatTokenDecimals);
+                    amount = tokens[symbol];
+                    soulAmount = tokensPrice[symbol] * totalTokenAmount / soulPrice;
+                    //Console.WriteLine($"TokenInfo |-> .{tokenInfo.Decimals} | ${tokensPrice[symbol]} | {tokens[symbol]} {symbol} | Converted {amount} {symbol} ");
+                    //Console.WriteLine($"TradeValues |-> {percent}% | {tokenAmount} | {soulAmount}/{soulTotal}\n");
+                    //Console.WriteLine($"{symbol} |-> .{tokenInfo.Decimals} | ${UnitConversion.ToDecimal(tokensPrice[symbol], DomainSettings.FiatTokenDecimals)} | {UnitConversion.ToDecimal(tokens[symbol], tokenInfo.Decimals)} {symbol} | Converted {UnitConversion.ToDecimal(amount, tokenInfo.Decimals)} {symbol}");
+                    //Console.WriteLine($"{symbol} Ratio |-> {tokenRatio}% | {UnitConversion.ToDecimal(amount, tokenInfo.Decimals)} {symbol}");
+                    //Console.WriteLine($"SOUL |-> {UnitConversion.ToDecimal(soulAmount, DomainSettings.StakingTokenDecimals)}/{UnitConversion.ToDecimal(soulTotal, DomainSettings.StakingTokenDecimals)} | {soulPrice} | {soulTotalPrice}");
+                    //Console.WriteLine($"TradeValues |-> {percent}% | {amount} | {soulAmount}/{soulTotal} -> {UnitConversion.ToDecimal(soulAmount, DomainSettings.StakingTokenDecimals)} SOUL");
+                    //Console.WriteLine($"Trade {UnitConversion.ToDecimal(amount, tokenInfo.Decimals)} {symbol} for {UnitConversion.ToDecimal(soulAmount, DomainSettings.StakingTokenDecimals)} SOUL\n");
+                    totalSOULUsed += soulAmount;
+                    CreatePool(this.Address, DomainSettings.StakingTokenSymbol, soulAmount, symbol, amount);
+                }
+            }
+            else
+            {
+                // With Price Ratio
+                foreach (var symbol in sortedTokens)
+                {
+                    tokenInfo = Runtime.GetToken(symbol);
+                    totalTokenAmount = UnitConversion.ConvertDecimals(tokens[symbol], tokenInfo.Decimals, DomainSettings.FiatTokenDecimals);
+                    amount = 0;
+                    percent = tokensPrice[symbol] * totalTokenAmount * 100 / otherTokensTotalValue;
+                    soulAmount = UnitConversion.ConvertDecimals((soulTotal * percent / 100), DomainSettings.FiatTokenDecimals, DomainSettings.StakingTokenDecimals);
+
+                    tokenRatio = tokensPrice[symbol] / soulPrice;
+                    if ( tokenRatio != 0)
+                        tokenAmount = UnitConversion.ConvertDecimals((soulAmount / tokenRatio), DomainSettings.FiatTokenDecimals, tokenInfo.Decimals);
+                    else
+                    {
+                        tokenRatio = soulPrice/tokensPrice[symbol];
+                        tokenAmount = UnitConversion.ConvertDecimals((soulAmount * tokenRatio), DomainSettings.FiatTokenDecimals, tokenInfo.Decimals);
+                    }
+
+                    //Console.WriteLine($"{symbol} |-> .{tokenInfo.Decimals} | ${UnitConversion.ToDecimal(tokensPrice[symbol], DomainSettings.FiatTokenDecimals)} | {UnitConversion.ToDecimal(tokens[symbol], tokenInfo.Decimals)} {symbol} | Converted {UnitConversion.ToDecimal(tokenAmount, tokenInfo.Decimals)} {symbol}");
+                    //Console.WriteLine($"{symbol} Ratio |-> {tokenRatio}% | {UnitConversion.ToDecimal(tokenAmount, tokenInfo.Decimals)} {symbol}");
+                    //Console.WriteLine($"SOUL |-> {UnitConversion.ToDecimal(soulAmount, DomainSettings.StakingTokenDecimals)}/{UnitConversion.ToDecimal(soulTotal, DomainSettings.StakingTokenDecimals)} | {soulPrice} | {soulTotalPrice}");
+                    //Console.WriteLine($"TradeValues |-> {percent}% | {tokenAmount} | {soulAmount}/{soulTotal} -> {UnitConversion.ToDecimal(soulAmount, DomainSettings.StakingTokenDecimals)} SOUL");
+                    //Console.WriteLine($"Trade {UnitConversion.ToDecimal(tokenAmount, tokenInfo.Decimals)} {symbol} for {UnitConversion.ToDecimal(soulAmount, DomainSettings.StakingTokenDecimals)} SOUL\n");
+                    totalSOULUsed += soulAmount;
+                    Runtime.Expect(soulAmount <= soulTotal, $"SOUL higher than total... {soulAmount}/{soulTotal}");
+                    CreatePool(this.Address, DomainSettings.StakingTokenSymbol, soulAmount, symbol, tokenAmount);
+                    Runtime.TransferTokens(symbol, this.Address, owner, tokens[symbol] - tokenAmount);
+                }
+            }
+
+            Runtime.Expect(totalSOULUsed <= soulTotal, "Used more than it has...");
+
+            // return the left overs
+            Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, this.Address, owner, soulTotal - totalSOULUsed);
         }
 
         #region DEXify
@@ -1290,7 +1308,7 @@ namespace Phantasma.Blockchain.Contracts
 
             // Check the if the input is valid
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(amount0 > 0 || amount1 > 0, "invalid amount");
+            Runtime.Expect(amount0 > 0 || amount1 > 0, "invalid amount 0");
             Runtime.Expect(symbol0 == "SOUL" || symbol1 == "SOUL", "Virtual pools are not supported yet!");
 
             // Check if pool exists
@@ -1301,40 +1319,56 @@ namespace Phantasma.Blockchain.Contracts
 
             var token1Info = Runtime.GetToken(symbol1);
             Runtime.Expect(IsSupportedToken(symbol1), "destination token is unsupported");
-            /*
+            
             var symbol0Price = Runtime.GetTokenQuote(symbol0, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, token0Info.Decimals));
             var symbol1Price = Runtime.GetTokenQuote(symbol1, DomainSettings.FiatTokenSymbol, UnitConversion.ToBigInteger(1, token1Info.Decimals));
             BigInteger tradeRatio = 0;
+            BigInteger tradeRatioAmount = 0;
 
+            //Console.WriteLine($"{symbol1Price} {symbol1} | {amount1}");
+
+            // Check ratio
             if (symbol0Price / symbol1Price > 0)
                 tradeRatio = symbol0Price  / symbol1Price;
             else
                 tradeRatio = symbol1Price / symbol0Price;
 
-
-            // TODO: calculate the amounts according to the ratio...
-            if ( amount0 > 0 && amount1 == 0)
+            if ( amount0 == 0 )
             {
-                //amount1 = UnitConversion.ConvertDecimals((amount0 / 100 / tradeRatio ), DomainSettings.FiatTokenDecimals, token1Info.Decimals);
-                amount1 = symbol1Price * amount0 / symbol0Price;
+                amount0 = UnitConversion.ConvertDecimals((amount1 / tradeRatio), DomainSettings.FiatTokenDecimals, token0Info.Decimals);
             }
             else
             {
-                if (amount0 == 0 && amount1 > 0)
+                if (amount1 == 0)
                 {
-                    //amount0 = UnitConversion.ConvertDecimals((amount1 / 100 / tradeRatio), DomainSettings.FiatTokenDecimals, token0Info.Decimals);
-                    amount0 = symbol0Price * amount1 / symbol1Price;
+                    amount1 = UnitConversion.ConvertDecimals((amount0 / tradeRatio), DomainSettings.FiatTokenDecimals, token1Info.Decimals); 
                 }
             }
 
+
+            if (amount0 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals) > 0)
+                tradeRatioAmount = amount0 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals);
+            else
+                tradeRatioAmount = amount1 / UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, token1Info.Decimals);
+
+            //Console.WriteLine($"TradeRatio:{tradeRatio} | Amount0:{amount0} | Amount1:{amount1} | Am0/Am1:{amount0/amount1} | Am1/Am0:{amount1/ amount0}");
             var tempAm0 = UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals);
             var tempAm1 = UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals);
-            Runtime.Expect( ValidateRatio(amount0, amount1, tradeRatio), $"ratio is not true. {tradeRatio}, new {tempAm0} {tempAm1} {tempAm0 / tempAm1} {amount0/ amount1}");
+            if ( tradeRatio == 0 )
+            {
+                tradeRatio = tradeRatioAmount;
+            }
+            else
+            {
+                Runtime.Expect(tradeRatioAmount == tradeRatio, $"TradeRatio < 0 | {tradeRatio} != {tradeRatioAmount}");
+            }
+            
+            Runtime.Expect( ValidateRatio(tempAm0, tempAm1, tradeRatio), $"ratio is not true. {tradeRatio}, new {tempAm0} {tempAm1} {tempAm0 / tempAm1} {amount0/ amount1}");
 
             var symbol0Balance = Runtime.GetBalance(symbol0, from);
             Runtime.Expect(symbol0Balance >= amount0, $"not enough {symbol0} balance, you need {amount0}");
             var symbol1Balance = Runtime.GetBalance(symbol1, from);
-            Runtime.Expect(symbol1Balance >= amount1, $"not enough {symbol1} balance, you need {amount1}");*/
+            Runtime.Expect(symbol1Balance >= amount1, $"not enough {symbol1} balance, you need {amount1}");
 
 
             BigInteger feeRatio = (amount0 * FeeConstant) / 1000;
@@ -1347,9 +1381,7 @@ namespace Phantasma.Blockchain.Contracts
             // Token1 Address
             Address token1Address = TokenUtils.GetContractAddress(symbol1);            
 
-            double am0 = (double)amount0;
-            double am1 = (double)amount1;
-            BigInteger TLP = (BigInteger)Math.Sqrt(am0 * am1);
+            BigInteger TLP = (BigInteger)Sqrt(amount0 * amount1);
 
             // Create the pool
             Pool pool = new Pool(symbol0, symbol1, token0Address.Text, token1Address.Text, amount0, amount1, feeRatio, TLP);
@@ -1378,9 +1410,16 @@ namespace Phantasma.Blockchain.Contracts
         {
             // Check input
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(amount0 > 0, "invalid amount");
-            Runtime.Expect(amount1 > 0, "invalid amount");
+            Runtime.Expect(amount0 >= 0, "invalid amount 0");
+            Runtime.Expect(amount1 >= 0, "invalid amount 1");
+            Runtime.Expect(amount0 > 0 || amount1 > 0, "invalid amount, both amounts can't be 0");
             Runtime.Expect(symbol0 != symbol1, "Symbols are the same...");
+
+            var token0Info = Runtime.GetToken(symbol0);
+            Runtime.Expect(IsSupportedToken(symbol0), "source token is unsupported");
+
+            var token1Info = Runtime.GetToken(symbol1);
+            Runtime.Expect(IsSupportedToken(symbol1), "destination token is unsupported");
 
             // if its virtual we need an aditional step
             Runtime.Expect(PoolIsReal(symbol0, symbol1), "Only Real pools are supported.");
@@ -1394,10 +1433,70 @@ namespace Phantasma.Blockchain.Contracts
 
             // Get pool
             Pool pool = GetPool(symbol0, symbol1);
-            BigInteger poolRatio = pool.Amount0 / pool.Amount1;
-            if (symbol0 != pool.Symbol0)
-                poolRatio = pool.Amount1 / pool.Amount0;
+            BigInteger poolRatio = 0;
+            BigInteger tradeRatioAmount = 0;
 
+            // Fix inputs
+            if (symbol0 != pool.Symbol0)
+            {
+                symbol0 = pool.Symbol0;
+                symbol1 = pool.Symbol1;
+                BigInteger temp = amount0;
+                amount0 = amount1;
+                amount1 = temp;
+            }
+
+
+            if (UnitConversion.ConvertDecimals(pool.Amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals) > 0)
+                poolRatio = UnitConversion.ConvertDecimals(pool.Amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals);
+            else
+                poolRatio = UnitConversion.ConvertDecimals(pool.Amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals);
+
+            // Calculate Amounts if they are 0
+            if (amount0 == 0)
+            {
+                amount0 = UnitConversion.ConvertDecimals((amount1 / 100 / poolRatio ), DomainSettings.FiatTokenDecimals, token0Info.Decimals);
+            }
+            else
+            {
+                if (amount1 == 0)
+                {
+                    amount1 = UnitConversion.ConvertDecimals((amount0 / 100 / poolRatio ), DomainSettings.FiatTokenDecimals, token1Info.Decimals);
+                }
+            }
+
+
+            if (amount1 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals) > 0)
+                tradeRatioAmount = amount0 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals);
+            else
+                tradeRatioAmount = amount1 * 100 / UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, token1Info.Decimals);
+
+            
+            if (poolRatio == 0)
+            {
+                poolRatio = tradeRatioAmount;
+            }
+            else
+            {
+                if (tradeRatioAmount != poolRatio)
+                {
+                    amount1 = UnitConversion.ConvertDecimals((amount0  * 100 / poolRatio ), DomainSettings.FiatTokenDecimals, token1Info.Decimals);
+
+                    if (amount0 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals) > 0)
+                        tradeRatioAmount = amount0 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals);
+                    else
+                        tradeRatioAmount = amount1 * 100 / UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, token1Info.Decimals);
+
+                }
+                //Runtime.Expect(tradeRatioAmount == poolRatio, $"TradeRatio < 0 | {poolRatio} != {tradeRatioAmount}");
+            }
+
+            Console.WriteLine($"Ratio:{poolRatio} | Trade:{tradeRatioAmount}");
+            var tempAm0 = UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals);
+            var tempAm1 = UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals);
+            Runtime.Expect(ValidateRatio(tempAm1, tempAm0*100, poolRatio), $"ratio is not true. {poolRatio}, new {tempAm0} {tempAm1} {tempAm1 * 100 / tempAm0} {amount1 * 100 /amount0 }");
+
+            Console.WriteLine($"ADD: ratio:{poolRatio} | amount0:{amount0} | amount1:{amount1}");
             // Check if is a virtual pool -> if one of the tokens is SOUL is real pool, if not is virtual.
             bool isRealPool = PoolIsReal(pool.Symbol0, pool.Symbol1);
             BigInteger liquidity = 0;
@@ -1497,8 +1596,9 @@ namespace Phantasma.Blockchain.Contracts
         {
             // Check input
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(amount0 > 0, "invalid amount");
-            Runtime.Expect(amount1 > 0, "invalid amount");
+            Runtime.Expect(amount0 >= 0 , "invalid amount 0");
+            Runtime.Expect(amount1 >= 0 , "invalid amount 1");
+            Runtime.Expect(amount0 > 0 || amount1 > 0, "invalid amount, both amounts can't be 0");
 
             // Check if user has LP Token
             Runtime.Expect(UserHasLP(from, symbol0, symbol1), "User doesn't have LP");
@@ -1506,10 +1606,80 @@ namespace Phantasma.Blockchain.Contracts
             // Check if pool exists
             Runtime.Expect(PoolExists(symbol0, symbol1), $"Pool {symbol0}/{symbol1} doesn't exist.");
 
+            var token0Info = Runtime.GetToken(symbol0);
+            Runtime.Expect(IsSupportedToken(symbol0), "source token is unsupported");
+
+            var token1Info = Runtime.GetToken(symbol1);
+            Runtime.Expect(IsSupportedToken(symbol1), "destination token is unsupported");
+
             // Get Pool
             Pool pool = GetPool(symbol0, symbol1);
             bool isRealPool = PoolIsReal(pool.Symbol0, pool.Symbol1);
             BigInteger liquidity = 0;
+
+            // Fix inputs
+            if (symbol0 != pool.Symbol0)
+            {
+                symbol0 = pool.Symbol0;
+                symbol1 = pool.Symbol1;
+                BigInteger temp = amount0;
+                amount0 = amount1;
+                amount1 = temp;
+            }
+
+            // Calculate Amounts
+            BigInteger poolRatio = 0; 
+            BigInteger tradeRatioAmount = 0;
+
+            if (UnitConversion.ConvertDecimals(pool.Amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals) > 0)
+                poolRatio = UnitConversion.ConvertDecimals(pool.Amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals);
+            else
+                poolRatio = UnitConversion.ConvertDecimals(pool.Amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals);
+
+            // Calculate Amounts if they are 0
+            if (amount0 == 0)
+            {
+                amount0 = UnitConversion.ConvertDecimals((amount1 / 100 / poolRatio), DomainSettings.FiatTokenDecimals, token0Info.Decimals);
+            }
+            else
+            {
+                if (amount1 == 0)
+                {
+                    amount1 = UnitConversion.ConvertDecimals((amount0 / 100 / poolRatio), DomainSettings.FiatTokenDecimals, token1Info.Decimals);
+                }
+            }
+
+
+            if (amount1 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals) > 0)
+                tradeRatioAmount = amount0 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals);
+            else
+                tradeRatioAmount = amount1 * 100 / UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, token1Info.Decimals);
+
+
+            if (poolRatio == 0)
+            {
+                poolRatio = tradeRatioAmount;
+            }
+            else
+            {
+                if (tradeRatioAmount != poolRatio)
+                {
+                    amount1 = UnitConversion.ConvertDecimals((amount0 * 100 / poolRatio), DomainSettings.FiatTokenDecimals, token1Info.Decimals);
+
+                    if (amount0 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals) > 0)
+                        tradeRatioAmount = amount0 * 100 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals);
+                    else
+                        tradeRatioAmount = amount1 * 100 / UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, token1Info.Decimals);
+
+                }
+                //Runtime.Expect(tradeRatioAmount == poolRatio, $"TradeRatio < 0 | {poolRatio} != {tradeRatioAmount}");
+            }
+
+            Console.WriteLine($"pool:{poolRatio} | trade:{tradeRatioAmount} | {amount0} {symbol0} for {amount1} {symbol1}");
+
+            var tempAm0 = UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals);
+            var tempAm1 = UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals);
+            Runtime.Expect(ValidateRatio(tempAm1, tempAm0*100, poolRatio), $"ratio is not true. {poolRatio}, new {tempAm0} {tempAm1} {tempAm0 / tempAm1} {amount0 / UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, token0Info.Decimals)}");
 
             // Update the user NFT
             var lpKey = GetLPTokensKey(from, pool.Symbol0, pool.Symbol1);
@@ -1519,36 +1689,47 @@ namespace Phantasma.Blockchain.Contracts
 
             if ( pool.Symbol0 == symbol0 )
             {
-                liquidity = (amount0 * pool.TotalLiquidity) / pool.Amount0;
+                liquidity = (amount0 * (pool.TotalLiquidity)) / (pool.Amount0);
             }
             else
             {
-                liquidity = (amount1 * pool.TotalLiquidity) / pool.Amount0;
+                liquidity = (amount1 * (pool.TotalLiquidity)) / (pool.Amount0);
             }
 
             Runtime.Expect(nftRAM.Liquidity - liquidity >= 0, "Trying to remove more than you have...");
+
+            Console.WriteLine($"BeforeLP:{nftRAM.Liquidity} - LiquidityToRemove:{liquidity} | FinalLP:{nftRAM.Liquidity-liquidity}");
+
 
             // If the new amount will be = 0 then burn the NFT
             if (nftRAM.Liquidity - liquidity == 0)
             {
                 // Burn NFT
                 Runtime.BurnToken(DomainSettings.LiquidityTokenSymbol, from, nftID);
-                RemoveFromLPTokens(from, nftID, symbol0, symbol1);
+                RemoveFromLPTokens(from, nftID, pool.Symbol0, pool.Symbol1);
             }
             else
             {
                 // Update NFT
                 if (pool.Symbol0 == symbol0)
                 {
+                    Runtime.Expect(nftRAM.Amount0 - amount0 > 0, $"Lower Amount for symbol {symbol0}. | You have {nftRAM.Amount0} {symbol0}, trying to remove {amount0} {symbol0}");
                     nftRAM.Amount0 -= amount0;
+
+                    Runtime.Expect(nftRAM.Amount1 - amount1 > 0, $"Lower Amount for symbol {symbol1}. | You have {nftRAM.Amount1} {symbol1}, trying to remove {amount1} {symbol1}");
                     nftRAM.Amount1 -= amount1;
+
                     Runtime.TransferTokens(symbol0, this.Address, from, amount0);
                     Runtime.TransferTokens(symbol1, this.Address, from, amount1);
                 }
                 else
                 {
+                    Runtime.Expect(nftRAM.Amount0 - amount1 > 0, $"Lower Amount for symbol {symbol1}. | You have {nftRAM.Amount0} {symbol1}, trying to remove {amount1} {symbol1}");
                     nftRAM.Amount0 -= amount1;
+
+                    Runtime.Expect(nftRAM.Amount1 - amount0 > 0, $"Lower Amount for symbol {symbol0}. | You have {nftRAM.Amount1} {symbol0}, trying to remove {amount0} {symbol0}");
                     nftRAM.Amount1 -= amount0;
+
                     Runtime.TransferTokens(symbol0, this.Address, from, amount1);
                     Runtime.TransferTokens(symbol1, this.Address, from, amount0);
 
@@ -1693,6 +1874,18 @@ namespace Phantasma.Blockchain.Contracts
             return holder.unclaimed;
         }
 
+        private static BigInteger Sqrt(BigInteger n)
+        {
+            BigInteger root = n / 2;
+
+            while (n < root * root)
+            {
+                root += n / root;
+                root /= 2;
+            }
+
+            return root;
+        }
         // Helpers
         //Runtime.GetBalance(symbol0, this.Address);
         //Runtime.GetBalance(symbol1, this.Address);

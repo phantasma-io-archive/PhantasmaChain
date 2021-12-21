@@ -29,7 +29,7 @@ namespace Phantasma.Tests
         string poolSymbol0 = "SOUL";
         BigInteger poolAmount0 = UnitConversion.ToBigInteger(50000, 8);
         string poolSymbol1 = "KCAL";
-        BigInteger poolAmount1 = UnitConversion.ToBigInteger(16000, 10);
+        BigInteger poolAmount1 = UnitConversion.ToBigInteger(160000, 10);
         string poolSymbol2 = "ETH";
         BigInteger poolAmount2 = UnitConversion.ToBigInteger(50, 18);
         string poolSymbol3 = "BNB";
@@ -59,10 +59,10 @@ namespace Phantasma.Tests
             simulator.MintTokens(owner, owner.Address, poolSymbol4, poolAmount4 * 100);
             simulator.MintTokens(owner, owner.Address, poolSymbol5, poolAmount5 * 100);
             simulator.MintTokens(owner, SwapAddress, poolSymbol0, poolAmount0);
-            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol1, poolAmount1 * 5);
+            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol1, poolAmount1 * 2);
             simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol2, poolAmount2);
-            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol4, poolAmount4 * 3);
-            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol5, poolAmount5 * 5);
+            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol4, poolAmount4);
+            simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol5, poolAmount5);
             simulator.EndBlock();
 
             // Migrate Call to setup the Pools to V3
@@ -173,7 +173,7 @@ namespace Phantasma.Tests
             simulator.MintTokens(owner, owner.Address, poolSymbol2, poolAmount2 * 100);
             simulator.MintTokens(owner, owner.Address, poolSymbol4, poolAmount4 * 20);
             simulator.MintTokens(owner, owner.Address, poolSymbol5, poolAmount5 * 100);
-            simulator.MintTokens(owner, SwapAddress, poolSymbol0, poolAmount0);
+            simulator.MintTokens(owner, SwapAddress, poolSymbol0, poolAmount0 );
             simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol1, poolAmount1 * 5);
             simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol2, poolAmount2);
             simulator.GenerateTransfer(owner, SwapAddress, nexus.RootChain, poolSymbol4, poolAmount4 * 3);
@@ -192,73 +192,76 @@ namespace Phantasma.Tests
                 .EndScript());
             var block = simulator.EndBlock().First();
             var resultBytes = block.GetResultForTransaction(tx.Hash);
+
+            // Check pools
+
         }
 
 
         [TestMethod]
-        [Ignore]
         public void CreatePool()
         {
-            owner = PhantasmaKeys.Generate();
-            nexus = new Nexus("simnet", null, null);
-            nexus.SetOracleReader(new OracleSimulator(nexus));
-            simulator = new NexusSimulator(nexus, owner, 1234);
+            Init();
 
-            double am0 = (double)poolAmount0;
-            double am1 = (double)poolAmount1;
-            BigInteger totalLiquidity = (BigInteger)Math.Sqrt(am0 * am1);
+            string symbol0 = "SOUL";
+            string symbol1 = "COOL";
+            string symbol2 = "BADD";
+            BigInteger myPoolAmount0 = UnitConversion.ToBigInteger(10000, 8);
+            BigInteger myPoolAmount1 = UnitConversion.ToBigInteger(100000, 8);
+
+            double am0 = (double)myPoolAmount0;
+            double am1 = (double)myPoolAmount1;
+            BigInteger totalLiquidity = (BigInteger)Math.Sqrt(am0 * am0 / 3);
 
             // Setup a test user 
             var testUserA = PhantasmaKeys.Generate();
+            byte[] tokenScript = null;
 
             simulator.BeginBlock();
+            var communitySupply = 100000;
+            simulator.GenerateToken(owner, symbol2, "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
+            simulator.MintTokens(owner, owner.Address, symbol2, communitySupply);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol1, "Cool Token", myPoolAmount1 * 10, 8,  TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible, tokenScript);
             simulator.MintTokens(owner, owner.Address, poolSymbol1, poolAmount1 * 10);
-            simulator.MintTokens(owner, testUserA.Address, poolSymbol0, poolAmount0 * 5);
-            simulator.MintTokens(owner, testUserA.Address, poolSymbol1, poolAmount1 * 5);
+            simulator.MintTokens(owner, owner.Address, symbol0, myPoolAmount0 * 10);
+            simulator.MintTokens(owner, owner.Address, symbol1, myPoolAmount1 * 10);
             simulator.EndBlock();
 
             // Get Tokens Info
             //token0
-            var token0 = nexus.GetTokenInfo(nexus.RootStorage, poolSymbol0);
-            var token0Address = nexus.GetTokenContract(nexus.RootStorage, poolSymbol0);
-            Assert.IsTrue(token0.Symbol == poolSymbol0);
+            var token0 = nexus.GetTokenInfo(nexus.RootStorage, symbol0);
+            var token0Address = nexus.GetTokenContract(nexus.RootStorage, symbol0);
+            Assert.IsTrue(token0.Symbol == symbol0);
 
             // token1
-            var token1 = nexus.GetTokenInfo(nexus.RootStorage, poolSymbol1);
-            var token1Address = nexus.GetTokenContract(nexus.RootStorage, poolSymbol1);
-            Assert.IsTrue(token1.Symbol == poolSymbol1);
+            var token1 = nexus.GetTokenInfo(nexus.RootStorage, symbol1);
+            var token1Address = nexus.GetTokenContract(nexus.RootStorage, symbol1);
+            Assert.IsTrue(token1.Symbol == symbol1);
+            Assert.IsTrue(token1.Flags.HasFlag(TokenFlags.Transferable), "Not swappable.");
 
-            // Migrate First to Setup the new version
+            // Create a Pool
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal, () =>
                 ScriptUtils
                 .BeginScript()
                 .AllowGas(owner.Address, Address.Null, 1, 9999)
-                .CallContract("swap", "MigrateToV3")
+                .CallContract("swap", "CreatePool", owner.Address, symbol0, myPoolAmount0, symbol1, 0)
                 .SpendGas(owner.Address)
                 .EndScript());
             var block = simulator.EndBlock().First();
 
-            // Create a Pool
-            //simulator.BeginBlock();
-            //tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal, () =>
-            //    ScriptUtils
-            //    .BeginScript()
-            //    .AllowGas(owner.Address, Address.Null, 1, 9999)
-            //    .CallContract("swap", "CreatePool", owner.Address, poolSymbol0, poolAmount0, poolSymbol1, poolAmount1)
-            //    .SpendGas(owner.Address)
-            //    .EndScript());
-            //block = simulator.EndBlock().First();
-
             // Check if the pool was created
-            var script = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var script = new ScriptBuilder().CallContract("swap", "GetPool", symbol0, symbol1).EndScript();
             var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
             var pool = result.AsStruct<Pool>();
 
-            Assert.IsTrue(pool.Symbol0 == poolSymbol0, "Symbol0 doesn't check");
-            Assert.IsTrue(pool.Amount0 == poolAmount0, $"Amount0 doesn't check {pool.Amount0}");
-            Assert.IsTrue(pool.Symbol1 == poolSymbol1, "Symbol1 doesn't check");
-            Assert.IsTrue(pool.Amount1 == poolAmount1, $"Amount1 doesn't check {pool.Amount1}");
+            Assert.IsTrue(pool.Symbol0 == symbol0, "Symbol0 doesn't check");
+            Assert.IsTrue(pool.Amount0 == myPoolAmount0, $"Amount0 doesn't check {pool.Amount0}");
+            Assert.IsTrue(pool.Symbol1 == symbol1, "Symbol1 doesn't check");
+            Assert.IsTrue(pool.Amount1 == myPoolAmount0 / 3, $"Amount1 doesn't check {pool.Amount1}");
             Assert.IsTrue(pool.TotalLiquidity == totalLiquidity, "Liquidity doesn't check"); 
             Assert.IsTrue(pool.Symbol0Address == token0Address.Address.Text);
             Assert.IsTrue(pool.Symbol1Address == token1Address.Address.Text);
@@ -327,21 +330,24 @@ namespace Phantasma.Tests
         {
             Init();
 
-            double am0 = (double)poolAmount0;
-            double am1 = (double)poolAmount1;
-            BigInteger totalLiquidity = (BigInteger)Math.Sqrt(am0*am1);
+            // Get Initial Pool State the Liquidity
+            var script = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol2).EndScript();
+            var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
+            var pool = result.AsStruct<Pool>();
 
             // Setup a test user 
             var testUserA = PhantasmaKeys.Generate();
 
-            var amount1 = poolAmount0 / 10;
-            var amount2 = poolAmount1 / 10;
+            var amount0 = poolAmount0 / 10;
+            var amount1 = poolAmount2 / 10;
+            var poolRatio = UnitConversion.ConvertDecimals(pool.Amount0, 8, DomainSettings.FiatTokenDecimals) / UnitConversion.ConvertDecimals(pool.Amount1, 18, DomainSettings.FiatTokenDecimals);
+            var amountCalculated = UnitConversion.ConvertDecimals((amount0 / poolRatio), DomainSettings.FiatTokenDecimals, 18);
 
             // setup Tokens for the user
             simulator.BeginBlock();
-            //simulator.GenerateToken(owner, virtualPoolSymbol, "CoolToken", virtualPoolAmount1, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
             simulator.MintTokens(owner, testUserA.Address, poolSymbol0, virtualPoolAmount1);
             simulator.MintTokens(owner, testUserA.Address, poolSymbol1, virtualPoolAmount1);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol2, poolAmount2);
             simulator.EndBlock();
 
             // Add Liquidity to the pool
@@ -350,23 +356,23 @@ namespace Phantasma.Tests
                     ScriptUtils
                     .BeginScript()
                     .AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, amount1, poolSymbol1, amount2)
+                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, amount0, poolSymbol2, 0)
                     .SpendGas(testUserA.Address)
                     .EndScript()
                 );
             var block = simulator.EndBlock().First();
 
             // Check the Liquidity
-            var script = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
-            var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
-            var pool = result.AsStruct<Pool>();
-            totalLiquidity += (amount1 * totalLiquidity) / (poolAmount0);
+            var scriptAfter = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol2).EndScript();
+            var resultAfter = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptAfter);
+            var poolAfter = resultAfter.AsStruct<Pool>();
+            pool.TotalLiquidity += (amount0 * pool.TotalLiquidity) / (pool.Amount0);
 
-            Assert.IsTrue(pool.Symbol0 == poolSymbol0, "Symbol is incorrect");
-            Assert.IsTrue(pool.Amount0 == poolAmount0 + amount1, "Symbol Amount0 is incorrect");
-            Assert.IsTrue(pool.Symbol1 == poolSymbol1, "Pair is incorrect");
-            Assert.IsTrue(pool.Amount1 == poolAmount1 + amount2, "Symbol Amount1 is incorrect");
-            Assert.IsTrue(pool.TotalLiquidity == totalLiquidity, $"TotalLiquidity doesn't checkout {pool.TotalLiquidity}!={totalLiquidity}");
+            Assert.IsTrue(poolAfter.Symbol0 == poolSymbol0, $"Symbol is incorrect: {poolSymbol0}");
+            Assert.IsTrue(poolAfter.Amount0 == pool.Amount0 + amount0, $"Symbol Amount0 is incorrect: {pool.Amount0 + amount0} != {poolAfter.Amount0} {poolSymbol0}");
+            Assert.IsTrue(poolAfter.Symbol1 == poolSymbol2, $"Pair is incorrect: {poolSymbol2}");
+            Assert.IsTrue(poolAfter.Amount1 == pool.Amount1 + amountCalculated, $"Symbol Amount1 is incorrect: {pool.Amount1 + amountCalculated} != {poolAfter.Amount1} {poolSymbol2}");
+            Assert.IsTrue(pool.TotalLiquidity == poolAfter.TotalLiquidity, $"TotalLiquidity doesn't checkout {pool.TotalLiquidity}!={poolAfter.TotalLiquidity}");
         }
 
         [TestMethod]
@@ -378,7 +384,6 @@ namespace Phantasma.Tests
             SetupVirtualPool();
 
             BigInteger totalLiquidity = (BigInteger)Math.Sqrt((long)(poolAmount1 * virtualPoolAmount1));
-
 
             // Setup a test user 
             var testUserA = PhantasmaKeys.Generate();
@@ -421,20 +426,27 @@ namespace Phantasma.Tests
         {
             Init();
 
-            BigInteger totalAm0 = poolAmount0;
-            BigInteger totalAm1 = poolAmount1;
-            double am0 = (double)poolAmount0;
-            double am1 = (double)poolAmount1;
-            BigInteger totalLiquidity = (BigInteger)Math.Sqrt(am0 * am1);
+            // Get Initial Pool State the Liquidity
+            var scriptPool = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            var pool = resultPool.AsStruct<Pool>();
+
+            BigInteger poolRatio = UnitConversion.ConvertDecimals(pool.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, 10, DomainSettings.FiatTokenDecimals);
+            var amount0 = poolAmount0 / 2;
+            var amount1 = UnitConversion.ConvertDecimals((amount0 * 100 / poolRatio ), DomainSettings.FiatTokenDecimals, 10);
+            Console.WriteLine($"ratio:{poolRatio} | amount0:{amount0} | amount1:{amount1}");
+            Console.WriteLine($"BeforeTouchingPool: {pool.Amount0} {pool.Symbol0} | {pool.Amount1} {pool.Symbol1} | PoolRatio:{UnitConversion.ConvertDecimals(pool.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, 10, DomainSettings.FiatTokenDecimals)}\n");
+
+            BigInteger totalAm0 = pool.Amount0;
+            BigInteger totalAm1 = pool.Amount1;
+            //poolRatio = UnitConversion.ConvertDecimals(pool.Amount1, 10, DomainSettings.FiatTokenDecimals) / UnitConversion.ConvertDecimals(pool.Amount0, 8, DomainSettings.FiatTokenDecimals);
+            BigInteger totalLiquidity = pool.TotalLiquidity;
 
             // Setup a test user 
             var testUserA = PhantasmaKeys.Generate();
-            var amount0 = poolAmount0 / 10;
-            var amount1 = poolAmount1 / 10;
-
+            
             // setup Tokens for the user
             simulator.BeginBlock();
-            //simulator.GenerateToken(owner, LPTokenSymbol, "LP", 1000, 0, TokenFlags.Burnable | TokenFlags.Transferable);
             simulator.MintTokens(owner, testUserA.Address, poolSymbol0, virtualPoolAmount1);
             simulator.MintTokens(owner, testUserA.Address, poolSymbol1, virtualPoolAmount1);
             simulator.EndBlock();
@@ -454,6 +466,10 @@ namespace Phantasma.Tests
             totalLiquidity += lpAdded;
             totalAm0 += poolAmount0;
 
+            resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            pool = resultPool.AsStruct<Pool>();
+            Console.WriteLine($"AfterAdd: {pool.Amount0} {pool.Symbol0} | {pool.Amount1} {pool.Symbol1} | PoolRatio:{UnitConversion.ConvertDecimals(pool.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, 10, DomainSettings.FiatTokenDecimals)}\n");
+
             var scriptBefore = new ScriptBuilder().CallContract("swap", "GetMyPoolRAM", testUserA.Address.Text, poolSymbol0, poolSymbol1).EndScript();
             var resultBefore = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptBefore);
             var nftRAMBefore = resultBefore.AsStruct<LPTokenContentRAM>();
@@ -464,7 +480,7 @@ namespace Phantasma.Tests
                     ScriptUtils
                     .BeginScript()
                     .AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("swap", "RemoveLiquidity", testUserA.Address.Text, poolSymbol0, amount0, poolSymbol1, amount1)
+                    .CallContract("swap", "RemoveLiquidity", testUserA.Address.Text, poolSymbol0, amount0, poolSymbol1, 0)
                     .SpendGas(testUserA.Address)
                     .EndScript()
                 );
@@ -473,7 +489,9 @@ namespace Phantasma.Tests
             // Get Pool
             var script = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
             var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
-            var pool = result.AsStruct<Pool>();
+            var poolAfter = result.AsStruct<Pool>();
+            Console.WriteLine($"AfterRemove: {poolAfter.Amount0} {poolAfter.Symbol0} | {poolAfter.Amount1} {poolAfter.Symbol1} | PoolRatio:{UnitConversion.ConvertDecimals(poolAfter.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(poolAfter.Amount1, 10, DomainSettings.FiatTokenDecimals)}\n");
+
             var lpRemoved = ((amount0) * totalLiquidity) / totalAm0;
             totalLiquidity -= lpRemoved;
             totalAm0 -= (amount0);
@@ -482,34 +500,40 @@ namespace Phantasma.Tests
             var scriptAfter = new ScriptBuilder().CallContract("swap", "GetMyPoolRAM", testUserA.Address.Text, poolSymbol0, poolSymbol1).EndScript();
             var resultAfter = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptAfter);
             var nftRAMAfter = resultAfter.AsStruct<LPTokenContentRAM>();
-            
+
+            Console.WriteLine($"TEST: BeforeLP:{nftRAMBefore.Liquidity}  | AfterLP:{nftRAMAfter.Liquidity} | LPRemoved:{lpRemoved}");
+
             // Validation
             Assert.IsFalse(nftRAMBefore.Amount0 == nftRAMAfter.Amount0, "Amount0 does not differ.");
             Assert.IsFalse(nftRAMBefore.Amount1 == nftRAMAfter.Amount1, "Amount1 does not differ.");
             Assert.IsFalse(nftRAMBefore.Liquidity == nftRAMAfter.Liquidity, "Liquidity does not differ.");
 
-            Assert.IsTrue(nftRAMBefore.Amount0 - (poolAmount0 / 10) == nftRAMAfter.Amount0, "Amount0 not true.");
-            Assert.IsTrue(nftRAMBefore.Amount1 - (poolAmount1 / 10) == nftRAMAfter.Amount1, "Amount1 not true.");
+            Assert.IsTrue(nftRAMBefore.Amount0 - amount0 == nftRAMAfter.Amount0, "Amount0 not true.");
+            Assert.IsTrue(nftRAMBefore.Amount1 - amount1 == nftRAMAfter.Amount1, $"Amount1 not true. {nftRAMBefore.Amount1 - amount1} != {nftRAMAfter.Amount1}");
+            Assert.IsTrue(nftRAMBefore.Liquidity - lpRemoved== nftRAMAfter.Liquidity, $"Liquidity does differ.");
 
             // Get Amount by Liquidity
             // Liqudity Formula  Liquidity = (amount0 * pool.TotalLiquidity) / pool.Amount0;
             // Amount Formula  amount = Liquidity  * pool.Amount0 / pool.TotalLiquidity;
-            var _amount0 = nftRAMAfter.Liquidity * pool.Amount0 /  pool.TotalLiquidity;
-            var _amount1 = nftRAMAfter.Liquidity * pool.Amount1 / pool.TotalLiquidity;
+            //(amount0 * (pool.TotalLiquidity - nftRAM.Liquidity)) / (pool.Amount0 - nftRAM.Amount0);
+            var _amount0 = (nftRAMAfter.Liquidity) * poolAfter.Amount0 / poolAfter.TotalLiquidity;
+            var _amount1 = (nftRAMAfter.Liquidity) * poolAfter.Amount1 / poolAfter.TotalLiquidity;
 
             Console.WriteLine($"am0 = {_amount0} == {nftRAMAfter.Amount0} || am1 = {_amount1} == {nftRAMAfter.Amount1}");
-            Assert.IsTrue(_amount0 == nftRAMAfter.Amount0, "Amount0 not calculated properly");
-            Assert.IsTrue(_amount1 == nftRAMAfter.Amount1, "Amount1 not calculated properly");
+            Assert.IsTrue(_amount0 == nftRAMAfter.Amount0, $"Amount0 not calculated properly | {_amount0} != {nftRAMAfter.Amount0}");
+            Assert.IsTrue(_amount1 == nftRAMAfter.Amount1, $"Amount1 not calculated properly | {_amount1} != {nftRAMAfter.Amount1}");
 
             // Get Liquidity by amount
-            var liquidityAm0 = nftRAMAfter.Amount0 * totalLiquidity / pool.Amount0;
-            var liquidityAm1 = nftRAMAfter.Amount1 * totalLiquidity / pool.Amount1;
+            var liquidityAm0 = nftRAMAfter.Amount0 * totalLiquidity / poolAfter.Amount0;
+            var liquidityAm1 = nftRAMAfter.Amount1 * totalLiquidity / poolAfter.Amount1;
 
-            Console.WriteLine($"LiquidityAm0 = {liquidityAm0} == {nftRAMAfter.Liquidity} || LiquidityAm1 = {liquidityAm1} == {nftRAMAfter.Liquidity}");
+            Console.WriteLine($"LiquidityAm0 = {liquidityAm0} == {nftRAMAfter.Liquidity} || LiquidityAm1 = {liquidityAm1} == {nftRAMAfter.Liquidity} | ratio:{nftRAMAfter.Amount0*100 / nftRAMAfter.Amount1}");
+            Console.WriteLine($"LiquidityAm0 = {nftRAMAfter.Amount0} * {totalLiquidity} / {poolAfter.Amount1} = {nftRAMAfter.Amount0 * totalLiquidity / poolAfter.Amount0}");
+            Console.WriteLine($"LiquidityAm0 = {nftRAMAfter.Amount0} * {poolAfter.TotalLiquidity} / {poolAfter.Amount1} = {nftRAMAfter.Amount0 * poolAfter.TotalLiquidity / poolAfter.Amount0}");
 
             Assert.IsTrue(liquidityAm0 == nftRAMAfter.Liquidity, "Liquidity Amount0 -> not calculated properly");
             Assert.IsTrue(liquidityAm1 == nftRAMAfter.Liquidity, "Liquidity Amount1 -> not calculated properly");
-            Assert.IsTrue(totalLiquidity == pool.TotalLiquidity, "Liquidity not true.");
+            Assert.IsTrue(totalLiquidity == poolAfter.TotalLiquidity, $"Liquidity not true.");
         }
 
         [TestMethod]
@@ -609,14 +633,17 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        [Ignore]
         // TODO: Get the pool initial values and calculate the target rate with those values insted of the static ones.
         public void GetRatesForSwap()
         {
             Init();
 
+            var scriptPool = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            var pool = resultPool.AsStruct<Pool>();
+
             BigInteger amount = UnitConversion.ToBigInteger(5, 8);
-            BigInteger targetRate = (poolAmount1 * (1 - 3 / 100) * amount / (poolAmount0 + (1 - 3 / 100) * amount));
+            BigInteger targetRate = (pool.Amount1 * (1 - 3 / 100) * amount / (pool.Amount0 + (1 - 3 / 100) * amount));
 
             var script = new ScriptBuilder().CallContract("swap", "GetRates", poolSymbol0, amount).EndScript();
 
@@ -636,18 +663,21 @@ namespace Phantasma.Tests
                 }
             }
 
-            Assert.IsTrue(rate == UnitConversion.ToDecimal(targetRate, 10), $"{rate} != {targetRate}");
+            Assert.IsTrue(rate == UnitConversion.ToDecimal(targetRate, DomainSettings.FuelTokenDecimals), $"{rate} != {targetRate}");
         }
 
         [TestMethod]
-        [Ignore]
         // TODO: Get the pool initial values and calculate the target rate with those values insted of the static ones.
         public void GetRateForSwap()
         {
             Init();
 
+            var scriptPool = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            var pool = resultPool.AsStruct<Pool>();
+
             BigInteger amount = UnitConversion.ToBigInteger(5, 8);
-            BigInteger targetRate = poolAmount1 * (1 - 3 / 100) * amount / (poolAmount0 + (1 - 3 / 100) * amount);
+            BigInteger targetRate = pool.Amount1 * (1 - 3 / 100) * amount / (pool.Amount0 + (1 - 3 / 100) * amount);
 
             var script = new ScriptBuilder().CallContract("swap", "GetRate", poolSymbol0, poolSymbol1, amount).EndScript();
 
@@ -889,6 +919,79 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        // TODO: Finish this
+        public void SwapFee()
+        {
+            Init();
+
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+
+            var initialKcal = 1000000;
+
+            BigInteger swapValueSOUL = UnitConversion.ToBigInteger(1, 8);
+            BigInteger swapValueKCAL = UnitConversion.ToBigInteger(1, 10);
+            BigInteger swapFee = UnitConversion.ConvertDecimals(swapValueSOUL, 8, 8);
+
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol0, poolAmount0 );
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol1, virtualPoolAmount1);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol2, poolAmount2 * 2);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol4, poolAmount4 * 2);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol0, poolAmount0);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol1, initialKcal);
+            simulator.EndBlock();
+
+            // Get Balances before starting trades
+            var beforeTXBalanceSOUL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol0, testUserB.Address);
+            var beforeTXBalanceKCAL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol1, testUserB.Address);
+            var kcalToSwap = swapValueSOUL;
+            kcalToSwap -= UnitConversion.ConvertDecimals(beforeTXBalanceKCAL, DomainSettings.FuelTokenDecimals, 8);
+
+            // Kcal to trade for
+            Console.WriteLine($"Soul amount: {kcalToSwap} | {beforeTXBalanceKCAL} | {swapValueSOUL} - { UnitConversion.ConvertDecimals(beforeTXBalanceKCAL, DomainSettings.FuelTokenDecimals, 8)} = {kcalToSwap}");
+
+            // Get Pool
+            var scriptPool = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol1, poolSymbol0).EndScript();
+            var resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            var pool = resultPool.AsStruct<Pool>();
+
+            var rateByPool = pool.Amount0 * (1 - 97 / 100) * kcalToSwap / (pool.Amount1 + (1 - 97 / 100) * kcalToSwap);
+            rateByPool = UnitConversion.ConvertDecimals(rateByPool, 10, 8);
+
+            // Get Rate
+            var scriptRate = new ScriptBuilder().CallContract("swap", "GetRate", poolSymbol0, poolSymbol1, kcalToSwap).EndScript();
+            var resultRate = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptRate);
+            var rate = (BigInteger)resultRate.AsNumber();
+
+            Console.WriteLine($"{UnitConversion.ToDecimal(kcalToSwap, 8)} {poolSymbol0} for {UnitConversion.ToDecimal(rate, 10)} {poolSymbol1} | Swap ->  {UnitConversion.ToDecimal(rateByPool, 10)}");
+
+            // Make Swap SOUL / KCAL (SwapFee)
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserB.Address, Address.Null, 1, 500)
+                    .CallContract("swap", "SwapFee", testUserB.Address, poolSymbol0, swapValueSOUL)
+                    .SpendGas(testUserB.Address)
+                    .EndScript()
+                );
+            var block = simulator.EndBlock().First();
+
+            // Get the balances
+            var afterTXBalanceSOUL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol0, testUserB.Address);
+            var afterTXBalanceKCAL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol1, testUserB.Address);
+
+            var kcalfee = afterTXBalanceKCAL - beforeTXBalanceKCAL - rate;
+            Console.WriteLine($"Fee:{UnitConversion.ToDecimal(kcalfee, 10)}");
+
+            Console.WriteLine($"{beforeTXBalanceSOUL} != {afterTXBalanceSOUL} | {afterTXBalanceKCAL}");
+
+            Assert.IsTrue(afterTXBalanceSOUL == beforeTXBalanceSOUL-(kcalToSwap + UnitConversion.ConvertDecimals(500, 10, 8)), $"SOUL {afterTXBalanceSOUL} != {beforeTXBalanceSOUL-(kcalToSwap + UnitConversion.ConvertDecimals(500, 10, 8))}");
+            Assert.IsTrue(beforeTXBalanceKCAL + kcalfee + rate == afterTXBalanceKCAL, $"KCAL {beforeTXBalanceKCAL + kcalfee + rate} != {afterTXBalanceKCAL}");
+        }
+
+        [TestMethod]
         public void GetUnclaimed()
         {
             Init();
@@ -923,6 +1026,178 @@ namespace Phantasma.Tests
             Assert.IsTrue(unclaimed == 0, "Unclaimed Failed");
         }
 
+
+        [TestMethod]
+        public void GetFees()
+        {
+            Init();
+
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+
+            var swapValueSOUL = UnitConversion.ToBigInteger(10, 8);
+
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol0, poolAmount0 * 2);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol1, poolAmount1 * 2);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol0, poolAmount0);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol1, poolAmount1);
+            simulator.EndBlock();
+
+            // Add Liquidity to the pool
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, poolAmount0, poolSymbol1, poolAmount1)
+                    .SpendGas(testUserA.Address)
+                    .EndScript()
+                );
+            var block = simulator.EndBlock().First();
+
+            // Get Pool
+            var scriptPool = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            var pool = resultPool.AsStruct<Pool>();
+
+            // Get RAM
+            var scriptRam = new ScriptBuilder().CallContract("swap", "GetMyPoolRAM", testUserA.Address.Text, poolSymbol0, poolSymbol1).EndScript();
+            var resultRam = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptRam);
+            var nftRAMBefore = resultRam.AsStruct<LPTokenContentRAM>();
+
+            // Make a Swap
+            var scriptRate = new ScriptBuilder().CallContract("swap", "GetRate", poolSymbol0, poolSymbol1, swapValueSOUL).EndScript();
+            var resultRate = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptRate);
+            var rate = (BigInteger)resultRate.AsNumber();
+
+            Console.WriteLine($"{UnitConversion.ToDecimal(swapValueSOUL, 8)} {poolSymbol0} for {UnitConversion.ToDecimal(rate, 10)} {poolSymbol1}");
+            // Make Swap SOUL / ETH
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserB.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "SwapTokens", testUserB.Address, poolSymbol0, poolSymbol1, swapValueSOUL)
+                    .SpendGas(testUserB.Address)
+                    .EndScript()
+                );
+            block = simulator.EndBlock().First();
+
+            // Get Rate
+            var script = new ScriptBuilder().CallContract("swap", "GetUnclaimedFees", testUserA.Address, poolSymbol0, poolSymbol1).EndScript();
+            var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
+            var unclaimed = (BigInteger)result.AsNumber();
+            BigInteger UserPercent = 75;
+            BigInteger totalFees = rate * 3 / 100;
+            BigInteger feeForUsers = totalFees * 100 / UserPercent;
+            BigInteger feeAmount = nftRAMBefore.Liquidity * 1000000000000 / pool.TotalLiquidity;
+            var calculatedFees = feeForUsers * feeAmount / 1000000000000;
+
+            Assert.IsTrue(unclaimed == calculatedFees, $"Unclaimed Failed | {unclaimed} != {calculatedFees}");
+        }
+
+        [TestMethod]
+        public void GetClaimFees()
+        {
+            Init();
+
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+
+            var swapValueSOUL = UnitConversion.ToBigInteger(10, 8);
+
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol0, poolAmount0 * 2);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol1, poolAmount1 * 3);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol0, poolAmount0);
+            simulator.MintTokens(owner, testUserB.Address, poolSymbol1, poolAmount1);
+            simulator.EndBlock();
+
+            // Add Liquidity to the pool
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, poolAmount0, poolSymbol1, 10)
+                    .SpendGas(testUserA.Address)
+                    .EndScript()
+                );
+            var block = simulator.EndBlock().First();
+
+            // Get Pool
+            var scriptPool = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            var pool = resultPool.AsStruct<Pool>();
+
+            // Get RAM
+            var scriptRam = new ScriptBuilder().CallContract("swap", "GetMyPoolRAM", testUserA.Address.Text, poolSymbol0, poolSymbol1).EndScript();
+            var resultRam = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptRam);
+            var nftRAMBefore = resultRam.AsStruct<LPTokenContentRAM>();
+
+            // Make a Swap
+            var scriptRate = new ScriptBuilder().CallContract("swap", "GetRate", poolSymbol0, poolSymbol1, swapValueSOUL).EndScript();
+            var resultRate = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptRate);
+            var rate = (BigInteger)resultRate.AsNumber();
+
+            Console.WriteLine($"{UnitConversion.ToDecimal(swapValueSOUL, 8)} {poolSymbol0} for {UnitConversion.ToDecimal(rate, 10)} {poolSymbol1}");
+            // Make Swap SOUL / ETH
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserB.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "SwapTokens", testUserB.Address, poolSymbol0, poolSymbol1, swapValueSOUL)
+                    .SpendGas(testUserB.Address)
+                    .EndScript()
+                );
+            block = simulator.EndBlock().First();
+
+            // Get Unclaimed Fees
+            var script = new ScriptBuilder().CallContract("swap", "GetUnclaimedFees", testUserA.Address, poolSymbol0, poolSymbol1).EndScript();
+            var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
+            var unclaimed = (BigInteger)result.AsNumber();
+            BigInteger UserPercent = 75;
+            BigInteger totalFees = rate * 3 / 100;
+            BigInteger feeForUsers = totalFees * 100 / UserPercent;
+            BigInteger feeAmount = nftRAMBefore.Liquidity * 1000000000000 / pool.TotalLiquidity;
+            var calculatedFees = feeForUsers * feeAmount / 1000000000000;
+
+            Console.WriteLine($"{calculatedFees} {poolSymbol1}");
+            Assert.IsTrue(unclaimed == calculatedFees, $"Unclaimed Failed | {unclaimed} != {calculatedFees}");
+
+            // Claim Fees
+            // Get User Balance Before Claiming Fees
+            var beforeTXBalanceSOUL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol0, testUserA.Address);
+            var beforeTXBalanceKCAL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol1, testUserA.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "ClaimFees", testUserA.Address, poolSymbol0, poolSymbol1)
+                    .SpendGas(testUserA.Address)
+                    .EndScript()
+                );
+            block = simulator.EndBlock().First();
+
+            // Get User Balance After Claiming Fees
+            var afterTXBalanceSOUL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol0, testUserA.Address);
+            var afterTXBalanceKCAL = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, poolSymbol1, testUserA.Address);
+
+
+            var scriptAfter = new ScriptBuilder().CallContract("swap", "GetUnclaimedFees", testUserA.Address, poolSymbol0, poolSymbol1).EndScript();
+            var resultAfter = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptAfter);
+            var unclaimedAfter = (BigInteger)resultAfter.AsNumber();
+
+            Assert.IsTrue(afterTXBalanceSOUL == beforeTXBalanceSOUL+calculatedFees, $"Soul Claimed Failed | {afterTXBalanceSOUL} != {beforeTXBalanceSOUL}");
+            Assert.IsTrue(beforeTXBalanceKCAL != afterTXBalanceKCAL, $"Kcal for TX Failed | {beforeTXBalanceKCAL} != {afterTXBalanceKCAL}");
+            Assert.IsTrue(unclaimedAfter == 0, $"Kcal for TX Failed | {unclaimedAfter} != {0}");
+
+
+        }
 
         [TestMethod]
         public void CosmicSwap()
