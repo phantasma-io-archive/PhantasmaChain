@@ -544,7 +544,7 @@ namespace Phantasma.Blockchain.Contracts
             {
                 var amountInOtherSymbol = GetRate(feeSymbol, fromSymbol, feeAmount);
                 var amountIKCAL = GetRate(fromSymbol, feeSymbol, feeAmount);
-                Console.WriteLine($"AmountOther: {amountInOtherSymbol} | feeAmount:{feeAmount} | feeBalance:{feeBalance} | amountOfKcal: {amountIKCAL}" );
+                //Console.WriteLine($"AmountOther: {amountInOtherSymbol} | feeAmount:{feeAmount} | feeBalance:{feeBalance} | amountOfKcal: {amountIKCAL}" );
 
                 if (amountInOtherSymbol < minAmount)
                 {
@@ -1491,12 +1491,12 @@ namespace Phantasma.Blockchain.Contracts
                 //Runtime.Expect(tradeRatioAmount == poolRatio, $"TradeRatio < 0 | {poolRatio} != {tradeRatioAmount}");
             }
 
-            Console.WriteLine($"Ratio:{poolRatio} | Trade:{tradeRatioAmount}");
+            //Console.WriteLine($"Ratio:{poolRatio} | Trade:{tradeRatioAmount}");
             var tempAm0 = UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals);
             var tempAm1 = UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals);
             Runtime.Expect(ValidateRatio(tempAm1, tempAm0*100, poolRatio), $"ratio is not true. {poolRatio}, new {tempAm0} {tempAm1} {tempAm1 * 100 / tempAm0} {amount1 * 100 /amount0 }");
 
-            Console.WriteLine($"ADD: ratio:{poolRatio} | amount0:{amount0} | amount1:{amount1}");
+            //Console.WriteLine($"ADD: ratio:{poolRatio} | amount0:{amount0} | amount1:{amount1}");
             // Check if is a virtual pool -> if one of the tokens is SOUL is real pool, if not is virtual.
             bool isRealPool = PoolIsReal(pool.Symbol0, pool.Symbol1);
             BigInteger liquidity = 0;
@@ -1563,7 +1563,7 @@ namespace Phantasma.Blockchain.Contracts
                 AddToLPTokens(from, nftID, pool.Symbol0, pool.Symbol1);
             }
 
-            Console.WriteLine($"ADD: lp:{liquidity}");
+            //Console.WriteLine($"ADD: lp:{liquidity}");
 
 
             // Update the pool values
@@ -1668,7 +1668,7 @@ namespace Phantasma.Blockchain.Contracts
                 //Runtime.Expect(tradeRatioAmount == poolRatio, $"TradeRatio < 0 | {poolRatio} != {tradeRatioAmount}");
             }
 
-            Console.WriteLine($"pool:{poolRatio} | trade:{tradeRatioAmount} | {amount0} {symbol0} for {amount1} {symbol1}");
+            //Console.WriteLine($"pool:{poolRatio} | trade:{tradeRatioAmount} | {amount0} {symbol0} for {amount1} {symbol1}");
 
             var tempAm0 = UnitConversion.ConvertDecimals(amount0, token0Info.Decimals, DomainSettings.FiatTokenDecimals);
             var tempAm1 = UnitConversion.ConvertDecimals(amount1, token1Info.Decimals, DomainSettings.FiatTokenDecimals);
@@ -1690,7 +1690,7 @@ namespace Phantasma.Blockchain.Contracts
             
             Runtime.Expect(nftRAM.Liquidity - liquidity >= 0, "Trying to remove more than you have...");
 
-            Console.WriteLine($"BeforeLP:{nftRAM.Liquidity} - LiquidityToRemove:{liquidity} | FinalLP:{newLiquidity}");
+            //Console.WriteLine($"BeforeLP:{nftRAM.Liquidity} - LiquidityToRemove:{liquidity} | FinalLP:{newLiquidity}");
 
 
             // If the new amount will be = 0 then burn the NFT
