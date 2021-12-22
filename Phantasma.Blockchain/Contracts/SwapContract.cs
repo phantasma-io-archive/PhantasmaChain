@@ -1563,21 +1563,14 @@ namespace Phantasma.Blockchain.Contracts
                 AddToLPTokens(from, nftID, pool.Symbol0, pool.Symbol1);
             }
 
+            Console.WriteLine($"ADD: lp:{liquidity}");
+
+
             // Update the pool values
-            if (symbol0 == pool.Symbol0 && symbol1 == pool.Symbol1)
-            {
-                Runtime.TransferTokens(pool.Symbol0, from, this.Address, amount0);
-                Runtime.TransferTokens(pool.Symbol1, from, this.Address, amount1);
-                pool.Amount0 += amount0;
-                pool.Amount1 += amount1;
-            }
-            else
-            {
-                Runtime.TransferTokens(pool.Symbol0, from, this.Address, amount1);
-                Runtime.TransferTokens(pool.Symbol1, from, this.Address, amount0);
-                pool.Amount1 += amount0;
-                pool.Amount0 += amount1;
-            }
+            Runtime.TransferTokens(pool.Symbol0, from, this.Address, amount0);
+            Runtime.TransferTokens(pool.Symbol1, from, this.Address, amount1);
+            pool.Amount0 += amount0;
+            pool.Amount1 += amount1;
 
             pool.TotalLiquidity += liquidity;
 
@@ -1686,19 +1679,18 @@ namespace Phantasma.Blockchain.Contracts
             var nftID = _lp_tokens.Get<string, BigInteger>(lpKey);
             var nft = Runtime.ReadToken(DomainSettings.LiquidityTokenSymbol, nftID);
             LPTokenContentRAM nftRAM = VMObject.FromBytes(nft.RAM).AsStruct<LPTokenContentRAM>();
+            BigInteger newAmount0 = nftRAM.Amount0 - amount0;
+            BigInteger newAmount1 = nftRAM.Amount1 - amount1;
+            BigInteger oldAmount0 = nftRAM.Amount0;
+            BigInteger oldAmount1 = nftRAM.Amount1;
+            BigInteger oldLP = nftRAM.Liquidity;
+            BigInteger newLiquidity = newAmount0 * (pool.TotalLiquidity - nftRAM.Liquidity) / (pool.Amount0-nftRAM.Amount0);
 
-            if ( pool.Symbol0 == symbol0 )
-            {
-                liquidity = (amount0 * (pool.TotalLiquidity)) / (pool.Amount0);
-            }
-            else
-            {
-                liquidity = (amount1 * (pool.TotalLiquidity)) / (pool.Amount0);
-            }
-
+            liquidity = (amount0 * (pool.TotalLiquidity)) / (pool.Amount0);
+            
             Runtime.Expect(nftRAM.Liquidity - liquidity >= 0, "Trying to remove more than you have...");
 
-            Console.WriteLine($"BeforeLP:{nftRAM.Liquidity} - LiquidityToRemove:{liquidity} | FinalLP:{nftRAM.Liquidity-liquidity}");
+            Console.WriteLine($"BeforeLP:{nftRAM.Liquidity} - LiquidityToRemove:{liquidity} | FinalLP:{newLiquidity}");
 
 
             // If the new amount will be = 0 then burn the NFT
@@ -1710,54 +1702,28 @@ namespace Phantasma.Blockchain.Contracts
             }
             else
             {
-                // Update NFT
-                if (pool.Symbol0 == symbol0)
-                {
-                    Runtime.Expect(nftRAM.Amount0 - amount0 > 0, $"Lower Amount for symbol {symbol0}. | You have {nftRAM.Amount0} {symbol0}, trying to remove {amount0} {symbol0}");
-                    nftRAM.Amount0 -= amount0;
+                Runtime.Expect(nftRAM.Amount0 - amount0 > 0, $"Lower Amount for symbol {symbol0}. | You have {nftRAM.Amount0} {symbol0}, trying to remove {amount0} {symbol0}");
+                nftRAM.Amount0 = newAmount0;
 
-                    Runtime.Expect(nftRAM.Amount1 - amount1 > 0, $"Lower Amount for symbol {symbol1}. | You have {nftRAM.Amount1} {symbol1}, trying to remove {amount1} {symbol1}");
-                    nftRAM.Amount1 -= amount1;
+                Runtime.Expect(nftRAM.Amount1 - amount1 > 0, $"Lower Amount for symbol {symbol1}. | You have {nftRAM.Amount1} {symbol1}, trying to remove {amount1} {symbol1}");
+                nftRAM.Amount1 = newAmount1;
 
-                    Runtime.TransferTokens(symbol0, this.Address, from, amount0);
-                    Runtime.TransferTokens(symbol1, this.Address, from, amount1);
-                }
-                else
-                {
-                    Runtime.Expect(nftRAM.Amount0 - amount1 > 0, $"Lower Amount for symbol {symbol1}. | You have {nftRAM.Amount0} {symbol1}, trying to remove {amount1} {symbol1}");
-                    nftRAM.Amount0 -= amount1;
-
-                    Runtime.Expect(nftRAM.Amount1 - amount0 > 0, $"Lower Amount for symbol {symbol0}. | You have {nftRAM.Amount1} {symbol0}, trying to remove {amount0} {symbol0}");
-                    nftRAM.Amount1 -= amount0;
-
-                    Runtime.TransferTokens(symbol0, this.Address, from, amount1);
-                    Runtime.TransferTokens(symbol1, this.Address, from, amount0);
-
-                }
-
-                nftRAM.Liquidity -= liquidity;
+                Runtime.TransferTokens(symbol0, this.Address, from, amount0);
+                Runtime.TransferTokens(symbol1, this.Address, from, amount1);
+                
+                nftRAM.Liquidity = newLiquidity;
 
                 Runtime.WriteToken(from, DomainSettings.LiquidityTokenSymbol, nftID, VMObject.FromStruct(nftRAM).AsByteArray());
             }
 
             // Update the pool values
-            if (symbol0 == pool.Symbol0 && symbol1 == pool.Symbol1)
-            {
-                pool.Amount0 -= amount0;
-                pool.Amount1 -= amount1;
-            }
-            else
-            {
-                pool.Amount1 -= amount0;
-                pool.Amount0 -= amount1;
-            }
+            pool.Amount0 = (pool.Amount0 - oldAmount0) + amount0;
+            pool.Amount1 = (pool.Amount1 - oldAmount1) + amount1;
 
-            pool.TotalLiquidity -= liquidity;
+            pool.TotalLiquidity = pool.TotalLiquidity - oldLP + newLiquidity;
 
             _pools.Set<string, Pool>($"{pool.Symbol0}_{pool.Symbol1}", pool);
         }
-
-
 
         private bool ValidateTrade(BigInteger amount0, BigInteger amount1, Pool pool, bool isBuying = false)
         {
