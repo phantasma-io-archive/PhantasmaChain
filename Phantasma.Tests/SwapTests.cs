@@ -466,9 +466,10 @@ namespace Phantasma.Tests
             totalLiquidity += lpAdded;
             totalAm0 += poolAmount0;
 
-            resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
-            pool = resultPool.AsStruct<Pool>();
-            Console.WriteLine($"AfterAdd: {pool.Amount0} {pool.Symbol0} | {pool.Amount1} {pool.Symbol1} | PoolRatio:{UnitConversion.ConvertDecimals(pool.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, 10, DomainSettings.FiatTokenDecimals)}\n");
+            var scriptPoolBefore = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPoolBefore = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPoolBefore);
+            var poolBefore = resultPoolBefore.AsStruct<Pool>();
+            Console.WriteLine($"AfterAdd: {poolBefore.Amount0} {poolBefore.Symbol0} | {poolBefore.Amount1} {poolBefore.Symbol1} | PoolRatio:{UnitConversion.ConvertDecimals(poolBefore.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(poolBefore.Amount1, 10, DomainSettings.FiatTokenDecimals)}\n");
 
             var scriptBefore = new ScriptBuilder().CallContract("swap", "GetMyPoolRAM", testUserA.Address.Text, poolSymbol0, poolSymbol1).EndScript();
             var resultBefore = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptBefore);
@@ -490,10 +491,11 @@ namespace Phantasma.Tests
             var script = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
             var result = nexus.RootChain.InvokeScript(nexus.RootStorage, script);
             var poolAfter = result.AsStruct<Pool>();
-            Console.WriteLine($"AfterRemove: {poolAfter.Amount0} {poolAfter.Symbol0} | {poolAfter.Amount1} {poolAfter.Symbol1} | PoolRatio:{UnitConversion.ConvertDecimals(poolAfter.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(poolAfter.Amount1, 10, DomainSettings.FiatTokenDecimals)}\n");
 
-            var lpRemoved = ((amount0) * totalLiquidity) / totalAm0;
-            totalLiquidity -= lpRemoved;
+            Console.WriteLine($"AfterRemove: {poolAfter.Amount0} {poolAfter.Symbol0} | {poolAfter.Amount1} {poolAfter.Symbol1} | PoolRatio:{UnitConversion.ConvertDecimals(poolAfter.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(poolAfter.Amount1, 10, DomainSettings.FiatTokenDecimals)}\n");
+            BigInteger newLP = ((nftRAMBefore.Amount0 - amount0) * (totalLiquidity - nftRAMBefore.Liquidity)) / (totalAm0 - nftRAMBefore.Amount0);
+            var lpRemoved = ((nftRAMBefore.Amount0 - amount0) * (totalLiquidity- nftRAMBefore.Liquidity)) / (totalAm0- nftRAMBefore.Amount0);
+            totalLiquidity = totalLiquidity - nftRAMBefore.Liquidity + newLP;
             totalAm0 -= (amount0);
 
             // Get My NFT DATA 
@@ -506,11 +508,11 @@ namespace Phantasma.Tests
             // Validation
             Assert.IsFalse(nftRAMBefore.Amount0 == nftRAMAfter.Amount0, "Amount0 does not differ.");
             Assert.IsFalse(nftRAMBefore.Amount1 == nftRAMAfter.Amount1, "Amount1 does not differ.");
-            Assert.IsFalse(nftRAMBefore.Liquidity == nftRAMAfter.Liquidity, "Liquidity does not differ.");
+            Assert.IsFalse(nftRAMBefore.Liquidity == nftRAMAfter.Liquidity, $"Liquidity does not differ. | {nftRAMBefore.Liquidity} == {nftRAMAfter.Liquidity}");
 
             Assert.IsTrue(nftRAMBefore.Amount0 - amount0 == nftRAMAfter.Amount0, "Amount0 not true.");
             Assert.IsTrue(nftRAMBefore.Amount1 - amount1 == nftRAMAfter.Amount1, $"Amount1 not true. {nftRAMBefore.Amount1 - amount1} != {nftRAMAfter.Amount1}");
-            Assert.IsTrue(nftRAMBefore.Liquidity - lpRemoved== nftRAMAfter.Liquidity, $"Liquidity does differ.");
+            Assert.IsTrue(newLP == nftRAMAfter.Liquidity, $"Liquidity does differ. | {nftRAMBefore.Liquidity - lpRemoved} == {nftRAMAfter.Liquidity}");
 
             // Get Amount by Liquidity
             // Liqudity Formula  Liquidity = (amount0 * pool.TotalLiquidity) / pool.Amount0;
@@ -518,10 +520,20 @@ namespace Phantasma.Tests
             //(amount0 * (pool.TotalLiquidity - nftRAM.Liquidity)) / (pool.Amount0 - nftRAM.Amount0);
             var _amount0 = (nftRAMAfter.Liquidity) * poolAfter.Amount0 / poolAfter.TotalLiquidity;
             var _amount1 = (nftRAMAfter.Liquidity) * poolAfter.Amount1 / poolAfter.TotalLiquidity;
-
+            var _pool_amount0 = (poolBefore.Amount0 - nftRAMBefore.Amount0) + amount0;
+            var _pool_amount1 = (poolBefore.Amount1 - nftRAMBefore.Amount1) + amount1;
+            var _pool_liquidity = totalLiquidity;
+             
+            Console.WriteLine($"user Initial = am0:{nftRAMBefore.Amount0} | am1:{nftRAMBefore.Amount1} | lp:{nftRAMBefore.Liquidity}");
+            Console.WriteLine($"pool Initial = am0:{poolBefore.Amount0} | am1:{poolBefore.Amount1} | lp:{poolBefore.TotalLiquidity}");
+            Console.WriteLine($"user after = am0:{nftRAMAfter.Amount0} | am1:{nftRAMAfter.Amount1} | lp:{nftRAMAfter.Liquidity}");
+            Console.WriteLine($"pool after = am0:{poolAfter.Amount0} | am1:{poolAfter.Amount1} | lp:{poolAfter.TotalLiquidity}");
             Console.WriteLine($"am0 = {_amount0} == {nftRAMAfter.Amount0} || am1 = {_amount1} == {nftRAMAfter.Amount1}");
-            Assert.IsTrue(_amount0 == nftRAMAfter.Amount0, $"Amount0 not calculated properly | {_amount0} != {nftRAMAfter.Amount0}");
-            Assert.IsTrue(_amount1 == nftRAMAfter.Amount1, $"Amount1 not calculated properly | {_amount1} != {nftRAMAfter.Amount1}");
+            Assert.IsTrue(_pool_amount0 == poolAfter.Amount0, $"Pool Amount0 not calculated properly | {_pool_amount0} != {poolAfter.Amount0}");
+            Assert.IsTrue(_pool_amount1 == poolAfter.Amount1, $"Pool Amount1 not calculated properly | {_pool_amount1} != {poolAfter.Amount1}");
+            Assert.IsTrue(_pool_liquidity == poolAfter.TotalLiquidity, $"Pool TotalLiquidity not calculated properly | {_pool_liquidity} != {poolAfter.TotalLiquidity}");
+            Assert.IsTrue(_amount0 + UnitConversion.ToBigInteger(0.00000001m, 8) >= nftRAMAfter.Amount0, $"Amount0 not calculated properly | {_amount0+ UnitConversion.ToBigInteger(0.00000001m, 8) } != {nftRAMAfter.Amount0}");
+            Assert.IsTrue(_amount1 + UnitConversion.ToBigInteger(0.000000001m, 10) >= nftRAMAfter.Amount1, $"Amount1 not calculated properly | {_amount1+ UnitConversion.ToBigInteger(0.000000001m, 10)} != {nftRAMAfter.Amount1}");
 
             // Get Liquidity by amount
             var liquidityAm0 = nftRAMAfter.Amount0 * totalLiquidity / poolAfter.Amount0;
@@ -534,6 +546,63 @@ namespace Phantasma.Tests
             Assert.IsTrue(liquidityAm0 == nftRAMAfter.Liquidity, "Liquidity Amount0 -> not calculated properly");
             Assert.IsTrue(liquidityAm1 == nftRAMAfter.Liquidity, "Liquidity Amount1 -> not calculated properly");
             Assert.IsTrue(totalLiquidity == poolAfter.TotalLiquidity, $"Liquidity not true.");
+        }
+
+        [TestMethod]
+        public void RemoveLiquiditySmall()
+        {
+            Init();
+
+            // Get Initial Pool State the Liquidity
+            var scriptPool = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPool = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPool);
+            var pool = resultPool.AsStruct<Pool>();
+
+            BigInteger poolRatio = UnitConversion.ConvertDecimals(pool.Amount0, 8, DomainSettings.FiatTokenDecimals) * 100 / UnitConversion.ConvertDecimals(pool.Amount1, 10, DomainSettings.FiatTokenDecimals);
+            var amount0 = poolAmount0 / 2;
+            var amount1 = UnitConversion.ConvertDecimals((amount0 * 100 / poolRatio), DomainSettings.FiatTokenDecimals, 10);
+
+            BigInteger totalAm0 = pool.Amount0;
+            BigInteger totalAm1 = pool.Amount1;
+            BigInteger totalLiquidity = pool.TotalLiquidity;
+
+            // Setup a test user 
+            var testUserA = PhantasmaKeys.Generate();
+
+            // setup Tokens for the user
+            simulator.BeginBlock();
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol0, virtualPoolAmount1);
+            simulator.MintTokens(owner, testUserA.Address, poolSymbol1, virtualPoolAmount1);
+            simulator.EndBlock();
+
+            // Add Liquidity to the pool
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.Minimal, () =>
+                    ScriptUtils
+                    .BeginScript()
+                    .AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "AddLiquidity", testUserA.Address, poolSymbol0, amount0, poolSymbol1, 0)
+                    .SpendGas(testUserA.Address)
+                    .EndScript()
+                );
+            var block = simulator.EndBlock().First();
+            var lpAdded = (amount0 * totalLiquidity) / totalAm0;
+            totalLiquidity += lpAdded;
+            totalAm0 += amount0;
+
+            var scriptPoolBefore = new ScriptBuilder().CallContract("swap", "GetPool", poolSymbol0, poolSymbol1).EndScript();
+            var resultPoolBefore = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptPoolBefore);
+            var poolBefore = resultPoolBefore.AsStruct<Pool>();
+
+            var scriptBefore = new ScriptBuilder().CallContract("swap", "GetMyPoolRAM", testUserA.Address.Text, poolSymbol0, poolSymbol1).EndScript();
+            var resultBefore = nexus.RootChain.InvokeScript(nexus.RootStorage, scriptBefore);
+            var nftRAMBefore = resultBefore.AsStruct<LPTokenContentRAM>();
+
+            var _amount0 = (nftRAMBefore.Liquidity) * poolBefore.Amount0 / poolBefore.TotalLiquidity;
+            var _amount1 = (nftRAMBefore.Liquidity) * poolBefore.Amount1 / poolBefore.TotalLiquidity;
+
+            Assert.IsTrue(_amount0 + UnitConversion.ToBigInteger(0.00000001m, 8)  >= nftRAMBefore.Amount0, $"Amount0 not calculated properly | {_amount0} != {nftRAMBefore.Amount0}");
+            Assert.IsTrue(_amount1 + UnitConversion.ToBigInteger(0.00000001m, 10) >= nftRAMBefore.Amount1, $"Amount1 not calculated properly | {_amount1} != {nftRAMBefore.Amount1}");
         }
 
         [TestMethod]
