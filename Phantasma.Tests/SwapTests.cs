@@ -518,8 +518,8 @@ namespace Phantasma.Tests
             // Liqudity Formula  Liquidity = (amount0 * pool.TotalLiquidity) / pool.Amount0;
             // Amount Formula  amount = Liquidity  * pool.Amount0 / pool.TotalLiquidity;
             //(amount0 * (pool.TotalLiquidity - nftRAM.Liquidity)) / (pool.Amount0 - nftRAM.Amount0);
-            var _amount0 = (nftRAMAfter.Liquidity) * pool.Amount0 / pool.TotalLiquidity;
-            var _amount1 = (nftRAMAfter.Liquidity) * pool.Amount1 / pool.TotalLiquidity;
+            var _amount0 = (nftRAMAfter.Liquidity) * poolAfter.Amount0 / poolAfter.TotalLiquidity;
+            var _amount1 = (nftRAMAfter.Liquidity) * poolAfter.Amount1 / poolAfter.TotalLiquidity;
             var _pool_amount0 = (poolBefore.Amount0 - nftRAMBefore.Amount0) + amount0;
             var _pool_amount1 = (poolBefore.Amount1 - nftRAMBefore.Amount1) + amount1;
             var _pool_liquidity = totalLiquidity;
@@ -533,7 +533,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(_pool_amount1 == poolAfter.Amount1, $"Pool Amount1 not calculated properly | {_pool_amount1} != {poolAfter.Amount1}");
             Assert.IsTrue(_pool_liquidity == poolAfter.TotalLiquidity, $"Pool TotalLiquidity not calculated properly | {_pool_liquidity} != {poolAfter.TotalLiquidity}");
             Assert.IsTrue(_amount0 + UnitConversion.ToBigInteger(0.00000001m, 8) >= nftRAMAfter.Amount0, $"Amount0 not calculated properly | {_amount0+ UnitConversion.ToBigInteger(0.00000001m, 8) } != {nftRAMAfter.Amount0}");
-            Assert.IsTrue(_amount1 + UnitConversion.ToBigInteger(0.00000001m, 10) >= nftRAMAfter.Amount1, $"Amount1 not calculated properly | {_amount1+ UnitConversion.ToBigInteger(0.00000001m, 10)} != {nftRAMAfter.Amount1}");
+            Assert.IsTrue(_amount1 + UnitConversion.ToBigInteger(0.000000001m, 10) >= nftRAMAfter.Amount1, $"Amount1 not calculated properly | {_amount1+ UnitConversion.ToBigInteger(0.000000001m, 10)} != {nftRAMAfter.Amount1}");
 
             // Get Liquidity by amount
             var liquidityAm0 = nftRAMAfter.Amount0 * totalLiquidity / poolAfter.Amount0;
