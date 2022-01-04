@@ -544,6 +544,10 @@ namespace Phantasma.VM
                                         break;
                                     }
 
+                                case VMType.None:
+                                    count = 0;
+                                    break;
+
                                 default: count = 1; break;
                             }
 
