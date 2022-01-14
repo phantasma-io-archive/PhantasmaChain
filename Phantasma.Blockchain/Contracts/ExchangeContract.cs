@@ -521,6 +521,7 @@ namespace Phantasma.Blockchain.Contracts
 
         #region OTC TRADES
         internal StorageList _otcBook;
+        const int MAX_ORDERS_PER_USER = 5;
 
         public ExchangeOrder[] GetOTC()
         {
@@ -533,18 +534,25 @@ namespace Phantasma.Blockchain.Contracts
 
             var count = _otcBook.Count();
             ExchangeOrder lockUpOrder;
+            var userOrdersCount = 0;
             for (int i = 0; i < count; i++)
             {
                 lockUpOrder = _otcBook.Get<ExchangeOrder>(i);
                 if(lockUpOrder.Creator == from)
                 {
-                    throw new Exception("Already have an offer created");
-                    return;
+                    userOrdersCount++;
+                    if (userOrdersCount >= MAX_ORDERS_PER_USER)
+                    {
+                        throw new Exception($"Already have {MAX_ORDERS_PER_USER} offers created");
+                        return;
+                    }
                 }
             }
 
+            Runtime.Expect(userOrdersCount <= MAX_ORDERS_PER_USER, $"Already have {MAX_ORDERS_PER_USER} offers created");
+
             var baseBalance = Runtime.GetBalance(baseSymbol, from);
-            Runtime.Expect(baseBalance >= amount, "invalid seller amount");
+            Runtime.Expect(baseBalance >= price, "invalid seller amount");
             Runtime.TransferTokens(baseSymbol, from, this.Address, price);
 
             var order = new ExchangeOrder(uid, Runtime.Time, from, this.Address, amount, baseSymbol, price, quoteSymbol, ExchangeOrderSide.Sell, ExchangeOrderType.OTC);
