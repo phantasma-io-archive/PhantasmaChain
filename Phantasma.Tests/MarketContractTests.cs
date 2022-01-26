@@ -408,6 +408,21 @@ namespace Phantasma.Tests
             );
             simulator.EndBlock();
 
+            // cancel auction after it received bids (should fail)
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                    simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                    ScriptUtils.
+                        BeginScript().
+                        AllowGas(testUser.Address, Address.Null, 1, 9999).
+                        CallContract("market", "CancelSale", token.Symbol, tokenID).
+                        SpendGas(testUser.Address).
+                        EndScript()
+                    );
+                simulator.EndBlock();
+            });
+
             // make one bid lower (should fail)
             Assert.ThrowsException<ChainException>(() =>
             {
@@ -1217,21 +1232,6 @@ namespace Phantasma.Tests
                         AllowGas(owner.Address, Address.Null, 1, 9999).
                         CallContract("market", "CancelSale", token.Symbol, tokenID).
                         SpendGas(owner.Address).
-                        EndScript()
-                    );
-                simulator.EndBlock();
-            });
-
-            // cancel auction after it started (should fail)
-            Assert.ThrowsException<ChainException>(() =>
-            {
-                simulator.BeginBlock();
-                    simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
-                    ScriptUtils.
-                        BeginScript().
-                        AllowGas(testUser.Address, Address.Null, 1, 9999).
-                        CallContract("market", "CancelSale", token.Symbol, tokenID).
-                        SpendGas(testUser.Address).
                         EndScript()
                     );
                 simulator.EndBlock();
