@@ -108,7 +108,10 @@ namespace Phantasma.Blockchain.Contracts
             {
                 endDate = auction.EndDate;
             }
-            Runtime.Expect(endDate > startDate, "invalid end date");
+            else
+            {
+                Runtime.Expect(endDate > startDate, "invalid end date");
+            }
 
             if (extensionPeriod == 0 || auction.Type == TypeAuction.Fixed)
             {
