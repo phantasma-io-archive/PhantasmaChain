@@ -22,6 +22,7 @@ namespace Phantasma.Blockchain
         {
             vm.RegisterMethod("Runtime.TransactionHash", Runtime_TransactionHash);
             vm.RegisterMethod("Runtime.Time", Runtime_Time);
+            vm.RegisterMethod("Runtime.Version", Runtime_Version);
             vm.RegisterMethod("Runtime.GasTarget", Runtime_GasTarget);
             vm.RegisterMethod("Runtime.Validator", Runtime_Validator);
             vm.RegisterMethod("Runtime.Context", Runtime_Context);
@@ -57,10 +58,10 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.AESDecrypt", Runtime_AESDecrypt);
             vm.RegisterMethod("Runtime.AESEncrypt", Runtime_AESEncrypt);
 
+            vm.RegisterMethod("Nexus.GetGovernanceValue", Nexus_GetGovernanceValue);
             vm.RegisterMethod("Nexus.BeginInit", Nexus_BeginInit);
             vm.RegisterMethod("Nexus.EndInit", Nexus_EndInit);
             vm.RegisterMethod("Nexus.MigrateToken", Nexus_MigrateToken);
-
             vm.RegisterMethod("Nexus.CreateToken", Nexus_CreateToken);
             vm.RegisterMethod("Nexus.CreateTokenSeries", Nexus_CreateTokenSeries);
             vm.RegisterMethod("Nexus.CreateChain", Nexus_CreateChain);
@@ -313,6 +314,14 @@ namespace Phantasma.Blockchain
         {
             var result = new VMObject();
             result.SetValue(vm.Time);
+            vm.Stack.Push(result);
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_Version(RuntimeVM vm)
+        {
+            var result = new VMObject();
+            result.SetValue(new BigInteger(vm.ProtocolVersion));
             vm.Stack.Push(result);
             return ExecutionState.Running;
         }
@@ -1165,6 +1174,19 @@ namespace Phantasma.Blockchain
 
             vm.WriteToken(from, symbol, tokenID, ram);
 
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Nexus_GetGovernanceValue(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+            var tag = vm.PopString("tag");
+
+            var val = vm.Nexus.GetGovernanceValue(vm.RootStorage, tag);
+
+            var result = new VMObject();
+            result.SetValue(val);
+            vm.Stack.Push(result);
             return ExecutionState.Running;
         }
 
