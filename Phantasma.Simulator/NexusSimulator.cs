@@ -63,9 +63,14 @@ namespace Phantasma.Simulator
         //    this.Nexus.SetOracleReader(new OracleSimulator(this.Nexus));
         //}
        
-        public NexusSimulator(Nexus nexus, PhantasmaKeys ownerKey, int seed, Logger logger = null)
+        public NexusSimulator(Nexus nexus, PhantasmaKeys ownerKey, int seed, Logger logger = null, int protocolVersion = -1)
         {
             this.Logger = logger != null ? logger : new DummyLogger();
+
+            if (protocolVersion <= 0)
+            {
+                protocolVersion = DomainSettings.LatestKnownProtocol;
+            }
 
             _owner = ownerKey;
             this.Nexus = nexus;
@@ -74,7 +79,7 @@ namespace Phantasma.Simulator
 
             if (!Nexus.HasGenesis)
             {
-                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, 6))
+                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, protocolVersion))
                 {
                     throw new ChainException("Genesis block failure");
                 }
