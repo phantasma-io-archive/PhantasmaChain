@@ -444,13 +444,22 @@ namespace Phantasma.VM
 
             var result = Activator.CreateInstance<T>();
 
+            Throw.If(result == null, "asStruct createInstance failed");
+
             TypedReference reference = __makeref(result);
+
+            Throw.If(result == null, "asStruct createInstance failed");
 
             // WARNING this code is still experimental, probably wont work in every situation
             // TODO check that values.Count equals the number of fields in type T
             foreach (var entry in values)
             {
+                Throw.If(entry.Key == null, $"null key found in struct");
+
                 var fieldName = entry.Key.AsString();
+
+                Throw.If(string.IsNullOrEmpty(fieldName), $"key with null or not string name found in struct");
+
                 FieldInfo fi = structType.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
 
                 Throw.If(fi == null, "unknown field: " + fieldName);
@@ -466,7 +475,11 @@ namespace Phantasma.VM
                     fieldValue = entry.Value.ToObject();
                 }
 
+                Throw.If(fieldValue == null, "could not instantiate properly field value: " + fieldName);
+
                 fieldValue = ConvertObjectInternal(fieldValue, fi.FieldType);
+
+                Throw.If(fieldValue == null, "could not convert properly field value: " + fieldName);
 
                 fi.SetValueDirect(reference, fieldValue);
             }
