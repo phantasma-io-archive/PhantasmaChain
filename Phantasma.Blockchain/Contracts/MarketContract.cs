@@ -108,7 +108,10 @@ namespace Phantasma.Blockchain.Contracts
             {
                 endDate = auction.EndDate;
             }
-            Runtime.Expect(endDate > startDate, "invalid end date");
+            else
+            {
+                Runtime.Expect(endDate > startDate, "invalid end date");
+            }
 
             if (extensionPeriod == 0 || auction.Type == TypeAuction.Fixed)
             {
@@ -419,13 +422,23 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             }
 
-            if (auction.Type == TypeAuction.Reserve)
+            if (Runtime.ProtocolVersion < 8)
             {
-                Runtime.Expect(auction.EndDate == 0, "reserve auction can not be cancelled once it started");
+                if (auction.Type == TypeAuction.Reserve)
+                {
+                    Runtime.Expect(auction.EndDate == 0, "reserve auction can not be cancelled once it started");
+                }
+                else if (auction.Type != TypeAuction.Fixed)
+                {
+                    Runtime.Expect(Runtime.Time < auction.StartDate || Runtime.Time > auction.EndDate, "auction can not be cancelled once it started, until it ends");
+                }
             }
-            else if (auction.Type != TypeAuction.Fixed)
+            else 
             {
-                Runtime.Expect(Runtime.Time < auction.StartDate || Runtime.Time > auction.EndDate, "auction can not be cancelled once it started, until it ends");
+                if (auction.Type != TypeAuction.Fixed)
+                {
+                    Runtime.Expect(auction.CurrentBidWinner == Address.Null, "auction can not be cancelled once it has received bids");
+                }
             }
 
             EndSaleInternal(from, symbol, tokenID, auction);
