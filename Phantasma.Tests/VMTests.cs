@@ -337,7 +337,7 @@ namespace Phantasma.Tests
             BigInteger number = 123;
             string name = "my_test";
 
-            TestStruct test = new TestStruct(name, number);
+            var test = new TestStruct(name, number);
 
             Assert.IsTrue(test.Name == name);
             Assert.IsTrue(test.Number == number);
@@ -356,6 +356,19 @@ namespace Phantasma.Tests
             Assert.IsTrue(backToStruct.Name == name);
             Assert.IsTrue(backToStruct.Number == number);
 
+            test = new TestStruct("", number);
+            vmStruct = VMObject.FromStruct(test);
+            backFromStruct = vmStruct.AsStruct<TestStruct>();
+
+            Assert.IsTrue(string.IsNullOrEmpty(backFromStruct.Name));
+            Assert.IsTrue(backFromStruct.Number == number);
+
+            vmSerialize = vmStruct.Serialize();
+            backFromSerialize = VMObject.FromBytes(vmSerialize);
+            backToStruct = backFromSerialize.AsStruct<TestStruct>();
+
+            Assert.IsTrue(string.IsNullOrEmpty(backToStruct.Name));
+            Assert.IsTrue(backToStruct.Number == number);
         }
 
 
