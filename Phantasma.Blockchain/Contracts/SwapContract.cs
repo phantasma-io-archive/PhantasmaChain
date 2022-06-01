@@ -180,7 +180,7 @@ namespace Phantasma.Blockchain.Contracts
     {
         public override NativeContractKind Kind => NativeContractKind.Swap;
 
-        internal BigInteger _swapVersion;
+        internal BigInteger _DEXversion;
 
         public SwapContract() : base()
         {
@@ -188,13 +188,20 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger GetSwapVersion()
         {
-            if (_swapVersion <= 0) // support for legacy versions
+            if (_DEXversion > 0) // support for legacy versions
             {
-                return 2;
+                return 2 + _DEXversion;
             }
             else
             {
-                return _swapVersion;
+                if (Runtime.ProtocolVersion >= 3)
+                {
+                    return 2;
+                }
+                else
+                {
+                    return 1;
+                }
             }
         }
 
@@ -230,16 +237,18 @@ namespace Phantasma.Blockchain.Contracts
         // returns how many tokens would be obtained by trading from one type of another
         public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount)
         {
-            if (_swapVersion >= 7)
+            var swapVersion = GetSwapVersion();
+
+            if (swapVersion >= 3)
             {
                 return GetRateV3(fromSymbol, toSymbol, amount);
             }
-            else if (_swapVersion >= 3)
+            else if (swapVersion == 2)
             {
 
                 return GetRateV2(fromSymbol, toSymbol, amount);
             }
-            else
+            else 
             {
                 return GetRateV1(fromSymbol, toSymbol, amount);
             }
@@ -477,12 +486,14 @@ namespace Phantasma.Blockchain.Contracts
         {
             var protocol = Runtime.ProtocolVersion;
 
-            if (_swapVersion >= 7)
+            var swapVersion = GetSwapVersion();
+
+            if (swapVersion >= 3)
             {
                 SwapFeeV3(from, fromSymbol, feeAmount);
             }
             else
-            if (_swapVersion >= 3)
+            if (swapVersion == 2)
             {
                 SwapFeeV2(from, fromSymbol, feeAmount);
             }
@@ -500,7 +511,7 @@ namespace Phantasma.Blockchain.Contracts
         /// <param name="feeAmount"></param>
         private void SwapFeeV3(Address from, string fromSymbol, BigInteger feeAmount)
         {
-            Runtime.Expect(GetSwapVersion() >= 7, "call migrateV3 first");
+            Runtime.Expect(_DEXversion >= 1, "call migrateV3 first");
             var feeSymbol = DomainSettings.FuelTokenSymbol;
 
             // Need to remove the fees
@@ -690,7 +701,9 @@ namespace Phantasma.Blockchain.Contracts
         /// <param name="amount"></param>
         public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
         {
-            if(_swapVersion >= 7)
+            var swapVersion = GetSwapVersion();
+
+            if (swapVersion >= 3)
             {
                 SwapTokensV3(from, fromSymbol, toSymbol, amount);
             }
@@ -843,7 +856,7 @@ namespace Phantasma.Blockchain.Contracts
             var owner = Runtime.GenesisAddress;
             Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
 
-            Runtime.Expect(GetSwapVersion() < 3, "Migration failed, wrong version");
+            Runtime.Expect(_DEXversion == 0, "Migration failed, wrong version");
 
             var existsLP = Runtime.TokenExists(DomainSettings.LiquidityTokenSymbol);
             Runtime.Expect(!existsLP, "LP token already exists!");
@@ -923,7 +936,7 @@ namespace Phantasma.Blockchain.Contracts
 
             // Create Pools based on that percent and on the availableSOUL and on token ratio
             BigInteger totalSOULUsed = 0;
-            _swapVersion = 7;
+            _DEXversion = 1;
 
             if (otherTokensTotalValue < soulTotalPrice)
             {
@@ -1304,7 +1317,7 @@ namespace Phantasma.Blockchain.Contracts
         /// <param name="amount1">Amount for Symbol1</param>
         public void CreatePool(Address from, string symbol0, BigInteger amount0, string symbol1,  BigInteger amount1)
         {
-            Runtime.Expect(GetSwapVersion() >= 7, "call migrateV3 first");
+            Runtime.Expect(GetSwapVersion() >= 3, "call migrateV3 first");
 
             // Check the if the input is valid
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");

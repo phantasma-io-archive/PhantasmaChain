@@ -1467,7 +1467,27 @@ namespace Phantasma.API
 
                 if (result.Type == VMType.Object)
                 {
-                    result = VMObject.CastTo(result, VMType.Struct);
+                    // NOTE currently supports simple arrays of C# objects. If something more complex in ncessary later, its good idea to rewrite this a recursive method
+                    if (result.Data.GetType().IsArray)
+                    {
+                        var array1 = ((Array)result.Data);
+                        var array2 = new VMObject[array1.Length];
+                        for (int i=0; i<array1.Length; i++)
+                        {
+                            var obj = array1.GetValue(i);
+
+                            var vm_obj = VMObject.FromObject(obj);
+                            vm_obj = VMObject.CastTo(result, VMType.Struct);
+
+                            array2[i] = vm_obj;
+                        }
+
+                        result = VMObject.FromArray(array2);
+                    }
+                    else
+                    {
+                        result = VMObject.CastTo(result, VMType.Struct);
+                    }
                 }
 
                 var resultBytes = Serialization.Serialize(result);

@@ -18,7 +18,7 @@ namespace Phantasma.Domain
     public abstract class WalletLink
     {
         public const int WebSocketPort = 7090;
-        public const int LinkProtocol = 2;
+        public const int LinkProtocol = 3;
 
         public struct Error : IAPIResult
         {
@@ -63,7 +63,8 @@ namespace Phantasma.Domain
 
         public struct Invocation : IAPIResult
         {
-            public string result;
+            public string result; // deprecated
+            public string[] results;
         }
 
         public struct Transaction : IAPIResult
@@ -129,7 +130,7 @@ namespace Phantasma.Domain
 
         protected abstract void GetAccount(string platform, Action<Account, string> callback);
 
-        protected abstract void InvokeScript(string chain, byte[] script, int id, Action<byte[], string> callback);
+        protected abstract void InvokeScript(string chain, byte[] script, int id, Action<string[], string> callback);
 
         // NOTE for security, signData should not be usable as a way of signing transaction. That way the wallet is responsible for appending random bytes to the message, and return those in callback
         protected abstract void SignData(string platform, SignatureKind kind, byte[] data, int id, Action<string, string, string> callback);
@@ -490,12 +491,12 @@ namespace Phantasma.Domain
                             }
                             else
                             {
-                                InvokeScript(chain, script, id, (invokeResult, invokeError) =>
+                                InvokeScript(chain, script, id, (invokeResults, invokeError) =>
                                 {
-                                    if (invokeResult != null)
+                                    if (invokeResults != null && invokeResults.Length > 0)
                                     {
                                         success = true;
-                                        answer = APIUtils.FromAPIResult(new Invocation() { result = Base16.Encode(invokeResult) });
+                                        answer = APIUtils.FromAPIResult(new Invocation() { result = invokeResults[0], results = invokeResults });
                                     }
                                     else
                                     {

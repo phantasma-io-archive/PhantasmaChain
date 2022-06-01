@@ -26,7 +26,6 @@ namespace Phantasma.Simulator
         private Nexus _nexus;
         private string _name;
         private MyAccount _account;
-        private int LinkProtocol = 2;
 
         public LinkSimulator(Nexus Nexus, string name, MyAccount account)
         {
@@ -92,7 +91,7 @@ namespace Phantasma.Simulator
             throw new NotImplementedException();
         }
 
-        protected override void InvokeScript(string chain, byte[] script, int id, Action<byte[], string> callback)
+        protected override void InvokeScript(string chain, byte[] script, int id, Action<string[], string> callback)
         {
             throw new NotImplementedException();
         }
