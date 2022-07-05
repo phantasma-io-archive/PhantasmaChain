@@ -89,6 +89,7 @@ namespace Phantasma.Domain
 
         public const string LiquidityTokenSymbol = "LP";
         public const string LiquidityTokenName = "Phantasma Liquidity";
+        public const int LiquidityTokenDecimals = 8;
 
         public const string RootChainName = "main";
 
