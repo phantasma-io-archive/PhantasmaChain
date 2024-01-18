@@ -1,11 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>Phantasma.Tests</RootNamespace>
-    <FileUpgradeFlags>40</FileUpgradeFlags>
-    <UpgradeBackupLocation>C:\code\PhantasmaSpook\Backup\Phantasma.Tests\</UpgradeBackupLocation>
-    <OldToolsVersion>Current</OldToolsVersion>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>

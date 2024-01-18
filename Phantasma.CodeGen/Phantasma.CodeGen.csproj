@@ -1,12 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>Phantasma.CodeGen</RootNamespace>
-    <AssemblyName>Phantasma.CodeGen</AssemblyName>
-    <FileUpgradeFlags>40</FileUpgradeFlags>
-    <UpgradeBackupLocation>C:\code\PhantasmaSpook\Backup\Phantasma.CodeGen\</UpgradeBackupLocation>
-    <OldToolsVersion>Current</OldToolsVersion>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
     <ProjectReference Include="..\Phantasma.VM\Phantasma.VM.csproj" />

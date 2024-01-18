@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <FileUpgradeFlags>40</FileUpgradeFlags>
-    <UpgradeBackupLocation>C:\code\PhantasmaSpook\Backup\Phantasma.VM\</UpgradeBackupLocation>
-    <OldToolsVersion>Current</OldToolsVersion>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>

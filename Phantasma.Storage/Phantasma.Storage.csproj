@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <FileUpgradeFlags>40</FileUpgradeFlags>
-    <UpgradeBackupLocation>C:\code\PhantasmaSpook\Backup\Phantasma.Storage\</UpgradeBackupLocation>
-    <OldToolsVersion>Current</OldToolsVersion>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />

@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <FileUpgradeFlags>40</FileUpgradeFlags>
-    <UpgradeBackupLocation>C:\code\PhantasmaSpook\Backup\Phantasma.Core\</UpgradeBackupLocation>
-    <OldToolsVersion>Current</OldToolsVersion>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="LunarLabs.Parser" Version="1.3.7" />
   </ItemGroup>
